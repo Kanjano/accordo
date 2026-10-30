@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createPrismaClient } from '../../src/index.js';
 import { seedCatalog, seedGeo, seedHolidays, seedPlatformSettings } from './base.js';
-import { seedDemo } from './demo.js';
+import { seedDemo, seedDemoCredentials } from './demo.js';
 
 const rootEnv = resolve(import.meta.dirname, '../../../../.env');
 if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
@@ -26,6 +26,7 @@ try {
   if (withDemo) {
     console.log('Dati demo');
     await seedDemo(db);
+    await seedDemoCredentials(db);
   }
 } finally {
   await db.$disconnect();

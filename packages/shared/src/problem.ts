@@ -9,6 +9,8 @@ export const problemDetailsSchema = z.object({
   instance: z.string().optional(),
   code: z.string(),
   errors: z.array(z.object({ path: z.string(), message: z.string() })).optional(),
+  /** STEP_UP_REQUIRED: the factors the client must provide. */
+  requires: z.array(z.enum(['password', 'email_code'])).optional(),
 });
 
 export type ProblemDetails = z.infer<typeof problemDetailsSchema>;
@@ -19,6 +21,14 @@ export const ErrorCode = {
   UNAUTHORIZED: 'UNAUTHORIZED',
   FORBIDDEN: 'FORBIDDEN',
   CONFLICT: 'CONFLICT',
+  EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+  STEP_UP_REQUIRED: 'STEP_UP_REQUIRED',
+  TWO_FACTOR_REQUIRED: 'TWO_FACTOR_REQUIRED',
+  IMPERSONATION_READ_ONLY: 'IMPERSONATION_READ_ONLY',
+  ORIGIN_NOT_ALLOWED: 'ORIGIN_NOT_ALLOWED',
+  RATE_LIMITED: 'RATE_LIMITED',
+  OPEN_ORDERS: 'OPEN_ORDERS',
+  USERNAME_TAKEN: 'USERNAME_TAKEN',
   INTERNAL: 'INTERNAL',
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

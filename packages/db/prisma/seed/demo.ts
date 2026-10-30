@@ -30,12 +30,35 @@ import {
 } from '@accordo/domain';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { fakerIT as faker } from '@faker-js/faker';
+import { hashPassword } from 'better-auth/crypto';
 import sharp from 'sharp';
 import type { ItemCondition, Prisma, PrismaClient } from '../../src/generated/prisma/client.js';
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
 export const DEMO_ADMIN_EMAIL = 'admin@accordo.local';
+/** Development only (README). Staff accounts additionally need 2FA to open the back office. */
+export const DEMO_PASSWORD = 'accordo-demo-2026';
+
+/** Gives every demo user without a password a credential account (idempotent, Better Auth scrypt hash). */
+export async function seedDemoCredentials(db: PrismaClient): Promise<void> {
+  const users = await db.user.findMany({
+    where: {
+      OR: [
+        { email: { endsWith: '@accordo.local' } },
+        { email: { endsWith: '@demo.accordo.local' } },
+      ],
+      accounts: { none: { providerId: 'credential' } },
+    },
+    select: { id: true },
+  });
+  if (!users.length) return;
+  const password = await hashPassword(DEMO_PASSWORD);
+  await db.account.createMany({
+    data: users.map((u) => ({ userId: u.id, accountId: u.id, providerId: 'credential', password })),
+  });
+  console.log(`  credenziali demo: ${users.length} utenti (password ${DEMO_PASSWORD})`);
+}
 const BIG_CITIES = [
   '015146',
   '058091',

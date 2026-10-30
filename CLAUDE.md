@@ -10,13 +10,16 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - `pnpm lint && pnpm typecheck && pnpm test && pnpm build` — devono essere verdi a fine fase.
 - `pnpm --filter @accordo/<pkg> <script>` per un singolo pacchetto.
 - Database: `pnpm db:migrate` (nuova migrazione), `pnpm db:seed` (base + demo in sviluppo), `pnpm test:integration` (Testcontainers, serve Docker), `pnpm geo:import` (rigenera `packages/db/data`).
+- `pnpm test:e2e` — Playwright (`e2e/`); riusa `pnpm dev` se già avviato: in quel caso avvialo con `RATE_LIMIT_ENABLED=false NEXT_PUBLIC_ANALYTICS_SRC=http://localhost:3000/analytics-test.js`.
 - `pnpm db:reset` distrugge il DB: chiedere sempre il consenso esplicito all'utente (Prisma lo blocca senza `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`).
 - Nuove dipendenze con script di build: aggiungerle ad `allowBuilds` in `pnpm-workspace.yaml`, altrimenti `pnpm add` fallisce.
 
 ## Struttura
 
 - `apps/web` Next.js 16 App Router, `app/[locale]`, next-intl (`messages/it.json`), `proxy.ts`.
-- `apps/api` NestJS 12 ESM; moduli in `src/modules/<modulo>/`; env in `src/config/env.ts`.
+- `apps/api` NestJS 12 ESM; moduli in `src/modules/<modulo>/`; env in `src/config/env.ts`; wiring HTTP condiviso con i test in `src/app.setup.ts`.
+- Auth: Better Auth in `modules/auth/auth.factory.ts`; ogni route è protetta dal guard globale. Usa `@Public()`, `@AllowUnverified()`, `@Roles(...)`, `@RequireStepUp()` e `@CurrentAuth()`; valida i body con `@Body({ schema })` e gli schemi di `@accordo/shared`. Query sulle risorse dell'utente sempre filtrate per `userId` (anti-IDOR, 404 uniforme).
+- Web: client Better Auth in `lib/auth-client.ts`, API in `lib/api.ts` (browser) e `lib/server-api.ts` (Server Components); azioni sensibili con `useStepUp()`; testi solo da `messages/*.json` (chiavi senza `.`; `en` deve avere le stesse chiavi di `it`).
 - `apps/worker` NestJS standalone + BullMQ.
 - `packages/` `db` `domain` `shared` `sdk` `ui` `emails` `config` — compilati in `dist/` con `tsc`.
 - `packages/db`: `prisma/schema.prisma`, `prisma/migrations`, `prisma/seed/*`, client generato in `src/generated` (non versionato). Indici GIN dichiarati nello schema con `map:` (ADR-0009): non rimuoverli.

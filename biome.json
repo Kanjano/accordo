@@ -46,6 +46,14 @@
       },
       "suspicious": {
         "noExplicitAny": "error"
+      },
+      "a11y": {
+        "noLabelWithoutControl": {
+          "level": "error",
+          "options": {
+            "inputComponents": ["Checkbox", "Input", "Textarea"]
+          }
+        }
       }
     }
   },

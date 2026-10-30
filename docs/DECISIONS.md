@@ -88,3 +88,41 @@ Formato: contesto → decisione → conseguenze.
 ## ADR-0017 — `prisma migrate reset` da agenti AI
 
 - Prisma 7 blocca `migrate reset` quando lo lancia un agente AI, salvo consenso esplicito dell'utente (variabile `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`). Claude Code chiede sempre prima di resettare, e solo sul database locale.
+
+## ADR-0018 — Allineamento a Better Auth 1.7
+
+- `npx @better-auth/cli generate` è fermo alla 1.4: lo schema atteso è stato letto con `getAuthTables()` della versione installata. Differenza: `TwoFactor` ha tre campi in più (`verified`, `failedVerificationCount`, `lockedUntil`), aggiunti con la migrazione `better_auth_two_factor`. Better Auth verifica lo schema all'avvio e blocca le richieste se non coincide.
+- Id generati da Prisma (`advanced.database.generateId: false`, ADR-0010).
+- Plugin attivi: admin, username, twoFactor, passkey, captcha. `phoneNumber` resta predisposto nello schema ma non è montato (MVP).
+- Campi aggiuntivi dell'utente: `termsAcceptedAt`, `marketingConsentAt` (solo lato server, dal body della registrazione). Gli utenti Google ricevono uno username generato.
+
+## ADR-0019 — Email di autenticazione inviate direttamente
+
+- Le email di Better Auth (verifica, reset, nuovo dispositivo, password cambiata) e il codice di step-up partono dall'API tramite la porta `EmailProvider`, senza outbox: non dipendono da una transazione di dominio e sono sensibili al tempo. Le notifiche di dominio passeranno dall'outbox (Fase 3+).
+- Solo l'adapter SMTP (Mailpit in sviluppo); il provider di produzione UE si aggiunge prima del lancio.
+
+## ADR-0020 — Better Auth montato su Express, non tramite `@thallesp/nestjs-better-auth`
+
+- **Decisione:** `toNodeHandler(auth)` su `/api/auth/{*path}` prima del parser JSON (Better Auth legge il corpo grezzo); guard globale Nest scritto in casa (`AuthGuard`) con decorator `@Public`, `@AllowUnverified`, `@Roles`, `@RequireStepUp`, `@CurrentAuth`.
+- **Motivo:** meno dipendenze, compatibilità certa con Nest 12, controllo su Origin, impersonificazione in sola lettura e step-up.
+- La validazione usa `StandardSchemaValidationPipe` di Nest 12 con gli schemi Zod di `@accordo/shared` (`@Body({ schema })`).
+
+## ADR-0021 — Step-up e dispositivi riconosciuti
+
+- Cookie `accordo_device` firmato (HMAC con `DEVICE_COOKIE_SECRET`), salvato solo come SHA-256 in `KnownDevice`; impostato da un hook `after` di Better Auth su ogni nuova sessione.
+- Step-up richiesto se l'ultima autenticazione (creazione della sessione o ultimo step-up) ha più di `STEP_UP_MAX_AGE_MINUTES`, oppure se il dispositivo è stato visto per la prima volta da meno di 24 ore: in quel caso serve anche un codice email (6 cifre, hash in Valkey, 10 minuti, 5 tentativi). Chi non ha password usa solo il codice email.
+- Stato dello step-up in Valkey per sessione (`stepup:{sessionId}`). Risposta `401 STEP_UP_REQUIRED` con `requires: ["password" | "email_code"]`, anche sui percorsi di Better Auth (`/change-password`, `/change-email`, `/two-factor/disable`, `/passkey/delete-passkey`) tramite hook `before`.
+- Il link "Non sono stato io" dell'email di nuovo accesso porta alla pagina Sicurezza (esci dagli altri dispositivi, cambia password); revoca automatica rimandata (da rivedere in Fase 12).
+
+## ADR-0022 — Limiti di frequenza e captcha
+
+- Limiti di Better Auth (login 5/min, registrazione 3/ora, reset 3/ora, verifica 2FA 5/min per IP) con storage atomico su Valkey; `RATE_LIMIT_ENABLED=false` solo per test ed e2e. Il limite "10/ora per account" sul login è rimandato alla revisione di sicurezza (Fase 12).
+- Turnstile su registrazione e richiesta di reset password (chiavi di test in `.env.example`). Sul login non c'è captcha: lo protegge il limite per IP. Senza chiave segreta il plugin protegge un percorso fittizio, perché una lista vuota significa "endpoint predefiniti".
+
+## ADR-0023 — Frontend: componenti, consenso, pagine legali
+
+- `packages/ui`: componenti in stile shadcn scritti a mano su elementi HTML nativi (Button, Input, Field con `aria-describedby`/`aria-live`, Card, Alert), senza Radix finché non serve.
+- `next.config.ts` carica il `.env` della radice e deriva le variabili pubbliche (`NEXT_PUBLIC_API_URL` da `API_URL`, ecc.).
+- Banner cookie conforme alle linee guida del Garante: Accetta e Rifiuta equivalenti, X = rifiuto, scelte granulari non preselezionate, scelta valida 6 mesi, registro in `AuditLog` (`cookie.consent`). Gli analytics si caricano solo con consenso e solo se `NEXT_PUBLIC_ANALYTICS_SRC` è configurato.
+- Pagine legali in MDX (`content/legal`), con `dynamicParams = false`; testi marcati "DA VALIDARE CON IL LEGALE".
+- Esportazione GDPR dei dati rimandata alla Fase 11; l'eliminazione dell'account (anonimizzazione, step-up, bloccata con ordini aperti) è già attiva.

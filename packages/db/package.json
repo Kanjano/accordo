@@ -13,7 +13,7 @@
   "scripts": {
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "dev": "prisma generate && tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "typecheck": "prisma generate && tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "generate": "prisma generate",
     "seed": "tsx prisma/seed/index.ts",
@@ -27,6 +27,7 @@
     "@testcontainers/postgresql": "12.2.1",
     "@types/node": "26.6.6",
     "@types/pg": "8.23.1",
+    "better-auth": "1.7.14",
     "prisma": "7.10.1",
     "sharp": "0.35.5",
     "tsx": "4.23.15",

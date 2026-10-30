@@ -9,7 +9,10 @@
     "nav": "Navigazione principale",
     "listings": "Annunci",
     "sell": "Vendi",
-    "signIn": "Accedi"
+    "signIn": "Accedi",
+    "account": "Il mio account",
+    "signOut": "Esci",
+    "settings": "Impostazioni"
   },
   "Home": {
     "title": "Compra e vendi strumenti musicali in sicurezza",
@@ -27,6 +30,361 @@
     "rights": "© {year} Accordo. Tutti i diritti riservati.",
     "legal": "Note legali",
     "privacy": "Privacy",
-    "terms": "Termini di servizio"
+    "terms": "Termini di servizio",
+    "cookies": "Cookie",
+    "cookieSettings": "Preferenze cookie",
+    "termsProtected": "Condizioni del pagamento protetto",
+    "rules": "Regole di pubblicazione"
+  },
+  "Common": {
+    "loading": "Caricamento…",
+    "save": "Salva",
+    "saved": "Modifiche salvate",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "edit": "Modifica",
+    "add": "Aggiungi",
+    "close": "Chiudi",
+    "continue": "Continua",
+    "optional": "facoltativo",
+    "errorGeneric": "Qualcosa è andato storto. Riprova tra poco.",
+    "backHome": "Torna alla home"
+  },
+  "Errors": {
+    "INVALID_EMAIL_OR_PASSWORD": "Email o password non corretti.",
+    "INVALID_USERNAME_OR_PASSWORD": "Nome utente o password non corretti.",
+    "EMAIL_NOT_VERIFIED": "Devi prima confermare il tuo indirizzo email. Ti abbiamo appena inviato un nuovo link.",
+    "USER_ALREADY_EXISTS": "Esiste già un account con questa email.",
+    "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL": "Esiste già un account con questa email.",
+    "USERNAME_IS_ALREADY_TAKEN": "Questo nome utente è già in uso.",
+    "USERNAME_IS_ALREADY_TAKEN_PLEASE_TRY_ANOTHER": "Questo nome utente è già in uso.",
+    "USERNAME_TAKEN": "Questo nome utente è già in uso.",
+    "TERMS_REQUIRED": "Per registrarti devi accettare i Termini di servizio.",
+    "RATE_LIMITED": "Troppi tentativi. Attendi qualche minuto e riprova.",
+    "TOO_MANY_REQUESTS": "Troppi tentativi. Attendi qualche minuto e riprova.",
+    "INVALID_TOKEN": "Il link non è valido o è scaduto.",
+    "INVALID_CODE": "Codice non valido.",
+    "INVALID_TWO_FACTOR_AUTHENTICATION": "Codice non valido.",
+    "INVALID_BACKUP_CODE": "Codice di backup non valido.",
+    "STEP_UP_INVALID": "Password o codice non corretti.",
+    "INVALID_PASSWORD": "Password non corretta.",
+    "OPEN_ORDERS": "Hai ordini in corso: potrai eliminare l'account quando saranno conclusi.",
+    "MISSING_RESPONSE": "Completa la verifica anti-bot.",
+    "VERIFICATION_FAILED": "Verifica anti-bot non riuscita: riprova.",
+    "PASSWORD_TOO_SHORT": "La password deve avere almeno 10 caratteri.",
+    "generic": "Qualcosa è andato storto. Riprova tra poco.",
+    "STEP_UP_REQUIRED": "Conferma la tua identità per continuare."
+  },
+  "Validation": {
+    "EMAIL_INVALID": "Inserisci un indirizzo email valido.",
+    "PASSWORD_TOO_SHORT": "Almeno 10 caratteri.",
+    "PASSWORD_TOO_LONG": "Al massimo 128 caratteri.",
+    "USERNAME_FORMAT": "Da 3 a 30 caratteri: lettere minuscole, numeri, punto e trattino basso.",
+    "NAME_REQUIRED": "Inserisci il tuo nome.",
+    "TERMS_REQUIRED": "Devi accettare i Termini di servizio.",
+    "CAP_INVALID": "Il CAP ha 5 cifre.",
+    "PHONE_INVALID": "Numero di telefono non valido.",
+    "required": "Campo obbligatorio.",
+    "PASSWORDS_DIFFER": "Le password non coincidono.",
+    "CODE_FORMAT": "Il codice ha 6 cifre.",
+    "invalid": "Valore non valido."
+  },
+  "Auth": {
+    "signIn": {
+      "title": "Accedi",
+      "subtitle": "Bentornato su Accordo.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Accedi",
+      "forgot": "Password dimenticata?",
+      "noAccount": "Non hai un account?",
+      "register": "Registrati",
+      "or": "oppure",
+      "google": "Continua con Google",
+      "passkey": "Accedi con passkey",
+      "twoFactorTitle": "Verifica in due passaggi",
+      "twoFactorHelp": "Inserisci il codice a 6 cifre generato dalla tua app di autenticazione.",
+      "totpCode": "Codice di verifica",
+      "useBackupCode": "Usa un codice di backup",
+      "useTotp": "Usa l'app di autenticazione",
+      "backupCode": "Codice di backup",
+      "verify": "Verifica",
+      "trustDevice": "Ricorda questo dispositivo per 30 giorni"
+    },
+    "signUp": {
+      "title": "Crea il tuo account",
+      "subtitle": "Pubblicare annunci è gratis. Compra e vendi con il pagamento protetto.",
+      "name": "Nome e cognome",
+      "username": "Nome utente",
+      "usernameHelp": "Sarà visibile sul tuo profilo pubblico.",
+      "email": "Email",
+      "password": "Password",
+      "passwordHelp": "Almeno 10 caratteri.",
+      "terms": "Accetto i <terms>Termini di servizio</terms> e ho letto l'<privacy>Informativa privacy</privacy>.",
+      "marketing": "Voglio ricevere novità e offerte via email (facoltativo).",
+      "submit": "Registrati",
+      "haveAccount": "Hai già un account?",
+      "signIn": "Accedi",
+      "googleNotice": "Continuando con Google accetti i Termini di servizio.",
+      "checkEmailTitle": "Controlla la tua email",
+      "checkEmailText": "Ti abbiamo inviato un link a {email}. Aprilo per confermare l'indirizzo e attivare l'account."
+    },
+    "verifyEmail": {
+      "title": "Conferma dell'email",
+      "ok": "Indirizzo email confermato. Il tuo account è attivo.",
+      "error": "Il link non è valido o è scaduto. Accedi per riceverne uno nuovo.",
+      "pending": "Apri il link che ti abbiamo inviato per email per confermare l'indirizzo.",
+      "goToAccount": "Vai al tuo account",
+      "signIn": "Accedi"
+    },
+    "forgot": {
+      "title": "Password dimenticata",
+      "text": "Inserisci l'email del tuo account: ti invieremo un link per scegliere una nuova password.",
+      "email": "Email",
+      "submit": "Invia il link",
+      "sent": "Se l'indirizzo è registrato, riceverai a breve un'email con il link."
+    },
+    "reset": {
+      "title": "Nuova password",
+      "password": "Nuova password",
+      "confirm": "Ripeti la password",
+      "submit": "Salva la password",
+      "done": "Password aggiornata. Ora puoi accedere.",
+      "invalid": "Il link non è valido o è scaduto.",
+      "signIn": "Accedi"
+    }
+  },
+  "StepUp": {
+    "title": "Conferma la tua identità",
+    "text": "Per proteggere il tuo account ti chiediamo di confermare che sei tu.",
+    "newDevice": "Stai usando un dispositivo nuovo: ti inviamo anche un codice via email.",
+    "password": "Password",
+    "emailCode": "Codice ricevuto via email",
+    "sendCode": "Invia il codice",
+    "resendCode": "Invia di nuovo",
+    "codeSent": "Codice inviato a {email}.",
+    "confirm": "Conferma"
+  },
+  "Account": {
+    "title": "Il mio account",
+    "nav": {
+      "label": "Area personale",
+      "overview": "Riepilogo",
+      "profile": "Profilo",
+      "addresses": "Indirizzi",
+      "security": "Sicurezza",
+      "notifications": "Notifiche",
+      "privacy": "Privacy"
+    },
+    "welcome": "Ciao {name}!",
+    "overviewText": "Da qui gestisci profilo, indirizzi, sicurezza e preferenze. Annunci, acquisti e vendite arriveranno presto.",
+    "publicProfile": "Vedi il tuo profilo pubblico",
+    "emailUnverified": "Il tuo indirizzo email non è ancora confermato.",
+    "twoFactorHint": "Proteggi il tuo account: attiva la verifica in due passaggi."
+  },
+  "Settings": {
+    "profile": {
+      "title": "Profilo",
+      "name": "Nome visualizzato",
+      "username": "Nome utente",
+      "bio": "Presentazione",
+      "bioHelp": "Massimo 1.000 caratteri. Non inserire contatti: verrebbero rimossi.",
+      "comune": "Comune",
+      "comuneHelp": "Sul profilo mostriamo solo il comune, mai l'indirizzo.",
+      "comunePlaceholder": "Cerca il tuo comune",
+      "noResults": "Nessun comune trovato",
+      "marketing": "Ricevi novità e offerte via email"
+    },
+    "addresses": {
+      "title": "Indirizzi",
+      "intro": "Indirizzi di spedizione per i tuoi acquisti e indirizzo del mittente per le tue vendite.",
+      "empty": "Non hai ancora salvato indirizzi.",
+      "add": "Aggiungi indirizzo",
+      "new": "Nuovo indirizzo",
+      "type": "Tipo",
+      "types": {
+        "SHIPPING": "Spedizione",
+        "SENDER": "Mittente"
+      },
+      "fullName": "Nome e cognome",
+      "line1": "Indirizzo",
+      "line2": "Presso, scala, interno",
+      "cap": "CAP",
+      "comune": "Comune",
+      "phone": "Telefono",
+      "phoneHelp": "Serve al corriere, non è mai visibile agli altri utenti.",
+      "isDefault": "Usa come predefinito",
+      "default": "Predefinito",
+      "confirmDelete": "Eliminare questo indirizzo?"
+    },
+    "security": {
+      "title": "Sicurezza",
+      "newDeviceAlert": "Hai segnalato un accesso sospetto: esci da tutti gli altri dispositivi e cambia la password.",
+      "password": {
+        "title": "Password",
+        "current": "Password attuale",
+        "new": "Nuova password",
+        "submit": "Cambia password",
+        "done": "Password cambiata. Gli altri dispositivi sono stati disconnessi."
+      },
+      "twoFactor": {
+        "title": "Verifica in due passaggi",
+        "on": "Attiva",
+        "off": "Non attiva",
+        "recommended": "Consigliata a chi vende; obbligatoria per lo staff.",
+        "enable": "Attiva",
+        "disable": "Disattiva",
+        "password": "Conferma con la password",
+        "scan": "Inquadra il QR code con la tua app di autenticazione (per esempio Google Authenticator o 1Password), poi inserisci il codice generato.",
+        "qrAlt": "QR code per configurare l'app di autenticazione",
+        "secret": "Oppure inserisci questa chiave a mano:",
+        "code": "Codice a 6 cifre",
+        "verify": "Verifica e attiva",
+        "backupCodes": "Codici di backup",
+        "backupHelp": "Conservali in un posto sicuro: ognuno permette un accesso se perdi il telefono.",
+        "enabled": "Verifica in due passaggi attivata.",
+        "disabled": "Verifica in due passaggi disattivata."
+      },
+      "passkeys": {
+        "title": "Passkey",
+        "intro": "Accedi con l'impronta, il volto o il PIN del dispositivo, senza password.",
+        "empty": "Nessuna passkey registrata.",
+        "add": "Aggiungi una passkey",
+        "added": "Passkey aggiunta.",
+        "unnamed": "Passkey",
+        "created": "Aggiunta il {date}",
+        "remove": "Rimuovi"
+      },
+      "sessions": {
+        "title": "Dispositivi connessi",
+        "current": "Questo dispositivo",
+        "revoke": "Disconnetti",
+        "revokeOthers": "Esci da tutti gli altri dispositivi",
+        "unknown": "Dispositivo sconosciuto",
+        "lastActive": "Ultimo accesso: {date}",
+        "done": "Altri dispositivi disconnessi."
+      }
+    },
+    "notifications": {
+      "title": "Notifiche",
+      "intro": "Scegli come ricevere ogni tipo di avviso. Le comunicazioni su ordini, pagamenti e sicurezza sono sempre attive.",
+      "type": "Avviso",
+      "mandatory": "Sempre attiva",
+      "pushSoon": "Le notifiche push arriveranno presto.",
+      "channels": {
+        "IN_APP": "Sul sito",
+        "EMAIL": "Email",
+        "PUSH": "Push"
+      },
+      "types": {
+        "message_new": "Nuovi messaggi",
+        "offer_updates": "Offerte",
+        "order_updates": "Ordini e pagamenti",
+        "order_ship_reminder": "Promemoria di spedizione",
+        "payout_transferred": "Incassi trasferiti",
+        "dispute_updates": "Controversie",
+        "feedback_received": "Feedback ricevuti",
+        "feedback_reminder": "Promemoria per lasciare un feedback",
+        "saved_search_results": "Nuovi risultati delle ricerche salvate",
+        "favorite_price_drop": "Ribassi dei preferiti",
+        "listing_lifecycle": "Scadenza dei tuoi annunci",
+        "listing_moderation": "Revisione dei tuoi annunci",
+        "security_alerts": "Sicurezza dell'account",
+        "tax_dac7": "Richieste di dati fiscali"
+      }
+    },
+    "privacy": {
+      "title": "Privacy",
+      "cookies": {
+        "title": "Cookie",
+        "text": "Puoi cambiare in ogni momento il consenso ai cookie facoltativi.",
+        "button": "Gestisci le preferenze cookie"
+      },
+      "export": {
+        "title": "Esporta i tuoi dati",
+        "text": "L'esportazione completa dei dati sarà disponibile a breve. Nel frattempo puoi richiederla al supporto."
+      },
+      "delete": {
+        "title": "Elimina l'account",
+        "text": "I tuoi dati personali verranno anonimizzati e gli annunci rimossi. Ordini e feedback restano conservati in forma anonima per gli obblighi di legge. L'operazione è definitiva.",
+        "confirmLabel": "Per confermare scrivi ELIMINA",
+        "confirmWord": "ELIMINA",
+        "submit": "Elimina definitivamente l'account",
+        "done": "Account eliminato."
+      }
+    }
+  },
+  "Profile": {
+    "memberSince": "Membro da {date}",
+    "activity": {
+      "TODAY": "Attivo oggi",
+      "THIS_WEEK": "Attivo questa settimana"
+    },
+    "responseTime": {
+      "WITHIN_HOUR": "Risponde di solito entro un'ora",
+      "WITHIN_HOURS": "Risponde di solito entro qualche ora",
+      "WITHIN_DAY": "Risponde di solito in giornata"
+    },
+    "badges": {
+      "label": "Badge",
+      "emailVerified": "Email verificata",
+      "identityVerified": "Identità verificata",
+      "shopVerified": "Negozio verificato",
+      "topSeller": "Venditore Top"
+    },
+    "levels": {
+      "NEWCOMER": "Esordiente",
+      "SESSION_PLAYER": "Turnista",
+      "SOLOIST": "Solista",
+      "PROFESSIONAL": "Professionista",
+      "MAESTRO": "Maestro",
+      "LEGEND": "Leggenda"
+    },
+    "level": "Livello: {level}",
+    "feedback": "Feedback",
+    "positive": "{pct} positivi",
+    "feedbackCounts": "{positive} positivi · {neutral} neutri · {negative} negativi (12 mesi)",
+    "noFeedback": "Nessun feedback",
+    "score": "Punteggio {score}",
+    "sales": "{count, plural, one {# vendita} other {# vendite}}",
+    "purchases": "{count, plural, one {# acquisto} other {# acquisti}}",
+    "followers": "{count, plural, one {# follower} other {# follower}}",
+    "listings": "Annunci attivi ({count})",
+    "noListings": "Nessun annuncio attivo.",
+    "follow": "Segui",
+    "following": "Segui già",
+    "block": "Blocca",
+    "unblock": "Sblocca",
+    "blockConfirm": "Bloccare questo utente? Non potrà scriverti né farti offerte.",
+    "shop": "Vetrina del negozio",
+    "business": "Venditore professionale",
+    "notFound": "Utente non trovato.",
+    "signInToFollow": "Accedi per seguire questo utente."
+  },
+  "Condition": {
+    "NEW": "Nuovo",
+    "LIKE_NEW": "Come nuovo",
+    "EXCELLENT": "Ottime condizioni",
+    "GOOD": "Buone condizioni",
+    "FAIR": "Discrete condizioni",
+    "FOR_PARTS": "Da riparare / per ricambi"
+  },
+  "Consent": {
+    "title": "Rispettiamo la tua privacy",
+    "text": "Usiamo cookie tecnici necessari al funzionamento del sito. Con il tuo consenso useremmo anche statistiche anonime per migliorarlo. Puoi cambiare idea quando vuoi da «Preferenze cookie» in fondo alla pagina.",
+    "policy": "Informativa cookie",
+    "accept": "Accetta tutti",
+    "reject": "Rifiuta",
+    "customize": "Personalizza",
+    "save": "Salva le scelte",
+    "close": "Chiudi senza accettare",
+    "necessary": "Necessari",
+    "necessaryText": "Sessione, sicurezza e preferenze. Sempre attivi.",
+    "analytics": "Statistiche",
+    "analyticsText": "Misurazione anonima delle visite (nessuna profilazione)."
+  },
+  "NotFound": {
+    "title": "Pagina non trovata",
+    "text": "La pagina che cerchi non esiste o è stata spostata."
   }
 }

@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { UserMenu } from './user-menu';
 
 export function SiteHeader() {
   const t = useTranslations('Header');
@@ -32,12 +33,7 @@ export function SiteHeader() {
               </Link>
             </li>
             <li>
-              <Link
-                href="/accedi"
-                className="rounded-md bg-primary px-3 py-2 text-primary-foreground hover:bg-primary/90"
-              >
-                {t('signIn')}
-              </Link>
+              <UserMenu />
             </li>
           </ul>
         </nav>

@@ -30,3 +30,18 @@ describe('createApiClient', () => {
     await expect(client.health()).resolves.toEqual(report);
   });
 });
+
+describe('json requests', () => {
+  it('serialises the body and returns undefined on 204', async () => {
+    let seen: { body?: unknown; type?: string | null } = {};
+    const client = createApiClient({
+      baseUrl: 'http://api.test',
+      fetch: (_u, init) => {
+        seen = { body: init?.body, type: new Headers(init?.headers).get('content-type') };
+        return Promise.resolve(new Response(null, { status: 204 }));
+      },
+    });
+    await expect(client.put('/x', { a: 1 })).resolves.toBeUndefined();
+    expect(seen).toEqual({ body: '{"a":1}', type: 'application/json' });
+  });
+});

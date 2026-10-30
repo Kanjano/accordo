@@ -15,6 +15,11 @@ const valid = {
   S3_BUCKET_PRIVATE: 'private',
   S3_FORCE_PATH_STYLE: 'true',
   BETTER_AUTH_SECRET: 'x'.repeat(32),
+  BETTER_AUTH_URL: 'http://localhost:4000',
+  DEVICE_COOKIE_SECRET: 'y'.repeat(32),
+  EMAIL_FROM: 'Accordo <no-reply@accordo.local>',
+  SMTP_HOST: 'localhost',
+  SMTP_PORT: '1025',
 };
 
 describe('parseEnv', () => {
@@ -22,6 +27,8 @@ describe('parseEnv', () => {
     const env = parseEnv(valid);
     expect(env.API_PORT).toBe(4000);
     expect(env.S3_FORCE_PATH_STYLE).toBe(true);
+    expect(env.RATE_LIMIT_ENABLED).toBe(true);
+    expect(env.GOOGLE_CLIENT_ID).toBe('');
   });
 
   it('blocks startup when a variable is missing', () => {

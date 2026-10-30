@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale, type Locale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Analytics } from '@/components/consent/analytics';
+import { CookieBanner } from '@/components/consent/cookie-banner';
+import { Providers } from '@/components/providers';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { routing } from '@/i18n/routing';
@@ -26,11 +29,15 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
     <html lang={locale}>
       <body className="flex min-h-dvh flex-col antialiased">
         <NextIntlClientProvider>
-          <SiteHeader />
-          <main id="main" className="flex-1">
-            {children}
-          </main>
-          <SiteFooter />
+          <Providers>
+            <SiteHeader />
+            <main id="main" className="flex-1">
+              {children}
+            </main>
+            <SiteFooter />
+            <CookieBanner />
+            <Analytics />
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>

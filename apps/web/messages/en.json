@@ -9,7 +9,10 @@
     "nav": "Main navigation",
     "listings": "Listings",
     "sell": "Sell",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "account": "My account",
+    "signOut": "Sign out",
+    "settings": "Settings"
   },
   "Home": {
     "title": "Buy and sell musical instruments safely",
@@ -27,6 +30,361 @@
     "rights": "© {year} Accordo. All rights reserved.",
     "legal": "Legal notice",
     "privacy": "Privacy",
-    "terms": "Terms of service"
+    "terms": "Terms of service",
+    "cookies": "Cookies",
+    "cookieSettings": "Cookie preferences",
+    "termsProtected": "Protected payment terms",
+    "rules": "Listing rules"
+  },
+  "Common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "saved": "Changes saved",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "continue": "Continue",
+    "optional": "optional",
+    "errorGeneric": "Something went wrong. Please try again shortly.",
+    "backHome": "Back to home"
+  },
+  "Errors": {
+    "INVALID_EMAIL_OR_PASSWORD": "Wrong email or password.",
+    "INVALID_USERNAME_OR_PASSWORD": "Wrong username or password.",
+    "EMAIL_NOT_VERIFIED": "Please confirm your email address first. We just sent you a new link.",
+    "USER_ALREADY_EXISTS": "An account with this email already exists.",
+    "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL": "An account with this email already exists.",
+    "USERNAME_IS_ALREADY_TAKEN": "This username is already taken.",
+    "USERNAME_IS_ALREADY_TAKEN_PLEASE_TRY_ANOTHER": "This username is already taken.",
+    "USERNAME_TAKEN": "This username is already taken.",
+    "TERMS_REQUIRED": "You must accept the Terms of service to sign up.",
+    "RATE_LIMITED": "Too many attempts. Wait a few minutes and try again.",
+    "TOO_MANY_REQUESTS": "Too many attempts. Wait a few minutes and try again.",
+    "INVALID_TOKEN": "The link is invalid or has expired.",
+    "INVALID_CODE": "Invalid code.",
+    "INVALID_TWO_FACTOR_AUTHENTICATION": "Invalid code.",
+    "INVALID_BACKUP_CODE": "Invalid backup code.",
+    "STEP_UP_INVALID": "Wrong password or code.",
+    "INVALID_PASSWORD": "Wrong password.",
+    "OPEN_ORDERS": "You have orders in progress: you can delete your account once they are closed.",
+    "MISSING_RESPONSE": "Please complete the anti-bot check.",
+    "VERIFICATION_FAILED": "Anti-bot check failed: please try again.",
+    "PASSWORD_TOO_SHORT": "The password must be at least 10 characters long.",
+    "generic": "Something went wrong. Please try again shortly.",
+    "STEP_UP_REQUIRED": "Confirm your identity to continue."
+  },
+  "Validation": {
+    "EMAIL_INVALID": "Enter a valid email address.",
+    "PASSWORD_TOO_SHORT": "At least 10 characters.",
+    "PASSWORD_TOO_LONG": "At most 128 characters.",
+    "USERNAME_FORMAT": "3 to 30 characters: lowercase letters, digits, dot and underscore.",
+    "NAME_REQUIRED": "Enter your name.",
+    "TERMS_REQUIRED": "You must accept the Terms of service.",
+    "CAP_INVALID": "The postcode has 5 digits.",
+    "PHONE_INVALID": "Invalid phone number.",
+    "required": "Required field.",
+    "PASSWORDS_DIFFER": "Passwords do not match.",
+    "CODE_FORMAT": "The code has 6 digits.",
+    "invalid": "Invalid value."
+  },
+  "Auth": {
+    "signIn": {
+      "title": "Sign in",
+      "subtitle": "Welcome back to Accordo.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "forgot": "Forgot your password?",
+      "noAccount": "No account yet?",
+      "register": "Sign up",
+      "or": "or",
+      "google": "Continue with Google",
+      "passkey": "Sign in with a passkey",
+      "twoFactorTitle": "Two-step verification",
+      "twoFactorHelp": "Enter the 6-digit code from your authenticator app.",
+      "totpCode": "Verification code",
+      "useBackupCode": "Use a backup code",
+      "useTotp": "Use the authenticator app",
+      "backupCode": "Backup code",
+      "verify": "Verify",
+      "trustDevice": "Remember this device for 30 days"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "subtitle": "Listing is free. Buy and sell with protected payments.",
+      "name": "Full name",
+      "username": "Username",
+      "usernameHelp": "Shown on your public profile.",
+      "email": "Email",
+      "password": "Password",
+      "passwordHelp": "At least 10 characters.",
+      "terms": "I accept the <terms>Terms of service</terms> and have read the <privacy>Privacy notice</privacy>.",
+      "marketing": "Send me news and offers by email (optional).",
+      "submit": "Sign up",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "googleNotice": "By continuing with Google you accept the Terms of service.",
+      "checkEmailTitle": "Check your email",
+      "checkEmailText": "We sent a link to {email}. Open it to confirm the address and activate your account."
+    },
+    "verifyEmail": {
+      "title": "Email confirmation",
+      "ok": "Email address confirmed. Your account is active.",
+      "error": "The link is invalid or has expired. Sign in to get a new one.",
+      "pending": "Open the link we emailed you to confirm your address.",
+      "goToAccount": "Go to your account",
+      "signIn": "Sign in"
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "text": "Enter your account email: we will send you a link to choose a new password.",
+      "email": "Email",
+      "submit": "Send the link",
+      "sent": "If the address is registered, you will shortly receive an email with the link."
+    },
+    "reset": {
+      "title": "New password",
+      "password": "New password",
+      "confirm": "Repeat the password",
+      "submit": "Save password",
+      "done": "Password updated. You can now sign in.",
+      "invalid": "The link is invalid or has expired.",
+      "signIn": "Sign in"
+    }
+  },
+  "StepUp": {
+    "title": "Confirm it's you",
+    "text": "To protect your account, please confirm your identity.",
+    "newDevice": "You are on a new device: we also email you a code.",
+    "password": "Password",
+    "emailCode": "Code received by email",
+    "sendCode": "Send the code",
+    "resendCode": "Send again",
+    "codeSent": "Code sent to {email}.",
+    "confirm": "Confirm"
+  },
+  "Account": {
+    "title": "My account",
+    "nav": {
+      "label": "Personal area",
+      "overview": "Overview",
+      "profile": "Profile",
+      "addresses": "Addresses",
+      "security": "Security",
+      "notifications": "Notifications",
+      "privacy": "Privacy"
+    },
+    "welcome": "Hi {name}!",
+    "overviewText": "Manage your profile, addresses, security and preferences here. Listings, purchases and sales are coming soon.",
+    "publicProfile": "View your public profile",
+    "emailUnverified": "Your email address is not confirmed yet.",
+    "twoFactorHint": "Protect your account: turn on two-step verification."
+  },
+  "Settings": {
+    "profile": {
+      "title": "Profile",
+      "name": "Display name",
+      "username": "Username",
+      "bio": "About you",
+      "bioHelp": "Up to 1,000 characters. Do not include contact details: they would be removed.",
+      "comune": "Town",
+      "comuneHelp": "Your profile only shows the town, never your address.",
+      "comunePlaceholder": "Search your town",
+      "noResults": "No town found",
+      "marketing": "Receive news and offers by email"
+    },
+    "addresses": {
+      "title": "Addresses",
+      "intro": "Shipping addresses for your purchases and the sender address for your sales.",
+      "empty": "You have no saved addresses yet.",
+      "add": "Add address",
+      "new": "New address",
+      "type": "Type",
+      "types": {
+        "SHIPPING": "Shipping",
+        "SENDER": "Sender"
+      },
+      "fullName": "Full name",
+      "line1": "Address",
+      "line2": "c/o, staircase, flat",
+      "cap": "Postcode",
+      "comune": "Town",
+      "phone": "Phone",
+      "phoneHelp": "Needed by the courier, never shown to other users.",
+      "isDefault": "Use as default",
+      "default": "Default",
+      "confirmDelete": "Delete this address?"
+    },
+    "security": {
+      "title": "Security",
+      "newDeviceAlert": "You reported a suspicious sign-in: sign out of all other devices and change your password.",
+      "password": {
+        "title": "Password",
+        "current": "Current password",
+        "new": "New password",
+        "submit": "Change password",
+        "done": "Password changed. Other devices have been signed out."
+      },
+      "twoFactor": {
+        "title": "Two-step verification",
+        "on": "On",
+        "off": "Off",
+        "recommended": "Recommended for sellers; mandatory for staff.",
+        "enable": "Turn on",
+        "disable": "Turn off",
+        "password": "Confirm with your password",
+        "scan": "Scan the QR code with your authenticator app (for example Google Authenticator or 1Password), then enter the generated code.",
+        "qrAlt": "QR code to set up the authenticator app",
+        "secret": "Or enter this key manually:",
+        "code": "6-digit code",
+        "verify": "Verify and turn on",
+        "backupCodes": "Backup codes",
+        "backupHelp": "Keep them somewhere safe: each one lets you sign in if you lose your phone.",
+        "enabled": "Two-step verification turned on.",
+        "disabled": "Two-step verification turned off."
+      },
+      "passkeys": {
+        "title": "Passkeys",
+        "intro": "Sign in with your device fingerprint, face or PIN, no password needed.",
+        "empty": "No passkeys registered.",
+        "add": "Add a passkey",
+        "added": "Passkey added.",
+        "unnamed": "Passkey",
+        "created": "Added on {date}",
+        "remove": "Remove"
+      },
+      "sessions": {
+        "title": "Signed-in devices",
+        "current": "This device",
+        "revoke": "Sign out",
+        "revokeOthers": "Sign out of all other devices",
+        "unknown": "Unknown device",
+        "lastActive": "Last sign-in: {date}",
+        "done": "Other devices signed out."
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "intro": "Choose how to receive each kind of alert. Order, payment and security messages are always on.",
+      "type": "Alert",
+      "mandatory": "Always on",
+      "pushSoon": "Push notifications are coming soon.",
+      "channels": {
+        "IN_APP": "On site",
+        "EMAIL": "Email",
+        "PUSH": "Push"
+      },
+      "types": {
+        "message_new": "New messages",
+        "offer_updates": "Offers",
+        "order_updates": "Orders and payments",
+        "order_ship_reminder": "Shipping reminders",
+        "payout_transferred": "Payouts transferred",
+        "dispute_updates": "Disputes",
+        "feedback_received": "Feedback received",
+        "feedback_reminder": "Reminders to leave feedback",
+        "saved_search_results": "New results for saved searches",
+        "favorite_price_drop": "Price drops on favourites",
+        "listing_lifecycle": "Your listings expiring",
+        "listing_moderation": "Review of your listings",
+        "security_alerts": "Account security",
+        "tax_dac7": "Tax data requests"
+      }
+    },
+    "privacy": {
+      "title": "Privacy",
+      "cookies": {
+        "title": "Cookies",
+        "text": "You can change your consent to optional cookies at any time.",
+        "button": "Manage cookie preferences"
+      },
+      "export": {
+        "title": "Export your data",
+        "text": "Full data export is coming soon. Meanwhile you can request it from support."
+      },
+      "delete": {
+        "title": "Delete account",
+        "text": "Your personal data will be anonymised and your listings removed. Orders and feedback are kept anonymously to meet legal obligations. This cannot be undone.",
+        "confirmLabel": "Type ELIMINA to confirm",
+        "confirmWord": "ELIMINA",
+        "submit": "Permanently delete my account",
+        "done": "Account deleted."
+      }
+    }
+  },
+  "Profile": {
+    "memberSince": "Member since {date}",
+    "activity": {
+      "TODAY": "Active today",
+      "THIS_WEEK": "Active this week"
+    },
+    "responseTime": {
+      "WITHIN_HOUR": "Usually replies within an hour",
+      "WITHIN_HOURS": "Usually replies within a few hours",
+      "WITHIN_DAY": "Usually replies within a day"
+    },
+    "badges": {
+      "label": "Badges",
+      "emailVerified": "Email verified",
+      "identityVerified": "Identity verified",
+      "shopVerified": "Verified shop",
+      "topSeller": "Top Seller"
+    },
+    "levels": {
+      "NEWCOMER": "Newcomer",
+      "SESSION_PLAYER": "Session player",
+      "SOLOIST": "Soloist",
+      "PROFESSIONAL": "Professional",
+      "MAESTRO": "Maestro",
+      "LEGEND": "Legend"
+    },
+    "level": "Level: {level}",
+    "feedback": "Feedback",
+    "positive": "{pct} positive",
+    "feedbackCounts": "{positive} positive · {neutral} neutral · {negative} negative (12 months)",
+    "noFeedback": "No feedback",
+    "score": "Score {score}",
+    "sales": "{count, plural, one {# sale} other {# sales}}",
+    "purchases": "{count, plural, one {# purchase} other {# purchases}}",
+    "followers": "{count, plural, one {# follower} other {# followers}}",
+    "listings": "Active listings ({count})",
+    "noListings": "No active listings.",
+    "follow": "Follow",
+    "following": "Following",
+    "block": "Block",
+    "unblock": "Unblock",
+    "blockConfirm": "Block this user? They will not be able to message you or make offers.",
+    "shop": "Shop page",
+    "business": "Professional seller",
+    "notFound": "User not found.",
+    "signInToFollow": "Sign in to follow this user."
+  },
+  "Condition": {
+    "NEW": "New",
+    "LIKE_NEW": "Like new",
+    "EXCELLENT": "Excellent",
+    "GOOD": "Good",
+    "FAIR": "Fair",
+    "FOR_PARTS": "For repair / parts"
+  },
+  "Consent": {
+    "title": "We respect your privacy",
+    "text": "We use technical cookies required for the site to work. With your consent we would also use anonymous statistics to improve it. You can change your mind at any time from “Cookie preferences” at the bottom of the page.",
+    "policy": "Cookie policy",
+    "accept": "Accept all",
+    "reject": "Reject",
+    "customize": "Customise",
+    "save": "Save choices",
+    "close": "Close without accepting",
+    "necessary": "Necessary",
+    "necessaryText": "Session, security and preferences. Always on.",
+    "analytics": "Statistics",
+    "analyticsText": "Anonymous visit measurement (no profiling)."
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "text": "The page you are looking for does not exist or has moved."
   }
 }

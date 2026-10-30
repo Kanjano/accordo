@@ -1,8 +1,11 @@
 import { type HealthReport, healthReportSchema, type ProblemDetails } from '@accordo/shared';
 
 export class ApiError extends Error {
-  constructor(readonly problem: ProblemDetails) {
-    super(problem.title);
+  constructor(
+    readonly problem: ProblemDetails,
+    readonly status: number,
+  ) {
+    super(problem?.title ?? `HTTP ${status}`);
   }
 }
 
@@ -13,15 +16,30 @@ export interface ApiClientOptions {
   fetch?: typeof fetch;
 }
 
-/** ponytail: hand-written typed client; OpenAPI generation decided later (SPEC §5.4.7). */
+export interface RequestOptions extends Omit<RequestInit, 'body'> {
+  /** JSON body; sets the content type. */
+  json?: unknown;
+  body?: RequestInit['body'];
+}
+
+/** ponytail: hand-written typed client over the Zod contracts (ADR-0008). */
 export function createApiClient({ baseUrl, cookie, fetch: f = fetch }: ApiClientOptions) {
-  async function request(path: string, init: RequestInit = {}): Promise<unknown> {
+  async function request<T = unknown>(
+    path: string,
+    { json, ...init }: RequestOptions = {},
+  ): Promise<T> {
     const headers = new Headers(init.headers);
     if (cookie) headers.set('cookie', cookie);
-    const res = await f(new URL(path, baseUrl), { ...init, headers, credentials: 'include' });
-    const body: unknown = await res.json().catch(() => undefined);
-    if (!res.ok) throw new ApiError(body as ProblemDetails);
-    return body;
+    if (json !== undefined) headers.set('content-type', 'application/json');
+    const res = await f(new URL(path, baseUrl), {
+      ...init,
+      headers,
+      credentials: 'include',
+      ...(json !== undefined ? { body: JSON.stringify(json) } : {}),
+    });
+    const body: unknown = res.status === 204 ? undefined : await res.json().catch(() => undefined);
+    if (!res.ok) throw new ApiError(body as ProblemDetails, res.status);
+    return body as T;
   }
 
   return {
@@ -31,6 +49,11 @@ export function createApiClient({ baseUrl, cookie, fetch: f = fetch }: ApiClient
       return healthReportSchema.parse(await res.json());
     },
     request,
+    get: <T>(path: string, init?: RequestOptions) => request<T>(path, { ...init, method: 'GET' }),
+    post: <T>(path: string, json?: unknown) => request<T>(path, { method: 'POST', json }),
+    patch: <T>(path: string, json?: unknown) => request<T>(path, { method: 'PATCH', json }),
+    put: <T>(path: string, json?: unknown) => request<T>(path, { method: 'PUT', json }),
+    delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
   };
 }
 

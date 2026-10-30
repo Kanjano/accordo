@@ -370,11 +370,15 @@ model Verification {
 }
 
 model TwoFactor {
-  id          String @id @default(uuid(7))
-  secret      String
-  backupCodes String
-  userId      String
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String    @id @default(uuid(7))
+  secret                  String
+  backupCodes             String
+  userId                  String
+  // Better Auth 1.7 twoFactor plugin fields (ADR-0018)
+  verified                Boolean?  @default(true)
+  failedVerificationCount Int?      @default(0)
+  lockedUntil             DateTime?
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
