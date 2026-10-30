@@ -49,6 +49,13 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - Foto: `ListingImage.width = 0` significa "in elaborazione"; senza il worker in esecuzione le foto non diventano mai pronte.
 - `RATE_LIMIT_ENABLED=false` disattiva anche i limiti applicativi (`RateLimitService`), solo per test ed e2e.
 
+## Note di implementazione (Fase 4)
+
+- Ricerca: `@accordo/search` (documento, filtri, reindex). Ogni `listing.*` va anche in `search-index` (`apps/worker/src/queues.ts`, `routesFor`); se cambia ciò che sta nel documento (foto incluse) scrivi un evento `listing.updated`.
+- Parametri di ricerca = forma dell'URL (`searchParamsSchema` in `@accordo/shared`), prezzi in euro interi. Le pagine di atterraggio usano `SearchResultsPage` e `landingMetadata` (`apps/web/components/search/`).
+- Senza Meilisearch l'API risponde con `degraded: true` (fallback PostgreSQL). Indici vuoti dopo un reset del DB: `pnpm search:reindex`.
+- Test API con ricerca: `startTestApp({ search: true })` avvia anche Meilisearch.
+
 ## Regole d'oro del dominio
 
 - Lo stato di un ordine cambia **solo** tramite `OrderStateMachine` (§6.4) e `OrdersService.transition()`; mai `update` diretti sulla colonna `status`.

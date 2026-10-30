@@ -24,7 +24,13 @@
     "feedbackText": "Only buyers and sellers who completed a real order on the platform can leave feedback.",
     "safetyTitle": "Anti-scam protection",
     "safetyText": "In-app chat with filters, non-clickable external links and identity-verified sellers.",
-    "comingSoon": "The site is under construction."
+    "departments": "Departments",
+    "recent": "Latest listings",
+    "allListings": "See all",
+    "recentlyViewed": "Recently viewed",
+    "sellTitle": "Got an instrument to sell?",
+    "sellText": "Listing is free: a few photos and an honest description are all it takes.",
+    "sellCta": "Start selling"
   },
   "Footer": {
     "rights": "© {year} Accordo. All rights reserved.",
@@ -189,7 +195,11 @@
       "security": "Security",
       "notifications": "Notifications",
       "privacy": "Privacy",
-      "listings": "My listings"
+      "listings": "My listings",
+      "favorites": "Favorites",
+      "savedSearches": "Saved searches",
+      "recentlyViewed": "Recently viewed",
+      "following": "Following"
     },
     "welcome": "Hi {name}!",
     "overviewText": "Manage your profile, addresses, security and preferences here. Listings, purchases and sales are coming soon.",
@@ -596,5 +606,118 @@
     "empty": "No notifications.",
     "markAll": "Mark all as read",
     "open": "Open"
+  },
+  "Search": {
+    "filters": "Filters",
+    "clearFilters": "Clear filters",
+    "department": "Department",
+    "category": "Category",
+    "brand": "Brand",
+    "all": "All",
+    "price": "Price",
+    "min": "Min",
+    "max": "Max",
+    "year": "Year",
+    "from": "From",
+    "to": "To",
+    "apply": "Apply",
+    "condition": "Condition",
+    "location": "Location",
+    "region": "Region",
+    "allItaly": "All of Italy",
+    "near": "Near",
+    "radius": "Maximum distance",
+    "onlyComune": "This town only",
+    "km": "{km} km",
+    "sellerType": "Seller",
+    "seller": {
+      "PRIVATE": "Private",
+      "BUSINESS": "Shop"
+    },
+    "options": "Options",
+    "flag": {
+      "protectedPayment": "Protected payment",
+      "shipping": "Shipping available",
+      "handDelivery": "Hand delivery",
+      "topSeller": "Top Seller"
+    },
+    "yes": "Yes",
+    "no": "No",
+    "any": "Any",
+    "loadingMore": "Loading more listings…",
+    "sortBy": "Sort by",
+    "sort": {
+      "relevance": "Relevance",
+      "newest": "Newest",
+      "price_asc": "Price: low to high",
+      "price_desc": "Price: high to low",
+      "distance": "Distance"
+    },
+    "saveSearch": "Save search",
+    "searchSaved": "Search saved.",
+    "manageSaved": "Manage alerts",
+    "breadcrumb": "Breadcrumb",
+    "count": "{count, plural, =0 {No listings} one {# listing} other {# listings}}",
+    "degraded": "Search is running in simplified mode: some filters and counts are unavailable right now.",
+    "invalid": "Some filters are not valid. Clear the filters and try again.",
+    "empty": "No listings found",
+    "emptyHint": "Try removing some filters or searching for different words. You can also save the search and get an alert.",
+    "pagination": "Result pages",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}",
+    "resultsFor": "Results for “{q}”",
+    "allListings": "All listings",
+    "home": "Home",
+    "landingDescription": "New and used {what} from private sellers and shops, with protected payment and verified feedback.",
+    "brandTitle": "{brand} instruments",
+    "searchLabel": "Search listings",
+    "placeholder": "Search instruments, brands, models…",
+    "suggestions": "Suggestions",
+    "kind": {
+      "brand": "Brand",
+      "category": "Category",
+      "listing": "Listings"
+    }
+  },
+  "Favorites": {
+    "add": "Add “{title}” to favorites",
+    "remove": "Remove “{title}” from favorites",
+    "title": "Favorites",
+    "empty": "No favorites yet. Tap the heart on a listing to save it here."
+  },
+  "Card": {
+    "sold": "Sold",
+    "reserved": "Under offer",
+    "distance": "{km} km",
+    "protected": "Protected payment",
+    "positive": "{pct} positive"
+  },
+  "SavedSearches": {
+    "title": "Saved searches",
+    "intro": "Get an alert when new listings match your searches: right away (every 10 minutes) or in a digest at 8:00.",
+    "empty": "No saved searches. Use “Save search” on the results.",
+    "createdAt": "Saved on {date}",
+    "open": "Open results",
+    "alerts": "Alerts",
+    "frequency": {
+      "NONE": "No alerts",
+      "INSTANT": "Right away",
+      "DAILY": "Daily digest"
+    },
+    "remove": "Delete the search “{name}”",
+    "delete": "Delete"
+  },
+  "RecentlyViewed": {
+    "title": "Recently viewed",
+    "empty": "You haven't viewed any listings yet."
+  },
+  "Following": {
+    "title": "Following",
+    "users": "{count, plural, =0 {Not following anyone} one {Following # user} other {Following # users}}",
+    "noUsers": "Follow a seller from their profile to see their new listings here.",
+    "feed": "New listings",
+    "emptyFeed": "No new listings from the users you follow.",
+    "more": "Show more"
   }
 }

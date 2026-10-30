@@ -6,11 +6,13 @@ import { ENV, type Env } from './config/env.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CatalogModule } from './modules/catalog/catalog.module.js';
 import { ComplianceModule } from './modules/compliance/compliance.module.js';
+import { EngagementModule } from './modules/engagement/engagement.module.js';
 import { GeoModule } from './modules/geo/geo.module.js';
 import { ListingsModule } from './modules/listings/listings.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { InfraModule } from './modules/platform/infra.module.js';
 import { PlatformModule } from './modules/platform/platform.module.js';
+import { SearchModule } from './modules/search/search.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 
 @Module({
@@ -47,6 +49,8 @@ import { UsersModule } from './modules/users/users.module.js';
     GeoModule,
     CatalogModule,
     ListingsModule,
+    SearchModule,
+    EngagementModule,
     ComplianceModule,
   ],
 })

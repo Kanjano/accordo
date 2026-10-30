@@ -2,15 +2,15 @@ import type { PrismaClient } from '@accordo/db';
 import type { S3Client } from '@aws-sdk/client-s3';
 import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
 import type { Redis } from 'ioredis';
-import { infraProviders, PRISMA, REDIS, S3 } from './infra.providers.js';
+import { infraProviders, PRISMA, REDIS, S3, SEARCH } from './infra.providers.js';
 import { RateLimitService } from './rate-limit.service.js';
 import { SettingsService } from './settings.service.js';
 
-/** Shared clients (PostgreSQL via Prisma, Valkey, S3) for every module. */
+/** Shared clients (PostgreSQL via Prisma, Valkey, S3, Meilisearch) for every module. */
 @Global()
 @Module({
   providers: [...infraProviders, RateLimitService, SettingsService],
-  exports: [PRISMA, REDIS, S3, RateLimitService, SettingsService],
+  exports: [PRISMA, REDIS, S3, SEARCH, RateLimitService, SettingsService],
 })
 export class InfraModule implements OnApplicationShutdown {
   constructor(

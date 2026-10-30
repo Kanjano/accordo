@@ -17,6 +17,12 @@ export class CatalogController {
     return this.catalog.attributes(id);
   }
 
+  /** Every brand (slug → name), for facet labels and brand pages. */
+  @Get('brands/all')
+  allBrands() {
+    return this.catalog.allBrands();
+  }
+
   @Get('brands')
   brands(@Query('q') q = '') {
     return this.catalog.brands(q);

@@ -14,6 +14,14 @@ import { ListingsService } from './listings.service.js';
 const MAX_BYTES = 15 * 1024 * 1024;
 
 /** SPEC §5.9: direct browser upload to a private temporary key, processing in the worker. */
+/** The cover photo is part of the search document. */
+const listingUpdated = (listingId: string) => ({
+  aggregateType: 'Listing',
+  aggregateId: listingId,
+  type: 'listing.updated',
+  payload: { listingId },
+});
+
 @Injectable()
 export class MediaService {
   constructor(
@@ -108,11 +116,11 @@ export class MediaService {
     if (imageIds.length !== current.size || !imageIds.every((id) => current.has(id))) {
       throw new BadRequestException({ code: 'INVALID_IMAGE_ORDER' });
     }
-    await this.db.$transaction(
-      imageIds.map((id, position) =>
-        this.db.listingImage.update({ where: { id }, data: { position } }),
-      ),
-    );
+    await this.db.$transaction(async (tx) => {
+      for (const [position, id] of imageIds.entries())
+        await tx.listingImage.update({ where: { id }, data: { position } });
+      await writeOutbox(tx, listingUpdated(listingId));
+    });
   }
 
   async remove(userId: string, listingId: string, imageId: string): Promise<void> {
@@ -126,12 +134,16 @@ export class MediaService {
       const rest = listing.images.filter((i) => i.id !== imageId);
       for (const [position, i] of rest.entries())
         await tx.listingImage.update({ where: { id: i.id }, data: { position } });
-      await writeOutbox(tx, {
-        aggregateType: 'ListingImage',
-        aggregateId: imageId,
-        type: 'media.deleted',
-        payload: { storageKey: image.storageKey },
-      });
+      await writeOutbox(
+        tx,
+        {
+          aggregateType: 'ListingImage',
+          aggregateId: imageId,
+          type: 'media.deleted',
+          payload: { storageKey: image.storageKey },
+        },
+        listingUpdated(listingId),
+      );
     });
   }
 }

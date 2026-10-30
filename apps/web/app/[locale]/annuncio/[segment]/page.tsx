@@ -8,9 +8,11 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import type { Locale } from 'next-intl';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { cache } from 'react';
+import { FavoriteButton } from '@/components/listing/favorite-button';
 import { Gallery } from '@/components/listing/gallery';
+import { RecentlyViewedTracker } from '@/components/listing/recently-viewed-tracker';
 import { ShareButton } from '@/components/listing/share-button';
-import { ListingCard } from '@/components/profile/listing-card';
+import { CardGrid } from '@/components/search/card-grid';
 import { Link } from '@/i18n/navigation';
 import { formatPrice } from '@/lib/format';
 import { serverApi } from '@/lib/server-api';
@@ -156,6 +158,22 @@ export default async function ListingPage({ params }: PageProps<'/[locale]/annun
           __html: JSON.stringify(jsonLd(l, baseUrl)).replace(/</g, '\\u003c'),
         }}
       />
+      {l.owner || !['ACTIVE', 'RESERVED', 'SOLD'].includes(l.status) ? null : (
+        <RecentlyViewedTracker
+          item={{
+            id: l.id,
+            shortId: l.shortId,
+            slug: l.slug,
+            title: l.title,
+            priceCents: l.priceCents,
+            currency: 'EUR',
+            condition: l.condition,
+            location: { comune: l.location.comune, provinciaSigla: l.location.provinciaSigla },
+            publishedAt: l.publishedAt,
+            imageKey: l.images.find((i) => i.ready)?.key ?? null,
+          }}
+        />
+      )}
       <nav aria-label={t('breadcrumb')} className="text-sm text-muted-foreground">
         <ol className="flex flex-wrap gap-1">
           <li>
@@ -164,8 +182,20 @@ export default async function ListingPage({ params }: PageProps<'/[locale]/annun
             </Link>{' '}
             ›
           </li>
-          <li>{l.category.department.name} ›</li>
-          <li>{l.category.name}</li>
+          <li>
+            <Link href={`/categoria/${l.category.department.slug}`} className="hover:underline">
+              {l.category.department.name}
+            </Link>{' '}
+            ›
+          </li>
+          <li>
+            <Link
+              href={`/categoria/${l.category.department.slug}/${l.category.slug}`}
+              className="hover:underline"
+            >
+              {l.category.name}
+            </Link>
+          </li>
         </ol>
       </nav>
 
@@ -221,7 +251,10 @@ export default async function ListingPage({ params }: PageProps<'/[locale]/annun
               })}
             </p>
           ) : null}
-          <ShareButton title={l.title} />
+          <div className="flex flex-wrap items-center gap-2">
+            <ShareButton title={l.title} />
+            {l.owner ? null : <FavoriteButton listingId={l.id} title={l.title} />}
+          </div>
 
           <section aria-labelledby="seller" className="grid gap-2 rounded-xl border p-4">
             <h2 id="seller" className="text-sm font-medium text-muted-foreground">
@@ -350,18 +383,7 @@ export default async function ListingPage({ params }: PageProps<'/[locale]/annun
           <h2 id="similar" className="text-xl font-semibold">
             {t('similar')}
           </h2>
-          <ul className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {similar.map((item) => (
-              <li key={item.id}>
-                <Link
-                  href={`/annuncio/${item.slug}-${item.shortId}`}
-                  className="block rounded-xl focus-visible:outline-2 focus-visible:outline-ring"
-                >
-                  <ListingCard item={item} />
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <CardGrid items={similar} />
         </section>
       ) : null}
     </div>

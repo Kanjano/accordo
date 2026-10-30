@@ -10,7 +10,7 @@ import {
 import type { Queue } from 'bullmq';
 import { ENV, type Env } from './env.js';
 import { PRISMA } from './infra.js';
-import { QUEUES, ROUTES } from './queues.js';
+import { QUEUES, routesFor } from './queues.js';
 
 interface Row {
   id: string;
@@ -37,8 +37,13 @@ export class OutboxDispatcher implements OnApplicationBootstrap, OnApplicationSh
     @Inject(PRISMA) private readonly db: PrismaClient,
     @InjectQueue(QUEUES.media) media: Queue,
     @InjectQueue(QUEUES.notifications) notifications: Queue,
+    @InjectQueue(QUEUES.searchIndex) searchIndex: Queue,
   ) {
-    this.queues = { [QUEUES.media]: media, [QUEUES.notifications]: notifications };
+    this.queues = {
+      [QUEUES.media]: media,
+      [QUEUES.notifications]: notifications,
+      [QUEUES.searchIndex]: searchIndex,
+    };
   }
 
   onApplicationBootstrap() {
@@ -61,15 +66,16 @@ export class OutboxDispatcher implements OnApplicationBootstrap, OnApplicationSh
           ORDER BY "createdAt" LIMIT ${batch}
           FOR UPDATE SKIP LOCKED`;
         for (const row of rows) {
-          const queue = ROUTES[row.type] ? this.queues[ROUTES[row.type] as string] : undefined;
           try {
-            await queue?.add(row.type, row.payload, {
-              jobId: row.id,
-              attempts: 5,
-              backoff: { type: 'exponential', delay: 2000 },
-              removeOnComplete: 1000,
-              removeOnFail: 5000,
-            });
+            for (const name of routesFor(row.type)) {
+              await this.queues[name]?.add(row.type, row.payload, {
+                jobId: row.id,
+                attempts: 5,
+                backoff: { type: 'exponential', delay: 2000 },
+                removeOnComplete: 1000,
+                removeOnFail: 5000,
+              });
+            }
             await tx.outboxEvent.update({
               where: { id: row.id },
               data: { status: 'PROCESSED', processedAt: new Date() },

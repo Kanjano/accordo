@@ -2,12 +2,15 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { createPrismaClient, type PrismaClient } from '@accordo/db';
 import type { EmailProvider, OutgoingEmail } from '@accordo/emails';
+import { createSearchClient, ensureIndexes, syncListings } from '@accordo/search';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { Queue } from 'bullmq';
+import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Env } from '../src/env.js';
 import { LifecycleProcessor } from '../src/lifecycle.js';
 import { Notifier } from '../src/notifications/notifier.js';
 import { OutboxDispatcher } from '../src/outbox.dispatcher.js';
+import { SavedSearchAlertsProcessor } from '../src/search/saved-search-alerts.js';
 
 let pg: StartedPostgreSqlContainer;
 let db: PrismaClient;
@@ -89,7 +92,8 @@ describe('outbox dispatcher', () => {
     });
     const media = { add: vi.fn() } as unknown as Queue;
     const notifications = { add: vi.fn() } as unknown as Queue;
-    const dispatcher = new OutboxDispatcher(env, db, media, notifications);
+    const searchIndex = { add: vi.fn() } as unknown as Queue;
+    const dispatcher = new OutboxDispatcher(env, db, media, notifications, searchIndex);
 
     expect(await dispatcher.tick()).toBe(2); // the future-dated row waits
     const [name, payload, opts] = (media.add as ReturnType<typeof vi.fn>).mock.calls[0] as [
@@ -100,6 +104,9 @@ describe('outbox dispatcher', () => {
     const row = await db.outboxEvent.findFirstOrThrow({ where: { type: 'media.uploaded' } });
     expect([name, payload, opts.jobId]).toEqual(['media.uploaded', { imageId: 'i1' }, row.id]);
     expect(notifications.add).not.toHaveBeenCalled();
+    expect((searchIndex.add as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]).toBe(
+      'listing.updated',
+    );
     expect(await db.outboxEvent.count({ where: { status: 'PROCESSED' } })).toBe(2);
     expect(await db.outboxEvent.count({ where: { status: 'PENDING' } })).toBe(1);
   });
@@ -117,7 +124,7 @@ describe('outbox dispatcher', () => {
     const failing = {
       add: vi.fn().mockRejectedValue(new Error('valkey down')),
     } as unknown as Queue;
-    await new OutboxDispatcher(env, db, failing, failing).tick();
+    await new OutboxDispatcher(env, db, failing, failing, failing).tick();
     const row = await db.outboxEvent.findFirstOrThrow();
     expect(row).toMatchObject({ status: 'PENDING', attempts: 1, lastError: 'Error: valkey down' });
     expect(row.availableAt.getTime()).toBeGreaterThan(Date.now());
@@ -167,5 +174,88 @@ describe('listing lifecycle', () => {
     expect(expired).toBeGreaterThan(0);
     expect(sent).toHaveLength(0);
     expect(await db.notification.count({ where: { userId: sellerId } })).toBe(before + expired);
+  });
+});
+
+describe('saved-search alerts', () => {
+  let meili: StartedTestContainer;
+  afterAll(() => meili?.stop());
+
+  it('notifies new matching listings once, skipping the user own and older ones', async () => {
+    meili = await new GenericContainer('getmeili/meilisearch:v1.56.0')
+      .withEnvironment({ MEILI_MASTER_KEY: 'test_master_key_123456', MEILI_NO_ANALYTICS: 'true' })
+      .withExposedPorts(7700)
+      .withWaitStrategy(Wait.forHttp('/health', 7700))
+      .start();
+    const client = createSearchClient(
+      `http://${meili.getHost()}:${meili.getMappedPort(7700)}`,
+      'test_master_key_123456',
+      10_000,
+    );
+    await ensureIndexes(client, db);
+    sent.length = 0;
+    const buyer = await db.user.create({
+      data: { name: 'Lucia', email: 'lucia@example.test', emailVerified: true },
+    });
+    const savedAt = new Date(Date.now() - 3_600_000);
+    const instant = await db.savedSearch.create({
+      data: {
+        userId: buyer.id,
+        name: 'Basso Rickenbacker',
+        query: { q: 'rickenbacker' },
+        alertFrequency: 'INSTANT',
+        createdAt: savedAt,
+      },
+    });
+    await db.savedSearch.create({
+      data: {
+        userId: buyer.id,
+        name: 'Riepilogo',
+        query: { q: 'rickenbacker' },
+        alertFrequency: 'DAILY',
+        createdAt: savedAt,
+      },
+    });
+    const make = (n: number, owner: string, publishedAt: Date) =>
+      db.listing.create({
+        data: {
+          shortId: `RIC${String(n).padStart(5, '0')}`,
+          slug: 'x',
+          sellerId: owner,
+          categoryId,
+          status: 'ACTIVE',
+          title: `Rickenbacker 4003 n. ${n}`,
+          description: 'x',
+          condition: 'GOOD',
+          priceCents: 150_000,
+          comuneId: '015146',
+          publishedAt,
+          bumpedAt: publishedAt,
+        },
+      });
+    const listings = await Promise.all([
+      make(1, sellerId, new Date(Date.now() - 600_000)), // new: notified
+      make(2, buyer.id, new Date(Date.now() - 600_000)), // own listing: skipped
+      make(3, sellerId, new Date(Date.now() - 7_200_000)), // before the search was saved
+    ]);
+    await syncListings(
+      client,
+      db,
+      listings.map((l) => l.id),
+    );
+
+    const processor = new SavedSearchAlertsProcessor(db, client, new Notifier(env, db, email));
+    expect(await processor.run('INSTANT')).toEqual({ notified: 1 });
+    expect(sent.map((e) => [e.to, e.subject])).toEqual([
+      ['lucia@example.test', 'Un nuovo annuncio per «Basso Rickenbacker»'],
+    ]);
+    expect(sent[0]?.html).toContain('/annunci?q=rickenbacker');
+    const updated = await db.savedSearch.findUniqueOrThrow({ where: { id: instant.id } });
+    expect(updated.lastNotifiedAt?.getTime()).toBe(
+      Math.floor((listings[0]?.publishedAt?.getTime() as number) / 1000) * 1000,
+    );
+    // Nothing new since: no duplicate alert.
+    expect(await processor.run('INSTANT')).toEqual({ notified: 0 });
+    expect(sent).toHaveLength(1);
   });
 });

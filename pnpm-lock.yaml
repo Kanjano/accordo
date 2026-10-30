@@ -166,9 +166,15 @@ importers:
 
   .:
     devDependencies:
+      '@accordo/db':
+        specifier: workspace:*
+        version: link:packages/db
       '@accordo/domain':
         specifier: workspace:*
         version: link:packages/domain
+      '@accordo/search':
+        specifier: workspace:*
+        version: link:packages/search
       '@biomejs/biome':
         specifier: 2.6.4
         version: 2.6.4
@@ -205,6 +211,9 @@ importers:
       '@accordo/emails':
         specifier: workspace:*
         version: link:../../packages/emails
+      '@accordo/search':
+        specifier: workspace:*
+        version: link:../../packages/search
       '@accordo/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -402,6 +411,12 @@ importers:
       '@accordo/emails':
         specifier: workspace:*
         version: link:../../packages/emails
+      '@accordo/search':
+        specifier: workspace:*
+        version: link:../../packages/search
+      '@accordo/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@aws-sdk/client-s3':
         specifier: 3.1160.0
         version: 3.1160.0
@@ -463,6 +478,9 @@ importers:
       pino-pretty:
         specifier: 13.2.0
         version: 13.2.0
+      testcontainers:
+        specifier: 12.2.1
+        version: 12.2.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -591,6 +609,31 @@ importers:
       '@accordo/shared':
         specifier: workspace:*
         version: link:../shared
+    devDependencies:
+      '@accordo/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 26.6.6
+        version: 26.6.6
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@types/node@26.6.6)(@vitest/coverage-v8@5.0.5)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
+  packages/search:
+    dependencies:
+      '@accordo/db':
+        specifier: workspace:*
+        version: link:../db
+      '@accordo/shared':
+        specifier: workspace:*
+        version: link:../shared
+      meilisearch:
+        specifier: 0.62.0
+        version: 0.62.0
     devDependencies:
       '@accordo/config':
         specifier: workspace:*
@@ -4280,6 +4323,10 @@ packages:
   media-typer@1.1.1:
     resolution: {integrity: sha512-yz3xRaG20c6/BOzvYoDaGtPmGscs7YivItZEEqe6GbwNfHuxu9YNmvnEkMzKldAGY4/80pRcQRZSEnhquk9XuQ==}
     engines: {node: '>= 0.8'}
+
+  meilisearch@0.62.0:
+    resolution: {integrity: sha512-/ETDW7mmWI2NcSmtJdTPhbjsIbs3VcuapszX5X6JhdHB0XbszPOhqd3EB2bEylL0HK7dgwh/4Z3MdyuycWVf5A==}
+    engines: {node: ^20.19.0 || >=22.12.0}
 
   merge-descriptors@2.0.0:
     resolution: {integrity: sha512-Snk314V5ayFLhp3fkUREub6WtjBfPdCPY1Ln8/8munuLuiYhsABgBVWsozAG+MWMbVEvcdcpbi9R7ww22l9Q3g==}
@@ -8959,6 +9006,8 @@ snapshots:
   media-typer@0.3.0: {}
 
   media-typer@1.1.1: {}
+
+  meilisearch@0.62.0: {}
 
   merge-descriptors@2.0.0: {}
 

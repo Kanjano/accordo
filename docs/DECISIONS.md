@@ -139,7 +139,7 @@ Formato: contesto → decisione → conseguenze.
 ## ADR-0026 — Outbox e code
 
 - Il dispatcher nel worker legge `OutboxEvent` ogni secondo con `FOR UPDATE SKIP LOCKED` e pubblica su BullMQ usando l'id della riga come `jobId` (nessun duplicato in caso di nuovo invio). Errori: tentativi con backoff esponenziale, `FAILED` dopo 10.
-- Instradamento: `media.*` → coda `media`; `listing.price_dropped`, `listing.review_pending` → `notifications`. Gli altri eventi (`listing.published`, `listing.updated`, …) vengono marcati come elaborati finché non arriva il loro consumatore (indicizzazione, Fase 4).
+- Instradamento: `media.*` → coda `media`; `listing.price_dropped`, `listing.review_pending` → `notifications`. Dalla Fase 4 tutti i `listing.*` vanno anche a `search-index` (ADR-0030); gli eventi senza consumatore vengono marcati come elaborati.
 - Ciclo di vita degli annunci: job orario (`5 * * * *`, Europe/Rome) con finestre di un'ora per i promemoria a 7 e 1 giorno; la scadenza non viene mai saltata.
 
 ## ADR-0027 — Media
@@ -155,3 +155,36 @@ Formato: contesto → decisione → conseguenze.
 - Visibili al pubblico: `ACTIVE`, `RESERVED`, `SOLD` (venduti `noindex` dopo 30 giorni). Il proprietario vede anche bozze e annunci in revisione, con visualizzazioni e link di modifica. URL canonico `/annuncio/{slug}-{shortId}` con redirect 308 se lo slug non coincide.
 - Pulsanti "Compra", "Fai un'offerta" e "Contatta" arrivano con le fasi 5–6; preferiti con la Fase 4.
 - Lighthouse (build di produzione locale, mobile simulato): annuncio con foto di test a rumore casuale Performance 86, annuncio demo 95; Accessibilità 100, SEO 100.
+
+## ADR-0029 — Pacchetto `@accordo/search`
+
+- Impostazioni degli indici, documento §9.1, traduzione parametri → filtri e reindicizzazione stanno in `packages/search`, usato da API, worker e script (ADR-0024).
+- Il documento contiene `imageKey` (chiave dello storage) invece di `imageUrl`, come il resto dell'API; `_geo` è omesso se il comune non ha coordinate. `publishedAt` è filtrabile in più rispetto al §9.2 (serve agli avvisi delle ricerche salvate).
+- Sinonimi: valore predefinito nel codice (§9.2); se esiste la chiave `PlatformSetting.searchSynonyms` vince quella (l'editor admin arriva in Fase 11; si applica con `pnpm search:reindex` o al riavvio del worker).
+- Parametri di ricerca: i prezzi nell'URL sono in euro interi (`priceMin=500`), convertiti in centesimi nel filtro; gli attributi sono `attr.<chiave>=<valore>`; liste come chiavi ripetute o separate da virgole. Le ricerche salvate memorizzano la query nella stessa forma dell'URL.
+- Le faccette contano con tutti i filtri applicati (non "disgiuntive"): più semplice e coerente con il totale mostrato.
+
+## ADR-0030 — Indicizzazione via outbox
+
+- Ogni evento `listing.*` va anche alla coda `search-index`; il job rilegge lo stato attuale dal database e fa upsert (se `ACTIVE`/`RESERVED`) o rimozione: idempotente e indipendente dall'ordine degli eventi. Concorrenza 1 per non riordinare i task di Meilisearch.
+- Le modifiche alle foto (riordino, eliminazione, fine elaborazione nel worker) scrivono `listing.updated`, perché la copertina fa parte del documento.
+- Il worker all'avvio crea gli indici mancanti e applica le impostazioni; ogni ora aggiorna gli indici leggeri `brands` (con il numero di annunci, usato per l'ordinamento dei suggerimenti) e `categories`.
+- `pnpm search:reindex` costruisce `<indice>_next`, poi `swapIndexes` atomico e cancellazione della copia vecchia (al primo avvio, rinomina).
+
+## ADR-0031 — Modalità degradata e limiti
+
+- Il client Meilisearch dell'API ha timeout 1,5 s; qualunque errore → ripiego su PostgreSQL: ogni parola deve comparire nel titolo (`ILIKE`, servito dall'indice GIN `pg_trgm`) + filtri base, ordinamenti per data e prezzo, niente faccette né distanza; il web mostra un avviso. Suggerimenti: marche e categorie dal database.
+- Ricerca anonima limitata a 60/min per IP (§13.2), suggerimenti a 120/min. Il web inoltra `x-forwarded-for` nelle chiamate SSR; in produzione `trust proxy` va impostato sul numero reale di proxy (Fase 12), altrimenti tutte le richieste SSR condividerebbero l'IP del server web.
+
+## ADR-0032 — Avvisi delle ricerche salvate
+
+- Coda `saved-search-alerts`: `INSTANT` ogni 10 minuti, `DAILY` alle 8:00 Europe/Rome. Per ogni ricerca si riesegue la query con `publishedAt > lastNotifiedAt` (o la data di creazione), escludendo gli annunci dell'utente stesso; `lastNotifiedAt` diventa la data di pubblicazione dell'annuncio più recente notificato, così non ci sono duplicati tra un giro e l'altro. Notifica in-app + email secondo la preferenza `saved_search.results`.
+- **Per scalare** (molte ricerche salvate): oggi una query per ricerca (lineare). Il passo successivo è la ricerca inversa ("percolazione"): a ogni `listing.published` si valutano le ricerche salvate raggruppate per filtri strutturati (categoria, marca, regione, fascia di prezzo) in tabelle indicizzate, eseguendo il testo solo sulle candidate; in alternativa un motore con percolator nativo (OpenSearch).
+
+## ADR-0033 — Pagine di ricerca, SEO e cache
+
+- `/annunci` e le pagine reparto/categoria/categoria+marca/marca condividono un unico componente server; i filtri sono nell'URL, il primo blocco di risultati è SSR, su telefono le pagine successive si caricano scorrendo (su desktop paginazione con link).
+- Indicizzabili solo le pagine di atterraggio senza altri filtri e con almeno 3 risultati (canonical sul percorso, `?page=N` per le pagine successive); il resto è `noindex, follow`. `/annunci` è indicizzabile solo senza parametri.
+- Sitemap: indice `/sitemap.xml` + `/sitemaps/{static,categories,brands,listings-N}.xml` (10.000 URL per file) generati su richiesta con i dati dell'API in cache per un'ora: equivale al job orario del §5.7 senza un altro job. Negozi nella sitemap con la Fase 10.
+- Cache: catalogo, marche e regioni usano la data cache di Next (5 minuti); i risultati di ricerca non si mettono in cache (§5.8). La pagina annuncio resta dinamica (conteggio visualizzazioni e vista del proprietario), quindi l'endpoint `/api/revalidate` con tag non serve ancora: si aggiunge in Fase 12 se le misure lo richiedono.
+- Visti di recente: cronologia locale (20 annunci, anche anonimi) unita all'account alla prima apertura di "Visti di recente" nella sessione; per gli utenti autenticati ogni visita viene registrata anche sul server (50 annunci).

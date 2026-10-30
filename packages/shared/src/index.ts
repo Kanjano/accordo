@@ -8,3 +8,4 @@ export * from './users.js';
 
 export const CURRENCY = 'EUR' as const;
 export type Currency = typeof CURRENCY;
+export * from './search.js';

@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { SearchBox } from './search/search-box';
 import { UserMenu } from './user-menu';
 
 export function SiteHeader() {
@@ -12,7 +13,7 @@ export function SiteHeader() {
       >
         {t('skipToContent')}
       </a>
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
         <Link
           href="/"
           aria-label={t('home')}
@@ -20,6 +21,7 @@ export function SiteHeader() {
         >
           Accordo
         </Link>
+        <SearchBox className="order-last w-full md:order-none md:w-auto md:max-w-md md:flex-1" />
         <nav aria-label={t('nav')}>
           <ul className="flex items-center gap-1 text-sm font-medium sm:gap-4">
             <li>

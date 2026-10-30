@@ -67,6 +67,10 @@ export class CatalogService {
     return [...matches, ...contains].slice(0, 10).map(({ id, name, slug }) => ({ id, name, slug }));
   }
 
+  async allBrands(): Promise<BrandOption[]> {
+    return (await this.cachedBrands()).map(({ id, name, slug }) => ({ id, name, slug }));
+  }
+
   private async cachedBrands() {
     const cached = await this.redis.get('catalog:brands');
     if (cached) return JSON.parse(cached) as Array<BrandOption & { aliases: string[] }>;

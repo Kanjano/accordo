@@ -1,14 +1,20 @@
-/** BullMQ queues fed by the outbox dispatcher. */
+/** BullMQ queues fed by the outbox dispatcher (and by the worker's own schedulers). */
 export const QUEUES = {
   media: 'media',
   notifications: 'notifications',
   lifecycle: 'listing-lifecycle',
+  searchIndex: 'search-index',
+  savedSearchAlerts: 'saved-search-alerts',
 } as const;
 
-/** Outbox event type → queue. Events without a route are marked processed (no consumer yet). */
-export const ROUTES: Record<string, string> = {
-  'media.uploaded': QUEUES.media,
-  'media.deleted': QUEUES.media,
-  'listing.price_dropped': QUEUES.notifications,
-  'listing.review_pending': QUEUES.notifications,
-};
+const NOTIFIED = new Set(['listing.price_dropped', 'listing.review_pending']);
+
+/** Outbox event type → queues. Events without a route are marked processed (no consumer yet). */
+export function routesFor(type: string): string[] {
+  const queues: string[] = [];
+  if (type.startsWith('media.')) queues.push(QUEUES.media);
+  if (NOTIFIED.has(type)) queues.push(QUEUES.notifications);
+  // Every listing change may add, update or remove the search document (SPEC §9.3).
+  if (type.startsWith('listing.')) queues.push(QUEUES.searchIndex);
+  return queues;
+}

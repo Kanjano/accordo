@@ -80,3 +80,26 @@
 - Test: pipeline media (nessun EXIF/GPS/XMP/IPTC nelle varianti, orientamento applicato, magic bytes); integrazione API (bozze private, anti-IDOR, completezza, attributi, prezzo anomalo, parole vietate, foto riutilizzate, ribasso, ciclo di vita); integrazione worker (dispatcher, ciclo di vita, preferenze email); e2e annuncio con 5 foto visibile sulla sua pagina.
 - Lighthouse sulla build di produzione: vedi ADR-0028 (tutti i criteri raggiunti).
 - Decisioni: ADR-0024…0028.
+
+## Fase 4 — Ricerca, navigazione e SEO
+
+**Piano**
+1. `packages/search`: client Meilisearch, impostazioni §9.2 (sinonimi da `PlatformSetting.searchSynonyms`), documento §9.1 costruito da Prisma, traduzione parametri → filtri/ordinamenti (condivisa da API e worker), reindicizzazione con indice nuovo + `swapIndexes`, indici leggeri `brands` e `categories`.
+2. Worker: coda `search-index` alimentata da tutti gli eventi `listing.*` (upsert se `ACTIVE`/`RESERVED`, altrimenti rimozione); coda `saved-search-alerts` (istantanei ogni 10 minuti, riepilogo alle 8:00 Europe/Rome).
+3. API: `GET /search/listings` (faccette, distanza, ordinamenti, attributi per categoria, limite anonimi 60/min), `GET /search/suggest`, modalità degradata su PostgreSQL (`pg_trgm`), ricerche salvate, preferiti, visti di recente, feed dei seguiti, dati per le sitemap.
+4. Web: barra di ricerca con autocompletamento, `/annunci` con filtri nell'URL, pagine reparto/categoria/marca con canonical e regole `noindex`, preferiti, visti di recente (anche anonimi), ricerche salvate, feed dei seguiti, home con annunci recenti, `sitemap.xml` + `robots.txt`.
+5. Script: `pnpm search:reindex`, `pnpm db:seed:big` (100.000 annunci), benchmark p95.
+6. Test: refusi, faccette = database, raggio 30 km da Milano, modalità degradata, avvisi delle ricerche salvate.
+
+**Fatto**
+- `packages/search`: impostazioni §9.2 (tolleranza ai refusi, stop word italiane, sinonimi di settore, `bumpedAt:desc` in coda), documento §9.1, traduzione dei parametri (faccette, attributi per categoria, `_geoRadius`/`_geoPoint`, ordinamenti), indici leggeri `brands`/`categories`, reindicizzazione con indice `_next` e `swapIndexes`.
+- Worker: coda `search-index` su tutti gli eventi `listing.*` (anche cambi di foto), aggiornamento orario degli indici leggeri, avvisi delle ricerche salvate (istantanei ogni 10 minuti, riepilogo alle 8:00) con notifica in-app ed email.
+- API: `GET /search/listings` (limite anonimi 60/min per IP), `GET /search/suggest`, modalità degradata su PostgreSQL, ricerche salvate (max 50, anti-IDOR), preferiti con contatore esatto, visti di recente (con unione della cronologia locale), utenti seguiti e loro feed, dati delle sitemap, `GET /catalog/brands/all`, `GET /geo/comuni/:id`.
+- Web: barra di ricerca con autocompletamento (combobox ARIA) nell'header e in home; `/annunci` con filtri nell'URL (reparto, categoria, marca, prezzo, anno, condizioni, regione, comune + raggio, venditore, opzioni, attributi della categoria), ordinamenti, salva ricerca, scroll infinito su telefono; pagine `/categoria/[reparto]`, `/categoria/[reparto]/[categoria]`, `/categoria/[reparto]/[categoria]/[marca]`, `/marca/[marca]` con canonical e `noindex` secondo §9.3; card con badge, venditore e distanza; preferiti (cuore su card e annuncio); `/account/preferiti`, `/account/ricerche-salvate`, `/account/visti-di-recente`, `/account/seguiti`; home con reparti, ultimi annunci, visti di recente (anche anonimi), JSON-LD `WebSite`/`SearchAction`/`Organization`; `sitemap.xml` (indice + file paginati) e `robots.txt`.
+- Script: `pnpm search:reindex`, `pnpm db:seed:big` (100.000 annunci in ~36 s), `pnpm search:bench`.
+- Criteri: "stratocster" trova "Stratocaster" (integrazione + e2e "fendr"); faccette = conteggi del database (integrazione); raggio 30 km da Milano include Monza ed esclude Bergamo, ordinato per distanza (integrazione); **p95 14,9 ms** (p50 9,1 ms) su 500 richieste API con 96.505 annunci indicizzati; email della ricerca salvata arrivata in Mailpit (flusso reale outbox → indice → avviso) e test di integrazione del worker; con il container Meilisearch fermo la ricerca risponde in modalità degradata e il web mostra l'avviso (integrazione + verifica manuale).
+- Test: 7 unitari (`packages/search`), 13 di integrazione API (ricerca, ricerche salvate, preferiti, visti, seguiti, sitemap, degradata), 1 di integrazione worker (avvisi), e2e ricerca (5 e2e in totale).
+- Decisioni: ADR-0029…0033.
+
+**Rimandato**
+- Endpoint `/api/revalidate` e pagine con tag di cache (Fase 12, ADR-0033); barra inferiore mobile (Fase 12); negozi nella sitemap (Fase 10); editor admin dei sinonimi (Fase 11); `trust proxy` di produzione (Fase 12).

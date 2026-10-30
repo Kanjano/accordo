@@ -1,27 +1,20 @@
 import type { Metadata } from 'next';
 import type { Locale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
+import { LEGAL_PAGES } from '@/lib/legal';
 
-const PAGES = {
-  termini: 'Termini di servizio',
-  privacy: 'Informativa privacy',
-  cookie: 'Informativa cookie',
-  'note-legali': 'Note legali',
-  'condizioni-pagamento-protetto': 'Condizioni del pagamento protetto',
-  'regole-pubblicazione': 'Regole di pubblicazione',
-} as const;
-type Slug = keyof typeof PAGES;
+type Slug = keyof typeof LEGAL_PAGES;
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return Object.keys(PAGES).map((legal) => ({ legal }));
+  return Object.keys(LEGAL_PAGES).map((legal) => ({ legal }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<'/[locale]/[legal]'>): Promise<Metadata> {
-  return { title: `${PAGES[(await params).legal as Slug]} — Accordo` };
+  return { title: `${LEGAL_PAGES[(await params).legal as Slug]} — Accordo` };
 }
 
 /** Legal pages are versioned MDX in content/legal (placeholders until legal review). */

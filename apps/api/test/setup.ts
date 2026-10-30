@@ -29,17 +29,35 @@ export class FakeEmailProvider implements EmailProvider {
 export interface TestEnv {
   app: INestApplication;
   emails: FakeEmailProvider;
+  /** Only with `{ search: true }`. */
+  meili?: StartedTestContainer;
   stop: () => Promise<void>;
 }
 
-/** Real PostgreSQL 18 + Valkey containers, migrated schema, full Nest app with the production wiring. */
-export async function startTestApp(): Promise<TestEnv> {
-  const [pg, valkey]: [StartedPostgreSqlContainer, StartedTestContainer] = await Promise.all([
+export const MEILI_KEY = 'test_master_key_123456';
+
+/**
+ * Real PostgreSQL 18 + Valkey (+ Meilisearch on request) containers, migrated schema, full Nest
+ * app with the production wiring. Without Meilisearch the API runs in degraded search mode.
+ */
+export async function startTestApp(opts: { search?: boolean } = {}): Promise<TestEnv> {
+  const [pg, valkey, meili]: [
+    StartedPostgreSqlContainer,
+    StartedTestContainer,
+    StartedTestContainer | undefined,
+  ] = await Promise.all([
     new PostgreSqlContainer('postgres:18.6').start(),
     new GenericContainer('valkey/valkey:8.1.11-alpine')
       .withExposedPorts(6379)
       .withWaitStrategy(Wait.forLogMessage('Ready to accept connections'))
       .start(),
+    opts.search
+      ? new GenericContainer('getmeili/meilisearch:v1.56.0')
+          .withEnvironment({ MEILI_MASTER_KEY: MEILI_KEY, MEILI_NO_ANALYTICS: 'true' })
+          .withExposedPorts(7700)
+          .withWaitStrategy(Wait.forHttp('/health', 7700))
+          .start()
+      : undefined,
   ]);
   const databaseUrl = pg.getConnectionUri();
   execFileSync('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], {
@@ -55,8 +73,10 @@ export async function startTestApp(): Promise<TestEnv> {
     BETTER_AUTH_URL: 'http://localhost:4000',
     DATABASE_URL: databaseUrl,
     REDIS_URL: `redis://${valkey.getHost()}:${valkey.getMappedPort(6379)}`,
-    MEILI_HOST: 'http://localhost:7700',
-    MEILI_MASTER_KEY: 'test_master_key_123456',
+    MEILI_HOST: meili
+      ? `http://${meili.getHost()}:${meili.getMappedPort(7700)}`
+      : 'http://127.0.0.1:9',
+    MEILI_MASTER_KEY: MEILI_KEY,
     S3_ENDPOINT: 'http://localhost:9000',
     S3_REGION: 'auto',
     S3_ACCESS_KEY_ID: 'x',
@@ -85,9 +105,10 @@ export async function startTestApp(): Promise<TestEnv> {
   return {
     app,
     emails,
+    meili,
     stop: async () => {
       await app.close();
-      await Promise.all([pg.stop(), valkey.stop()]);
+      await Promise.all([pg.stop(), valkey.stop(), meili?.stop().catch(() => undefined)]);
     },
   };
 }

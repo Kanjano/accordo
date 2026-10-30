@@ -8,6 +8,10 @@ import { useSession } from '@/lib/auth-client';
 const NAV = [
   ['/account', 'overview'],
   ['/account/annunci', 'listings'],
+  ['/account/preferiti', 'favorites'],
+  ['/account/ricerche-salvate', 'savedSearches'],
+  ['/account/visti-di-recente', 'recentlyViewed'],
+  ['/account/seguiti', 'following'],
   ['/account/notifiche', 'notifications'],
   ['/account/impostazioni/profilo', 'profile'],
   ['/account/impostazioni/indirizzi', 'addresses'],

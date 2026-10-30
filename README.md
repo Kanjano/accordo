@@ -37,6 +37,9 @@ pnpm test          # Vitest (unit; packages/domain con soglia di copertura 95%)
 pnpm test:integration  # Testcontainers: richiede Docker
 pnpm test:e2e      # Playwright (richiede infra:up; avvia o riusa pnpm dev)
 pnpm build
+pnpm search:reindex    # ricostruisce gli indici Meilisearch (indice nuovo + scambio atomico)
+pnpm db:seed:big       # 100.000 annunci per i test di prestazioni (poi search:reindex)
+pnpm search:bench      # p50/p95 della ricerca (API avviata con RATE_LIMIT_ENABLED=false)
 pnpm infra:down
 ```
 

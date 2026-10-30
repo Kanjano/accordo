@@ -82,6 +82,14 @@ export class MediaProcessor extends WorkerHost {
         phash: processed.phash,
       },
     });
+    await this.db.outboxEvent.create({
+      data: {
+        aggregateType: 'Listing',
+        aggregateId: listingId,
+        type: 'listing.updated',
+        payload: { listingId },
+      },
+    });
     await this.deleteTmp(tmpKey);
     await this.checkReuse(listingId, processed.phash);
   }

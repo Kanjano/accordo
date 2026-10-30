@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@accordo/db';
 import type { ComuneOption } from '@accordo/shared';
-import { Controller, Get, Inject, Query } from '@nestjs/common';
+import { Controller, Get, Inject, NotFoundException, Param, Query } from '@nestjs/common';
 import { Public } from '../auth/auth.decorators.js';
 import { PRISMA } from '../platform/infra.providers.js';
 
@@ -44,6 +44,18 @@ export class GeoController {
       provinciaSigla: c.provincia.sigla,
       caps: c.caps,
     }));
+  }
+
+  @Get('comuni/:id')
+  async comune(@Param('id') id: string): Promise<ComuneOption> {
+    const c = /^\d{6}$/.test(id)
+      ? await this.db.comune.findUnique({
+          where: { id },
+          select: { id: true, name: true, caps: true, provincia: { select: { sigla: true } } },
+        })
+      : null;
+    if (!c) throw new NotFoundException();
+    return { id: c.id, name: c.name, provinciaSigla: c.provincia.sigla, caps: c.caps };
   }
 
   @Get('regioni')

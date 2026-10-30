@@ -24,7 +24,13 @@
     "feedbackText": "Solo chi ha concluso un ordine reale sulla piattaforma può lasciare un feedback.",
     "safetyTitle": "Sicurezza anti-truffa",
     "safetyText": "Chat interna con filtri, link esterni non cliccabili e venditori con identità verificata.",
-    "comingSoon": "Il sito è in costruzione."
+    "departments": "Reparti",
+    "recent": "Ultimi annunci",
+    "allListings": "Vedi tutti",
+    "recentlyViewed": "Visti di recente",
+    "sellTitle": "Hai uno strumento da vendere?",
+    "sellText": "Pubblicare è gratis: bastano poche foto e una descrizione onesta.",
+    "sellCta": "Inizia a vendere"
   },
   "Footer": {
     "rights": "© {year} Accordo. Tutti i diritti riservati.",
@@ -189,7 +195,11 @@
       "security": "Sicurezza",
       "notifications": "Notifiche",
       "privacy": "Privacy",
-      "listings": "I miei annunci"
+      "listings": "I miei annunci",
+      "favorites": "Preferiti",
+      "savedSearches": "Ricerche salvate",
+      "recentlyViewed": "Visti di recente",
+      "following": "Seguiti"
     },
     "welcome": "Ciao {name}!",
     "overviewText": "Da qui gestisci profilo, indirizzi, sicurezza e preferenze. Annunci, acquisti e vendite arriveranno presto.",
@@ -596,5 +606,118 @@
     "empty": "Nessuna notifica.",
     "markAll": "Segna tutte come lette",
     "open": "Apri"
+  },
+  "Search": {
+    "filters": "Filtri",
+    "clearFilters": "Azzera i filtri",
+    "department": "Reparto",
+    "category": "Categoria",
+    "brand": "Marca",
+    "all": "Tutti",
+    "price": "Prezzo",
+    "min": "Minimo",
+    "max": "Massimo",
+    "year": "Anno",
+    "from": "Dal",
+    "to": "Al",
+    "apply": "Applica",
+    "condition": "Condizioni",
+    "location": "Posizione",
+    "region": "Regione",
+    "allItaly": "Tutta Italia",
+    "near": "Vicino a",
+    "radius": "Distanza massima",
+    "onlyComune": "Solo questo comune",
+    "km": "{km} km",
+    "sellerType": "Venditore",
+    "seller": {
+      "PRIVATE": "Privato",
+      "BUSINESS": "Negozio"
+    },
+    "options": "Opzioni",
+    "flag": {
+      "protectedPayment": "Pagamento protetto",
+      "shipping": "Spedizione disponibile",
+      "handDelivery": "Consegna a mano",
+      "topSeller": "Venditore Top"
+    },
+    "yes": "Sì",
+    "no": "No",
+    "any": "Qualsiasi",
+    "loadingMore": "Carico altri annunci…",
+    "sortBy": "Ordina per",
+    "sort": {
+      "relevance": "Pertinenza",
+      "newest": "Più recenti",
+      "price_asc": "Prezzo crescente",
+      "price_desc": "Prezzo decrescente",
+      "distance": "Distanza"
+    },
+    "saveSearch": "Salva ricerca",
+    "searchSaved": "Ricerca salvata.",
+    "manageSaved": "Gestisci avvisi",
+    "breadcrumb": "Percorso",
+    "count": "{count, plural, =0 {Nessun annuncio} one {# annuncio} other {# annunci}}",
+    "degraded": "La ricerca funziona in modalità semplificata: alcuni filtri e i conteggi non sono disponibili in questo momento.",
+    "invalid": "Alcuni filtri non sono validi. Azzera i filtri e riprova.",
+    "empty": "Nessun annuncio trovato",
+    "emptyHint": "Prova a togliere qualche filtro o a cercare parole diverse. Puoi anche salvare la ricerca e ricevere un avviso.",
+    "pagination": "Pagine dei risultati",
+    "previous": "Precedente",
+    "next": "Successiva",
+    "pageOf": "Pagina {page} di {total}",
+    "resultsFor": "Risultati per «{q}»",
+    "allListings": "Tutti gli annunci",
+    "home": "Home",
+    "landingDescription": "Annunci di {what} nuovi e usati, da privati e negozi, con pagamento protetto e feedback verificati.",
+    "brandTitle": "Strumenti {brand}",
+    "searchLabel": "Cerca negli annunci",
+    "placeholder": "Cerca strumenti, marche, modelli…",
+    "suggestions": "Suggerimenti",
+    "kind": {
+      "brand": "Marca",
+      "category": "Categoria",
+      "listing": "Annunci"
+    }
+  },
+  "Favorites": {
+    "add": "Aggiungi «{title}» ai preferiti",
+    "remove": "Togli «{title}» dai preferiti",
+    "title": "Preferiti",
+    "empty": "Non hai ancora annunci preferiti. Tocca il cuore su un annuncio per salvarlo qui."
+  },
+  "Card": {
+    "sold": "Venduto",
+    "reserved": "In trattativa",
+    "distance": "{km} km",
+    "protected": "Pagamento protetto",
+    "positive": "{pct} positivi"
+  },
+  "SavedSearches": {
+    "title": "Ricerche salvate",
+    "intro": "Ricevi un avviso quando escono nuovi annunci per le tue ricerche: subito (ogni 10 minuti) o con un riepilogo alle 8:00.",
+    "empty": "Nessuna ricerca salvata. Dai risultati di ricerca usa «Salva ricerca».",
+    "createdAt": "Salvata il {date}",
+    "open": "Apri i risultati",
+    "alerts": "Avvisi",
+    "frequency": {
+      "NONE": "Nessun avviso",
+      "INSTANT": "Subito",
+      "DAILY": "Riepilogo giornaliero"
+    },
+    "remove": "Elimina la ricerca «{name}»",
+    "delete": "Elimina"
+  },
+  "RecentlyViewed": {
+    "title": "Visti di recente",
+    "empty": "Non hai ancora visto annunci."
+  },
+  "Following": {
+    "title": "Utenti seguiti",
+    "users": "{count, plural, =0 {Nessun utente seguito} one {# utente seguito} other {# utenti seguiti}}",
+    "noUsers": "Segui un venditore dal suo profilo per vedere qui i suoi nuovi annunci.",
+    "feed": "Nuovi annunci",
+    "emptyFeed": "Nessun nuovo annuncio dagli utenti che segui.",
+    "more": "Mostra altri"
   }
 }

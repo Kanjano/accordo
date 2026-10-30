@@ -6,6 +6,8 @@ export const envSchema = z.object({
   WEB_URL: z.url(),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
+  MEILI_HOST: z.url(),
+  MEILI_MASTER_KEY: z.string().min(16),
   S3_ENDPOINT: z.url(),
   S3_REGION: z.string().min(1),
   S3_ACCESS_KEY_ID: z.string().min(1),

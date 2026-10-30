@@ -7,7 +7,9 @@ Panoramica completa: SPEC.md §5. Stato attuale (Fase 0):
 - `apps/worker` — NestJS standalone + BullMQ; job ricorrente `heartbeat`.
 - `packages/*` — librerie TypeScript compilate in `dist/` con `tsc`; Turborepo compila le dipendenze prima di `dev`, `typecheck`, `test`, `build`.
 
-## Flusso degli eventi (Fase 3)
+- `packages/search` — impostazioni Meilisearch, documento, traduzione dei parametri, reindicizzazione (usato da API, worker e `scripts/`).
+
+## Flusso degli eventi (Fasi 3–4)
 
 ```mermaid
 flowchart LR
@@ -15,9 +17,23 @@ flowchart LR
   PG --> D[Worker: dispatcher outbox, SKIP LOCKED]
   D -->|media.*| QM[coda media]
   D -->|listing.price_dropped, listing.review_pending| QN[coda notifications]
+  D -->|listing.*| QS[coda search-index]
+  QS --> MS[(Meilisearch: listings, brands, categories)]
+  SA[saved-search-alerts: ogni 10 min + 8:00] --> MS
+  SA --> N
   QM --> MP[MediaProcessor: sharp, varianti, dHash]
   MP --> S3[(S3 pubblico)]
   QN --> N[Notifier: in-app + email]
   L[LifecycleProcessor orario] --> PG
   L --> N
+```
+
+## Ricerca (Fase 4)
+
+```mermaid
+flowchart LR
+  W[Web SSR /annunci, /categoria, /marca] --> A[API GET /search/listings]
+  A -->|ok| MS[(Meilisearch)]
+  A -->|errore o timeout 1,5 s| PG[(PostgreSQL: ILIKE + pg_trgm)]
+  R[pnpm search:reindex] -->|indice _next + swapIndexes| MS
 ```
