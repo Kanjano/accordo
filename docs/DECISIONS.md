@@ -14,7 +14,7 @@ Formato: contesto → decisione → conseguenze.
 - **Decisione:** ogni `packages/*` compila con `tsc` in `dist/`; in `dev` gira `tsc --watch`; Turborepo esegue `^build` prima di `dev`/`typecheck`/`test`/`build`.
 - **Conseguenze:** un clone pulito richiede la build dei pacchetti, già automatica tramite Turbo.
 
-## ADR-0003 — Worker con configurazione propria (per ora)
+## ADR-0003 — Worker con configurazione propria (superata da ADR-0024)
 
 - **Contesto:** la SPEC prevede che il worker riusi i moduli dell'API. In Fase 0 il worker usa solo Valkey e il logger.
 - **Decisione:** schema env minimo nel worker; il meccanismo di condivisione dei moduli API ↔ worker si decide nella prima fase che ne ha bisogno (outbox, Fase 3/4).
@@ -126,3 +126,32 @@ Formato: contesto → decisione → conseguenze.
 - Banner cookie conforme alle linee guida del Garante: Accetta e Rifiuta equivalenti, X = rifiuto, scelte granulari non preselezionate, scelta valida 6 mesi, registro in `AuditLog` (`cookie.consent`). Gli analytics si caricano solo con consenso e solo se `NEXT_PUBLIC_ANALYTICS_SRC` è configurato.
 - Pagine legali in MDX (`content/legal`), con `dynamicParams = false`; testi marcati "DA VALIDARE CON IL LEGALE".
 - Esportazione GDPR dei dati rimandata alla Fase 11; l'eliminazione dell'account (anonimizzazione, step-up, bloccata con ordini aperti) è già attiva.
+
+## ADR-0024 — Codice condiviso tra API e worker solo tramite `packages/*`
+
+- **Decisione:** nessun import tra app. Il worker usa `@accordo/db`, `@accordo/domain`, `@accordo/emails` (la porta `EmailProvider` e l'adapter SMTP si sono spostati lì) e ha la propria validazione dell'ambiente.
+- **Conseguenze:** la logica di dominio condivisa (es. `isSimilarImage`) sta in `packages/domain`; la piccola duplicazione del controllo "foto riutilizzate" (API alla pubblicazione, worker su una foto nuova di un annuncio attivo) è accettata.
+
+## ADR-0025 — Bozze con prezzo 0
+
+- Il wizard salva la bozza prima che il prezzo sia scelto. Il vincolo diventa `CHECK ("priceCents" > 0 OR "status" = 'DRAFT')` (migrazione `draft_price`); la pubblicazione e le modifiche fuori bozza richiedono un prezzo > 0 (`LISTING_INCOMPLETE`, `PRICE_REQUIRED`).
+
+## ADR-0026 — Outbox e code
+
+- Il dispatcher nel worker legge `OutboxEvent` ogni secondo con `FOR UPDATE SKIP LOCKED` e pubblica su BullMQ usando l'id della riga come `jobId` (nessun duplicato in caso di nuovo invio). Errori: tentativi con backoff esponenziale, `FAILED` dopo 10.
+- Instradamento: `media.*` → coda `media`; `listing.price_dropped`, `listing.review_pending` → `notifications`. Gli altri eventi (`listing.published`, `listing.updated`, …) vengono marcati come elaborati finché non arriva il loro consumatore (indicizzazione, Fase 4).
+- Ciclo di vita degli annunci: job orario (`5 * * * *`, Europe/Rome) con finestre di un'ora per i promemoria a 7 e 1 giorno; la scadenza non viene mai saltata.
+
+## ADR-0027 — Media
+
+- Upload diretto con POST firmato (S3 `createPresignedPost`, 15 MB, tipo di contenuto fissato) nel bucket privato `uploads/tmp/{userId}/…`; CORS dei bucket impostato all'avvio in sviluppo (POST sul privato, GET sul pubblico per la rotazione nel browser). In produzione il CORS va configurato sul provider.
+- L'immagine viene creata subito con `width = 0` (= in elaborazione); il worker verifica i magic bytes, applica l'orientamento EXIF, rimuove tutti i metadati, genera le varianti e aggiorna dimensioni, LQIP e dHash. I file non validi vengono scartati.
+- Ridimensionamento e rotazione avvengono nel browser (canvas → JPEG, lato lungo ≤ 2560 px). La rotazione di una foto già caricata riscarica la variante 2048, la ruota, la ricarica e sostituisce la foto nella stessa posizione.
+- Controllo "foto riutilizzate" su massimo 5.000 hash della stessa categoria (scansione lineare; BK-tree quando servirà).
+
+## ADR-0028 — Pagina annuncio
+
+- Pagina SSR non messa in cache (dati sempre freschi); la cache con tag e la revalidazione via outbox (SPEC §5.8) arrivano con le pagine di ricerca e categoria (Fase 4).
+- Visibili al pubblico: `ACTIVE`, `RESERVED`, `SOLD` (venduti `noindex` dopo 30 giorni). Il proprietario vede anche bozze e annunci in revisione, con visualizzazioni e link di modifica. URL canonico `/annuncio/{slug}-{shortId}` con redirect 308 se lo slug non coincide.
+- Pulsanti "Compra", "Fai un'offerta" e "Contatta" arrivano con le fasi 5–6; preferiti con la Fase 4.
+- Lighthouse (build di produzione locale, mobile simulato): annuncio con foto di test a rumore casuale Performance 86, annuncio demo 95; Accessibilità 100, SEO 100.

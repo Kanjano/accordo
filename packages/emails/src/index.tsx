@@ -2,11 +2,14 @@ import { render } from '@react-email/render';
 import type { ReactElement } from 'react';
 import {
   NewDeviceLogin,
+  Notification,
   PasswordChanged,
   ResetPassword,
   StepUpCode,
   VerifyEmail,
 } from './templates.js';
+
+export * from './provider.js';
 
 export interface RenderedEmail {
   subject: string;
@@ -29,6 +32,7 @@ const templates = {
     subject: () => 'La tua password è stata cambiata',
     component: PasswordChanged,
   },
+  notification: { subject: (p: { title: string }) => p.title, component: Notification },
 } as const;
 
 export type EmailTemplate = keyof typeof templates;

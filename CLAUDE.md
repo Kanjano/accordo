@@ -41,6 +41,14 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 11. Errori API in Problem Details (RFC 9457) con `code` stabile (`ProblemDetailsFilter`; passa `{ code, detail }` alle `HttpException`).
 12. Nest DI: non convertire in `import type` le classi iniettate (Biome `useImportType` è disattivato apposta).
 
+## Note di implementazione (Fase 3)
+
+- Effetti esterni: `writeOutbox(tx, …)` (`apps/api/src/modules/platform/outbox.ts`) nella stessa transazione; instradamento in `apps/worker/src/queues.ts`.
+- Impostazioni modificabili: `SettingsService.get(key)` (cache Valkey 60 s), mai costanti nel codice.
+- Le route generiche (`listings/:id/:action`) vanno dichiarate dopo quelle specifiche nello stesso controller.
+- Foto: `ListingImage.width = 0` significa "in elaborazione"; senza il worker in esecuzione le foto non diventano mai pronte.
+- `RATE_LIMIT_ENABLED=false` disattiva anche i limiti applicativi (`RateLimitService`), solo per test ed e2e.
+
 ## Regole d'oro del dominio
 
 - Lo stato di un ordine cambia **solo** tramite `OrderStateMachine` (§6.4) e `OrdersService.transition()`; mai `update` diretti sulla colonna `status`.

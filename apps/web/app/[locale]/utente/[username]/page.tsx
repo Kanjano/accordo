@@ -8,6 +8,7 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 import { cache } from 'react';
 import { ListingCard } from '@/components/profile/listing-card';
 import { ProfileActions } from '@/components/profile/profile-actions';
+import { Link } from '@/i18n/navigation';
 import { serverApi } from '@/lib/server-api';
 
 const load = cache(async (username: string) => {
@@ -117,6 +118,7 @@ export default async function ProfilePage({ params }: PageProps<'/[locale]/utent
               </dd>
             ) : null}
           </div>
+          <dt className="sr-only">{t('badges.label')}</dt>
           <dd>
             {t('score', { score: p.reputation.score })}
             {p.badges.levelKey
@@ -141,7 +143,12 @@ export default async function ProfilePage({ params }: PageProps<'/[locale]/utent
           <ul className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {listings.items.map((item) => (
               <li key={item.id}>
-                <ListingCard item={item} />
+                <Link
+                  href={`/annuncio/${item.slug}-${item.shortId}`}
+                  className="block rounded-xl focus-visible:outline-2 focus-visible:outline-ring"
+                >
+                  <ListingCard item={item} />
+                </Link>
               </li>
             ))}
           </ul>

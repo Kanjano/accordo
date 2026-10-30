@@ -100,10 +100,14 @@ describe('database constraints', () => {
     ).rejects.toThrow();
   });
 
-  it('listing price must be positive', async () => {
+  it('listing price must be positive outside drafts', async () => {
     await expect(
-      db.listing.update({ where: { id: listingId }, data: { priceCents: 0 } }),
+      db.listing.update({ where: { id: listingId }, data: { priceCents: 0, status: 'ACTIVE' } }),
     ).rejects.toThrow();
+    await expect(
+      db.listing.update({ where: { id: listingId }, data: { priceCents: 0, status: 'DRAFT' } }),
+    ).resolves.toBeDefined();
+    await db.listing.update({ where: { id: listingId }, data: { priceCents: 10_000 } });
   });
 
   it('seller feedback can only be positive; detailed ratings are 1–5', async () => {

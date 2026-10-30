@@ -1,6 +1,7 @@
 import {
   CreateBucketCommand,
   HeadBucketCommand,
+  PutBucketCorsCommand,
   PutBucketPolicyCommand,
   type S3Client,
 } from '@aws-sdk/client-s3';
@@ -8,7 +9,7 @@ import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs
 import { ENV, type Env } from '../../config/env.js';
 import { S3 } from './infra.providers.js';
 
-/** Development only: creates the media buckets on startup; the public one gets anonymous read. */
+/** Development only: creates the media buckets on startup (public one: anonymous read; private one: CORS for uploads). */
 @Injectable()
 export class StorageBootstrapService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StorageBootstrapService.name);
@@ -22,7 +23,40 @@ export class StorageBootstrapService implements OnApplicationBootstrap {
     if (this.env.NODE_ENV !== 'development') return;
     try {
       await this.ensureBucket(this.env.S3_BUCKET_PRIVATE);
-      if (await this.ensureBucket(this.env.S3_BUCKET_PUBLIC)) {
+      // Browsers upload photos straight to the private bucket with a presigned POST (SPEC §5.9).
+      await this.s3.send(
+        new PutBucketCorsCommand({
+          Bucket: this.env.S3_BUCKET_PRIVATE,
+          CORSConfiguration: {
+            CORSRules: [
+              {
+                AllowedOrigins: [this.env.WEB_URL],
+                AllowedMethods: ['POST'],
+                AllowedHeaders: ['*'],
+                MaxAgeSeconds: 3600,
+              },
+            ],
+          },
+        }),
+      );
+      const created = await this.ensureBucket(this.env.S3_BUCKET_PUBLIC);
+      // The photo editor reads public variants with fetch() (rotation), which needs CORS.
+      await this.s3.send(
+        new PutBucketCorsCommand({
+          Bucket: this.env.S3_BUCKET_PUBLIC,
+          CORSConfiguration: {
+            CORSRules: [
+              {
+                AllowedOrigins: [this.env.WEB_URL],
+                AllowedMethods: ['GET'],
+                AllowedHeaders: ['*'],
+                MaxAgeSeconds: 3600,
+              },
+            ],
+          },
+        }),
+      );
+      if (created) {
         await this.s3.send(
           new PutBucketPolicyCommand({
             Bucket: this.env.S3_BUCKET_PUBLIC,

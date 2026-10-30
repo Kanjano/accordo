@@ -1,33 +1,19 @@
 import type { PrismaClient } from '@accordo/db';
 import request from 'supertest';
 import { PRISMA } from '../src/modules/platform/infra.providers.js';
-import { startTestApp, type TestEnv, WEB } from './setup.js';
+import { startTestApp, type TestEnv, verifiedUserFactory, WEB } from './setup.js';
 
 let env: TestEnv;
 let db: PrismaClient;
 
+let verifiedUser: ReturnType<typeof verifiedUserFactory>;
+
 beforeAll(async () => {
   env = await startTestApp();
   db = env.app.get(PRISMA);
+  verifiedUser = verifiedUserFactory(env);
 });
 afterAll(() => env?.stop());
-
-/** Signs up, follows the verification link (auto sign-in) and returns a cookie-keeping agent. */
-async function verifiedUser(username: string) {
-  const agent = request.agent(env.app.getHttpServer());
-  const email = `${username}@example.test`;
-  await agent
-    .post('/api/auth/sign-up/email')
-    .set('origin', WEB)
-    .send({ name: 'Test User', username, email, password: 'una-password-lunga', acceptTerms: true })
-    .expect(200);
-  const link = /href="(http:\/\/localhost:4000[^"]+)"/
-    .exec(env.emails.last(email)?.html ?? '')?.[1]
-    ?.replace(/&amp;/g, '&');
-  expect(link).toBeTruthy();
-  await agent.get(new URL(link as string).pathname + new URL(link as string).search).expect(302);
-  return { agent, email };
-}
 
 describe('sign-up', () => {
   it('requires accepting the terms', async () => {

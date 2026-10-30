@@ -1,12 +1,7 @@
-import { expect, type Page, test } from '@playwright/test';
-import { latestEmailHtml, totp, waitForApi } from './helpers';
+import { expect, test } from '@playwright/test';
+import { latestEmailHtml, rejectCookies, totp, waitForApi } from './helpers';
 
 test.beforeAll(waitForApi);
-
-async function dismissCookies(page: Page) {
-  const reject = page.getByRole('button', { name: 'Rifiuta' });
-  if (await reject.isVisible().catch(() => false)) await reject.click();
-}
 
 /** Codes are single-use: wait for a fresh 30 s window when needed. */
 async function freshCode(secret: string, used: Set<string>) {
@@ -19,7 +14,11 @@ async function freshCode(secret: string, used: Set<string>) {
   return code;
 }
 
-test('registration → email verification → sign-in → 2FA → sign-in with TOTP', async ({ page }) => {
+test('registration → email verification → sign-in → 2FA → sign-in with TOTP', async ({
+  page,
+  context,
+}) => {
+  await rejectCookies(context);
   const stamp = Date.now();
   const email = `e2e.${stamp}@example.test`;
   const password = 'una-password-molto-lunga';
@@ -27,7 +26,6 @@ test('registration → email verification → sign-in → 2FA → sign-in with T
 
   // Registration (Turnstile test keys pass automatically).
   await page.goto('/registrati');
-  await dismissCookies(page);
   await page.getByLabel('Nome e cognome').fill('Utente E2E');
   await page.getByLabel('Nome utente', { exact: true }).fill(`e2e${stamp}`);
   await page.getByLabel('Email', { exact: true }).fill(email);

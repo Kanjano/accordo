@@ -91,3 +91,33 @@ export function PasswordChanged({ name, url }: { name: string; url: string }) {
     </Layout>
   );
 }
+
+export function Notification({
+  name,
+  title,
+  body,
+  url,
+  cta,
+}: {
+  name: string;
+  title: string;
+  body: string;
+  url?: string;
+  cta?: string;
+}) {
+  return (
+    <Layout preview={title}>
+      <Text style={text}>Ciao {name},</Text>
+      <Text style={{ ...text, fontWeight: 700 }}>{title}</Text>
+      <Text style={text}>{body}</Text>
+      {url ? (
+        <Button href={url} style={button}>
+          {cta ?? 'Apri su Accordo'}
+        </Button>
+      ) : null}
+      <Text style={{ ...text, fontSize: '13px', color: '#7a726b' }}>
+        Puoi scegliere quali avvisi ricevere via email da Il mio account → Notifiche.
+      </Text>
+    </Layout>
+  );
+}

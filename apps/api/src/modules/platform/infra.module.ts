@@ -4,12 +4,13 @@ import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/comm
 import type { Redis } from 'ioredis';
 import { infraProviders, PRISMA, REDIS, S3 } from './infra.providers.js';
 import { RateLimitService } from './rate-limit.service.js';
+import { SettingsService } from './settings.service.js';
 
 /** Shared clients (PostgreSQL via Prisma, Valkey, S3) for every module. */
 @Global()
 @Module({
-  providers: [...infraProviders, RateLimitService],
-  exports: [PRISMA, REDIS, S3, RateLimitService],
+  providers: [...infraProviders, RateLimitService, SettingsService],
+  exports: [PRISMA, REDIS, S3, RateLimitService, SettingsService],
 })
 export class InfraModule implements OnApplicationShutdown {
   constructor(

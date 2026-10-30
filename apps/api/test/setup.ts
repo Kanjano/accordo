@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import request from 'supertest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
@@ -88,5 +89,30 @@ export async function startTestApp(): Promise<TestEnv> {
       await app.close();
       await Promise.all([pg.stop(), valkey.stop()]);
     },
+  };
+}
+
+/** Signs up, follows the verification link (auto sign-in) and returns a cookie-keeping agent. */
+export function verifiedUserFactory(env: TestEnv) {
+  return async (username: string) => {
+    const agent = request.agent(env.app.getHttpServer());
+    const email = `${username}@example.test`;
+    await agent
+      .post('/api/auth/sign-up/email')
+      .set('origin', WEB)
+      .send({
+        name: 'Test User',
+        username,
+        email,
+        password: 'una-password-lunga',
+        acceptTerms: true,
+      })
+      .expect(200);
+    const link = /href="(http:\/\/localhost:4000[^"]+)"/
+      .exec(env.emails.last(email)?.html ?? '')?.[1]
+      ?.replace(/&amp;/g, '&');
+    if (!link) throw new Error('verification email not sent');
+    await agent.get(new URL(link).pathname + new URL(link).search).expect(302);
+    return { agent, email };
   };
 }

@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { expect } from '@playwright/test';
+import { type BrowserContext, expect } from '@playwright/test';
 
 const MAILPIT = process.env.MAILPIT_URL ?? 'http://localhost:8025';
 export const API = process.env.API_URL ?? 'http://localhost:4000';
@@ -43,4 +43,15 @@ export async function waitForApi(): Promise<void> {
       timeout: 120_000,
     })
     .toBe(200);
+}
+
+/** Stores a "reject optional cookies" choice so the consent banner does not cover the page. */
+export async function rejectCookies(
+  context: BrowserContext,
+  baseURL = 'http://localhost:3000',
+): Promise<void> {
+  const value = encodeURIComponent(
+    JSON.stringify({ v: 1, analytics: false, at: new Date().toISOString() }),
+  );
+  await context.addCookies([{ name: 'accordo_consent', value, url: baseURL }]);
 }

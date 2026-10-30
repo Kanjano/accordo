@@ -1,19 +1,19 @@
 import { BullModule } from '@nestjs/bullmq';
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
-import { ENV, type Env, parseEnv } from './env.js';
+import { ENV, type Env } from './env.js';
 import { HEARTBEAT_QUEUE, HeartbeatProcessor, HeartbeatScheduler } from './heartbeat.js';
-
-@Global()
-@Module({
-  providers: [{ provide: ENV, useFactory: () => parseEnv() }],
-  exports: [ENV],
-})
-class ConfigModule {}
+import { InfraModule } from './infra.js';
+import { LifecycleProcessor, LifecycleScheduler } from './lifecycle.js';
+import { MediaProcessor } from './media/media.processor.js';
+import { NotificationsProcessor } from './notifications/notifications.processor.js';
+import { Notifier } from './notifications/notifier.js';
+import { OutboxDispatcher } from './outbox.dispatcher.js';
+import { QUEUES } from './queues.js';
 
 @Module({
   imports: [
-    ConfigModule,
+    InfraModule,
     LoggerModule.forRootAsync({
       inject: [ENV],
       useFactory: (env: Env) => ({
@@ -27,8 +27,22 @@ class ConfigModule {}
       inject: [ENV],
       useFactory: (env: Env) => ({ connection: { url: env.REDIS_URL } }),
     }),
-    BullModule.registerQueue({ name: HEARTBEAT_QUEUE }),
+    BullModule.registerQueue(
+      { name: HEARTBEAT_QUEUE },
+      { name: QUEUES.media },
+      { name: QUEUES.notifications },
+      { name: QUEUES.lifecycle },
+    ),
   ],
-  providers: [HeartbeatScheduler, HeartbeatProcessor],
+  providers: [
+    HeartbeatScheduler,
+    HeartbeatProcessor,
+    OutboxDispatcher,
+    MediaProcessor,
+    Notifier,
+    NotificationsProcessor,
+    LifecycleScheduler,
+    LifecycleProcessor,
+  ],
 })
 export class WorkerModule {}

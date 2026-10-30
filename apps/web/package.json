@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@accordo/domain": "workspace:*",
     "@accordo/sdk": "workspace:*",
     "@accordo/shared": "workspace:*",
     "@accordo/ui": "workspace:*",

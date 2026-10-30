@@ -15,7 +15,7 @@ pnpm install
 pnpm infra:up           # PostgreSQL, Valkey, Meilisearch, RustFS (S3), Mailpit
 pnpm db:deploy          # applica le migrazioni
 pnpm db:seed            # catalogo, comuni, festività, impostazioni + dati demo (sviluppo)
-pnpm dev                # web :3000, API :4000, worker
+pnpm dev                # web :3000, API :4000, worker (necessario anche per elaborare le foto)
 ```
 
 Per gli e2e serve una volta `npx playwright install chromium`.

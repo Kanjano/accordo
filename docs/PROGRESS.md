@@ -59,3 +59,24 @@
 
 **Rimandato**
 - Esportazione GDPR (Fase 11), revoca automatica dal link "Non sono stato io" e limite di login per account (Fase 12), e2e in CI (Fase 12), notifiche push (dopo l'MVP).
+
+## Fase 3 — Catalogo, annunci e media
+
+**Piano**
+1. Catalogo: `GET /catalog/departments`, attributi per categoria, marche con alias, suggerimento categoria dal titolo (dominio); schema Zod degli attributi costruito a runtime (§10.3).
+2. Annunci: bozza → wizard "Vendi" (5 passi, salvataggio automatico), modifica, pubblicazione con controlli automatici (§13.5: parole vietate, prezzo anomalo, foto riutilizzate, venditore nuovo sopra 2.000 €, limite giornaliero), pausa/ripresa/rinnovo/rialzo/venduto/eliminazione, storico prezzi, annunci simili, "I miei annunci".
+3. Media (§5.9): ridimensionamento lato client, POST firmato S3, collegamento all'annuncio, elaborazione nel worker (magic bytes, orientamento, rimozione metadati, WebP 320/640/1280/2048 + JPEG 1280, LQIP, dHash), riordino ed eliminazione.
+4. Outbox: eventi scritti nella stessa transazione, dispatcher nel worker verso BullMQ (`media`, `notifications`).
+5. Worker: elaborazione media, notifiche in-app ed email secondo le preferenze, job orario del ciclo di vita (promemoria a 7 e 1 giorno, scadenza).
+6. Web: wizard `/vendi`, pagina annuncio SSR con galleria accessibile e JSON-LD, `/account/annunci`, notifiche.
+7. Test: nessun EXIF/GPS nelle varianti, prezzo anomalo → revisione, anti-IDOR, e2e annuncio con 5 foto; Lighthouse sulla build di produzione.
+
+**Fatto**
+- Catalogo: albero reparti/categorie (cache Valkey), attributi per categoria, marche con alias, suggerimento categoria dal titolo (`suggestCategories` nel dominio); schema Zod degli attributi costruito a runtime (`buildAttributesSchema`).
+- Annunci: creazione bozza (limiti 20/giorno, 5 per account < 7 giorni), modifica con controlli sulle modifiche sostanziali, pubblicazione con verifica di completezza e controlli automatici (parole vietate, prezzo anomalo, foto riutilizzate, venditore nuovo sopra 2.000 €), pausa/ripresa/rinnovo/rialzo/venduto/eliminazione, storico prezzi e ribassi via outbox, annunci simili, "I miei annunci".
+- Media: upload firmato, elaborazione nel worker (varianti WebP 320/640/1280/2048 + JPEG 1280, LQIP, dHash, nessun metadato), riordino, rotazione, eliminazione.
+- Worker: dispatcher dell'outbox, code `media` e `notifications`, notifiche in-app ed email secondo le preferenze, job orario del ciclo di vita.
+- Web: wizard `/vendi` in 5 passi con salvataggio automatico, pagina annuncio SSR con galleria accessibile (tastiera, swipe, zoom), JSON-LD `Product`/`Offer`/`BreadcrumbList`, etichette privato/negozio e dati legali del negozio, `/account/annunci` con azioni, modifica, notifiche con campanella.
+- Test: pipeline media (nessun EXIF/GPS/XMP/IPTC nelle varianti, orientamento applicato, magic bytes); integrazione API (bozze private, anti-IDOR, completezza, attributi, prezzo anomalo, parole vietate, foto riutilizzate, ribasso, ciclo di vita); integrazione worker (dispatcher, ciclo di vita, preferenze email); e2e annuncio con 5 foto visibile sulla sua pagina.
+- Lighthouse sulla build di produzione: vedi ADR-0028 (tutti i criteri raggiunti).
+- Decisioni: ADR-0024…0028.

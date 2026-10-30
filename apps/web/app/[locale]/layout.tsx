@@ -17,7 +17,12 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: LayoutProps<'/[locale]'>): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale: locale as Locale, namespace: 'Metadata' });
-  return { title: t('title'), description: t('description') };
+  // Absolute canonical and Open Graph URLs (SPEC §12.3).
+  return {
+    metadataBase: new URL(process.env.WEB_URL ?? 'http://localhost:3000'),
+    title: t('title'),
+    description: t('description'),
+  };
 }
 
 export default async function LocaleLayout({ children, params }: LayoutProps<'/[locale]'>) {

@@ -6,3 +6,18 @@ Panoramica completa: SPEC.md §5. Stato attuale (Fase 0):
 - `apps/api` — NestJS 12 (Express, ESM). `ConfigModule` (env validato con Zod), `PlatformModule` (health, filtro Problem Details, bootstrap bucket in sviluppo). Prefisso REST `/api/v1`; health su `/health/live` e `/health/ready`.
 - `apps/worker` — NestJS standalone + BullMQ; job ricorrente `heartbeat`.
 - `packages/*` — librerie TypeScript compilate in `dist/` con `tsc`; Turborepo compila le dipendenze prima di `dev`, `typecheck`, `test`, `build`.
+
+## Flusso degli eventi (Fase 3)
+
+```mermaid
+flowchart LR
+  API[API: scrittura + OutboxEvent nella stessa transazione] --> PG[(PostgreSQL)]
+  PG --> D[Worker: dispatcher outbox, SKIP LOCKED]
+  D -->|media.*| QM[coda media]
+  D -->|listing.price_dropped, listing.review_pending| QN[coda notifications]
+  QM --> MP[MediaProcessor: sharp, varianti, dHash]
+  MP --> S3[(S3 pubblico)]
+  QN --> N[Notifier: in-app + email]
+  L[LifecycleProcessor orario] --> PG
+  L --> N
+```

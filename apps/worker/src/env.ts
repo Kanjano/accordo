@@ -1,11 +1,25 @@
 import { z } from 'zod';
 
-// ponytail: worker-only subset; worker and API share modules from the phase that first needs it (ADR-0003).
+/** Worker environment (ADR-0024: the worker shares code with the API only through packages/*). */
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  WEB_URL: z.url(),
+  DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
+  S3_ENDPOINT: z.url(),
+  S3_REGION: z.string().min(1),
+  S3_ACCESS_KEY_ID: z.string().min(1),
+  S3_SECRET_ACCESS_KEY: z.string().min(1),
+  S3_BUCKET_PUBLIC: z.string().min(3),
+  S3_BUCKET_PRIVATE: z.string().min(3),
+  S3_FORCE_PATH_STYLE: z.stringbool().default(false),
+  EMAIL_PROVIDER: z.enum(['smtp']).default('smtp'),
+  EMAIL_FROM: z.string().min(3),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.coerce.number().int().positive(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   HEARTBEAT_EVERY_MS: z.coerce.number().int().positive().default(30_000),
+  OUTBOX_POLL_MS: z.coerce.number().int().positive().default(1000),
 });
 
 export type Env = z.infer<typeof envSchema>;
