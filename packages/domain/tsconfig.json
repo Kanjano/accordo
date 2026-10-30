@@ -1,5 +1,9 @@
 {
   "extends": "@accordo/config/tsconfig.lib.json",
-  "compilerOptions": { "outDir": "dist", "rootDir": "src" },
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": ["ES2024", "ESNext.Temporal"]
+  },
   "include": ["src"]
 }

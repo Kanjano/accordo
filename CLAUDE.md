@@ -9,6 +9,8 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - `pnpm dev` — web :3000, API :4000, worker (Turbo compila prima i `packages/*`).
 - `pnpm lint && pnpm typecheck && pnpm test && pnpm build` — devono essere verdi a fine fase.
 - `pnpm --filter @accordo/<pkg> <script>` per un singolo pacchetto.
+- Database: `pnpm db:migrate` (nuova migrazione), `pnpm db:seed` (base + demo in sviluppo), `pnpm test:integration` (Testcontainers, serve Docker), `pnpm geo:import` (rigenera `packages/db/data`).
+- `pnpm db:reset` distrugge il DB: chiedere sempre il consenso esplicito all'utente (Prisma lo blocca senza `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`).
 - Nuove dipendenze con script di build: aggiungerle ad `allowBuilds` in `pnpm-workspace.yaml`, altrimenti `pnpm add` fallisce.
 
 ## Struttura
@@ -17,6 +19,8 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - `apps/api` NestJS 12 ESM; moduli in `src/modules/<modulo>/`; env in `src/config/env.ts`.
 - `apps/worker` NestJS standalone + BullMQ.
 - `packages/` `db` `domain` `shared` `sdk` `ui` `emails` `config` — compilati in `dist/` con `tsc`.
+- `packages/db`: `prisma/schema.prisma`, `prisma/migrations`, `prisma/seed/*`, client generato in `src/generated` (non versionato). Indici GIN dichiarati nello schema con `map:` (ADR-0009): non rimuoverli.
+- `packages/domain`: logica pura, usa `Temporal` (Node 26) per Europe/Rome; copertura ≥ 95% imposta dalla config Vitest.
 - `infra/compose`, `docs/`, `.github/workflows/ci.yml`.
 
 ## Regole di lavoro

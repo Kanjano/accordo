@@ -6,13 +6,15 @@ Marketplace italiano di strumenti musicali con pagamento protetto e feedback ver
 
 Node.js 26 (`.nvmrc`; consigliato [fnm](https://github.com/Schniz/fnm)), pnpm 12, Docker.
 
-## Avvio in 5 comandi
+## Avvio
 
 ```bash
 fnm use                 # Node 26
 cp .env.example .env
 pnpm install
 pnpm infra:up           # PostgreSQL, Valkey, Meilisearch, RustFS (S3), Mailpit
+pnpm db:deploy          # applica le migrazioni
+pnpm db:seed            # catalogo, comuni, festività, impostazioni + dati demo (sviluppo)
 pnpm dev                # web :3000, API :4000, worker
 ```
 
@@ -29,7 +31,14 @@ pnpm dev                # web :3000, API :4000, worker
 ```bash
 pnpm lint          # Biome
 pnpm typecheck
-pnpm test          # Vitest
+pnpm test          # Vitest (unit; packages/domain con soglia di copertura 95%)
+pnpm test:integration  # Testcontainers: richiede Docker
 pnpm build
 pnpm infra:down
 ```
+
+## Dati demo
+
+`pnpm db:seed` in sviluppo crea 60 utenti (`admin@accordo.local`, `moderatore@accordo.local`, `supporto@accordo.local`, `negozio@accordo.local`, `utente@accordo.local`, …), 2.000 annunci e ordini in ogni stato. Le password arrivano con l'autenticazione (Fase 2). Codice di consegna a mano degli ordini demo: `123456`. Solo per sviluppo.
+
+Dati geografici: ISTAT (CC BY 4.0) e Wikidata (CC0), vedi `docs/DATA_SOURCES.md`.

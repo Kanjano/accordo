@@ -11,15 +11,32 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "dev": "prisma generate && tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "prisma generate && tsc --noEmit",
+    "test": "vitest run",
+    "generate": "prisma generate",
+    "seed": "tsx prisma/seed/index.ts",
+    "seed:demo": "tsx prisma/seed/index.ts --demo",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "devDependencies": {
     "@accordo/config": "workspace:*",
+    "@aws-sdk/client-s3": "3.1160.0",
+    "@faker-js/faker": "10.6.0",
+    "@testcontainers/postgresql": "12.2.1",
     "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "prisma": "7.10.1",
+    "sharp": "0.35.5",
+    "tsx": "4.23.15",
     "typescript": "6.0.3",
     "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "@accordo/domain": "workspace:*",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "pg": "8.23.1"
   }
 }

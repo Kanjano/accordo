@@ -12,6 +12,10 @@ allowBuilds:
   unrs-resolver: true
   msgpackr-extract: true
   "@parcel/watcher": false
+  # Testcontainers transitive deps: optional native speedups / version notices, not needed.
+  cpu-features: false
+  ssh2: false
+  protobufjs: false
 
 minimumReleaseAgeExclude:
   - "@aws-sdk/checksums@3.1002.0"

@@ -1,20 +1,18 @@
+import { createPrismaClient } from '@accordo/db';
 import { S3Client } from '@aws-sdk/client-s3';
 import type { Provider } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import pg from 'pg';
 import { ENV, type Env } from '../../config/env.js';
 
-export const PG_POOL = Symbol('PG_POOL');
+export const PRISMA = Symbol('PRISMA');
 export const REDIS = Symbol('REDIS');
 export const S3 = Symbol('S3');
 
-// ponytail: raw pg pool only for readiness until Prisma lands in Phase 1.
 export const infraProviders: Provider[] = [
   {
-    provide: PG_POOL,
+    provide: PRISMA,
     inject: [ENV],
-    useFactory: (env: Env) =>
-      new pg.Pool({ connectionString: env.DATABASE_URL, max: 2, connectionTimeoutMillis: 2000 }),
+    useFactory: (env: Env) => createPrismaClient(env.DATABASE_URL),
   },
   {
     provide: REDIS,

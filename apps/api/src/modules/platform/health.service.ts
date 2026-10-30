@@ -1,10 +1,10 @@
+import type { PrismaClient } from '@accordo/db';
 import type { HealthReport } from '@accordo/shared';
 import { HeadBucketCommand, type S3Client } from '@aws-sdk/client-s3';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import type { Redis } from 'ioredis';
-import type pg from 'pg';
 import { ENV, type Env } from '../../config/env.js';
-import { PG_POOL, REDIS, S3 } from './infra.providers.js';
+import { PRISMA, REDIS, S3 } from './infra.providers.js';
 
 const TIMEOUT_MS = 2500;
 
@@ -21,14 +21,14 @@ function withTimeout(p: Promise<unknown>): Promise<unknown> {
 export class HealthService implements OnModuleDestroy {
   constructor(
     @Inject(ENV) private readonly env: Env,
-    @Inject(PG_POOL) private readonly pool: pg.Pool,
+    @Inject(PRISMA) private readonly db: PrismaClient,
     @Inject(REDIS) private readonly redis: Redis,
     @Inject(S3) private readonly s3: S3Client,
   ) {}
 
   async readiness(): Promise<HealthReport> {
     const checks: Record<string, () => Promise<unknown>> = {
-      database: () => this.pool.query('SELECT 1'),
+      database: () => this.db.$queryRaw`SELECT 1`,
       valkey: async () => {
         if (this.redis.status === 'wait') await this.redis.connect();
         await this.redis.ping();
@@ -65,7 +65,7 @@ export class HealthService implements OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
-    await this.pool.end();
+    await this.db.$disconnect();
     this.redis.disconnect();
     this.s3.destroy();
   }

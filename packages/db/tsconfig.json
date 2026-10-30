@@ -1,5 +1,5 @@
 {
   "extends": "@accordo/config/tsconfig.lib.json",
-  "compilerOptions": { "outDir": "dist", "rootDir": "src" },
-  "include": ["src"]
+  "compilerOptions": { "outDir": "dist", "rootDir": "." },
+  "include": ["src", "prisma", "prisma.config.ts"]
 }

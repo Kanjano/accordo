@@ -1,6 +1,7 @@
 {
   "name": "accordo",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@12.16.1",
   "engines": {
     "node": ">=26"
@@ -28,6 +29,7 @@
     "stripe:listen": "stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe"
   },
   "devDependencies": {
+    "@accordo/domain": "workspace:*",
     "@biomejs/biome": "2.6.4",
     "@types/node": "26.6.6",
     "@vitest/coverage-v8": "5.0.5",
