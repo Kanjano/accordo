@@ -188,3 +188,29 @@ Formato: contesto → decisione → conseguenze.
 - Sitemap: indice `/sitemap.xml` + `/sitemaps/{static,categories,brands,listings-N}.xml` (10.000 URL per file) generati su richiesta con i dati dell'API in cache per un'ora: equivale al job orario del §5.7 senza un altro job. Negozi nella sitemap con la Fase 10.
 - Cache: catalogo, marche e regioni usano la data cache di Next (5 minuti); i risultati di ricerca non si mettono in cache (§5.8). La pagina annuncio resta dinamica (conteggio visualizzazioni e vista del proprietario), quindi l'endpoint `/api/revalidate` con tag non serve ancora: si aggiunge in Fase 12 se le misure lo richiedono.
 - Visti di recente: cronologia locale (20 annunci, anche anonimi) unita all'account alla prima apertura di "Visti di recente" nella sessione; per gli utenti autenticati ogni visita viene registrata anche sul server (50 annunci).
+
+## ADR-0034 — Messaggi e anti-truffa
+
+- Una conversazione per (annuncio, acquirente), creata al primo messaggio o alla prima offerta. Limiti: 30 nuove conversazioni al giorno (10 per account < 7 giorni), 30 messaggi al minuto.
+- `scanMessage` all'invio: se il mascheramento si applica (l'altra parte non ha ancora scritto, o il mittente ha meno di 7 giorni) si salva **solo** il testo mascherato, mai l'originale. I flag restano sul messaggio; l'avviso al destinatario compare per `LINK`, `IBAN`, `OFF_PLATFORM_PAYMENT`, `MESSAGING_APP` (non per telefono/email da soli).
+- I link nei messaggi non sono mai cliccabili (anche quelli interni: è la scelta più semplice compatibile con il §13.4).
+- 5 messaggi con avviso in 24 ore verso conversazioni diverse → utente `LIMITED` + `AuditLog` `user.limited`. Un account `LIMITED` può rispondere nelle conversazioni esistenti ma non aprirne di nuove né fare offerte; la revisione dello staff arriva con il backoffice (Fase 11).
+- Blocco (in un senso o nell'altro): niente messaggi né offerte, la conversazione resta leggibile. Segnalazione di un messaggio altrui → `Report` `MESSAGE` (10 al giorno).
+- Immagini nei messaggi (§3.5) **rimandate**: richiedono un bucket privato con URL firmati per i soli partecipanti; non servono ai criteri della fase.
+- Notifica "nuovo messaggio" (in-app + email secondo preferenze) solo quando la conversazione passa da 0 a 1 non letti: una notifica per gruppo di messaggi, non una per messaggio.
+
+## ADR-0035 — Realtime
+
+- Socket.IO su `/ws` nell'API con `@socket.io/redis-adapter`; il worker emette con `@socket.io/redis-emitter` sullo stesso Redis (notifiche, scadenze delle offerte).
+- Autenticazione all'handshake con il cookie di sessione Better Auth; `allowRequest` rifiuta Origin diversi da `WEB_URL` (cross-site WebSocket hijacking). Ogni socket entra solo in `user:{id}`: gli eventi sono indirizzati ai due partecipanti, quindi le stanze `conversation:{id}` del §5.6 non servono (nessuna iscrizione da verificare).
+- Gli eventi (`message:new`, `conversation:read`, `offer:updated`, `notification:new`) non portano dati da fidarsi: il client invalida le query e rilegge dall'API. Senza socket le schermate fanno polling (5 s nella chat, 15 s nell'elenco, 30 s nel badge).
+- Le emissioni dell'API avvengono dopo il commit della transazione.
+- `MessagingModule` è registrato prima di `ListingsModule`: la route generica `POST listings/:id/:action` altrimenti cattura `POST listings/:id/offers`.
+
+## ADR-0036 — Offerte
+
+- Nuova colonna `Offer.proposedById` (migrazione con backfill ricorsivo: acquirente per l'offerta iniziale, poi alternato) + vincolo `amountCents > 0`. Regole pure in `packages/domain/src/offers.ts`: importo tra minimo (50%) e prezzo, solo il destinatario accetta/rifiuta/controproponendo, solo il proponente ritira.
+- Max 3 offerte `PENDING` per acquirente e annuncio; 20 offerte al giorno per utente.
+- Accettazione: aggiornamento condizionato (`status = PENDING`) dell'offerta e dell'annuncio (`ACTIVE → RESERVED`) nella stessa transazione: due accettazioni concorrenti non possono riservare due volte. `expiresAt` dell'offerta accettata diventa la scadenza del checkout (24 h); `listing.reserved` aggiorna l'indice.
+- Le altre offerte in attesa restano `PENDING` ma non sono accettabili finché l'annuncio è riservato; scadono da sole.
+- Sweeper ogni minuto nel worker: offerte `PENDING` scadute → `EXPIRED`; offerte `ACCEPTED` scadute senza ordine → `EXPIRED` e annuncio `RESERVED → ACTIVE` (`listing.released`). Ogni evento lascia un messaggio `OFFER` nella conversazione e notifica le parti. Il checkout al prezzo concordato (`CONSUMED`) arriva con la Fase 6.

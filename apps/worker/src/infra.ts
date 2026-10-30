@@ -3,12 +3,16 @@ import { createEmailProvider, type EmailProvider } from '@accordo/emails';
 import { createSearchClient } from '@accordo/search';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
+import { Emitter } from '@socket.io/redis-emitter';
+import { Redis } from 'ioredis';
 import { ENV, type Env, parseEnv } from './env.js';
 
 export const PRISMA = Symbol('PRISMA');
 export const S3 = Symbol('S3');
 export const EMAIL = Symbol('EMAIL');
 export const SEARCH = Symbol('SEARCH');
+/** Socket.IO emitter over Redis: reaches the browsers connected to any API instance. */
+export const REALTIME = Symbol('REALTIME');
 
 @Global()
 @Module({
@@ -39,8 +43,13 @@ export const SEARCH = Symbol('SEARCH');
       inject: [ENV],
       useFactory: (env: Env) => createSearchClient(env.MEILI_HOST, env.MEILI_MASTER_KEY, 10_000),
     },
+    {
+      provide: REALTIME,
+      inject: [ENV],
+      useFactory: (env: Env) => new Emitter(new Redis(env.REDIS_URL, { maxRetriesPerRequest: 1 })),
+    },
   ],
-  exports: [ENV, PRISMA, S3, EMAIL, SEARCH],
+  exports: [ENV, PRISMA, S3, EMAIL, SEARCH, REALTIME],
 })
 export class InfraModule implements OnApplicationShutdown {
   constructor(

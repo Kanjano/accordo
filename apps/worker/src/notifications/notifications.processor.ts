@@ -10,6 +10,39 @@ const euro = (cents: number) =>
   new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 const listingPath = (l: { slug: string; shortId: string }) => `/annuncio/${l.slug}-${l.shortId}`;
 
+interface MessagePayload {
+  messageId: string;
+  conversationId: string;
+  recipientId: string;
+  firstUnread: boolean;
+}
+interface OfferPayload {
+  offerId: string;
+  conversationId: string;
+  recipientId: string;
+}
+
+const OFFER_TEXTS: Record<string, (title: string, amount: string) => [string, string]> = {
+  'offer.created': (t, a) => ['Nuova offerta', `Hai ricevuto un'offerta di ${a} per «${t}».`],
+  'offer.countered': (t, a) => [
+    'Controproposta',
+    `Hai ricevuto una controproposta di ${a} per «${t}».`,
+  ],
+  'offer.accepted': (t, a) => [
+    'Offerta accettata',
+    `L'offerta di ${a} per «${t}» è stata accettata: l'annuncio è riservato per 24 ore in attesa del pagamento.`,
+  ],
+  'offer.declined': (t, a) => [
+    'Offerta rifiutata',
+    `L'offerta di ${a} per «${t}» è stata rifiutata.`,
+  ],
+  'offer.withdrawn': (t, a) => [
+    'Offerta ritirata',
+    `L'offerta di ${a} per «${t}» è stata ritirata.`,
+  ],
+  'offer.expired': (t, a) => ['Offerta scaduta', `L'offerta di ${a} per «${t}» è scaduta.`],
+};
+
 /** Domain events → recipients and Italian texts. */
 @Processor(QUEUES.notifications)
 export class NotificationsProcessor extends WorkerHost {
@@ -21,6 +54,8 @@ export class NotificationsProcessor extends WorkerHost {
   }
 
   async process(job: Job): Promise<void> {
+    if (job.name === 'message.created') return this.message(job.data as MessagePayload);
+    if (job.name.startsWith('offer.')) return this.offer(job.name, job.data as OfferPayload);
     const { listingId } = job.data as { listingId: string };
     const listing = await this.db.listing.findUnique({
       where: { id: listingId },
@@ -60,5 +95,50 @@ export class NotificationsProcessor extends WorkerHost {
         });
       }
     }
+  }
+
+  /** One notification per burst: only when the conversation had no unread messages (no spam). */
+  private async message(p: MessagePayload) {
+    if (!p.firstUnread) return;
+    const m = await this.db.message.findUnique({
+      where: { id: p.messageId },
+      select: {
+        body: true,
+        sender: { select: { name: true } },
+        conversation: { select: { listing: { select: { title: true } } } },
+      },
+    });
+    if (!m) return;
+    const preview = (m.body ?? '').replace(/\s+/g, ' ').slice(0, 140);
+    await this.notifier.notify({
+      userId: p.recipientId,
+      preference: 'message.new',
+      type: 'message.new',
+      title: `Nuovo messaggio da ${m.sender?.name ?? 'un utente'}`,
+      body: `«${m.conversation.listing.title}»: ${preview}`,
+      path: `/messaggi/${p.conversationId}`,
+      cta: 'Rispondi',
+      data: { conversationId: p.conversationId },
+    });
+  }
+
+  private async offer(event: string, p: OfferPayload) {
+    const texts = OFFER_TEXTS[event];
+    const offer = await this.db.offer.findUnique({
+      where: { id: p.offerId },
+      select: { amountCents: true, listing: { select: { title: true } } },
+    });
+    if (!texts || !offer) return;
+    const [title, body] = texts(offer.listing.title, euro(offer.amountCents));
+    await this.notifier.notify({
+      userId: p.recipientId,
+      preference: 'offer.updates',
+      type: event,
+      title,
+      body,
+      path: `/messaggi/${p.conversationId}`,
+      cta: 'Apri la conversazione',
+      data: { offerId: p.offerId, conversationId: p.conversationId },
+    });
   }
 }

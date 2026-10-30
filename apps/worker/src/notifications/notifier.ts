@@ -1,8 +1,9 @@
 import type { PrismaClient } from '@accordo/db';
 import { type EmailProvider, renderEmail } from '@accordo/emails';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import type { Emitter } from '@socket.io/redis-emitter';
 import { ENV, type Env } from '../env.js';
-import { EMAIL, PRISMA } from '../infra.js';
+import { EMAIL, PRISMA, REALTIME } from '../infra.js';
 
 export interface NotificationRequest {
   userId: string;
@@ -28,6 +29,7 @@ export class Notifier {
     @Inject(ENV) private readonly env: Env,
     @Inject(PRISMA) private readonly db: PrismaClient,
     @Inject(EMAIL) private readonly email: EmailProvider,
+    @Optional() @Inject(REALTIME) private readonly realtime?: Emitter,
   ) {}
 
   async notify(n: NotificationRequest): Promise<void> {
@@ -56,6 +58,10 @@ export class Notifier {
           data: { ...n.data, ...(n.path ? { path: n.path } : {}) },
         },
       });
+      // Realtime bell (SPEC §5.6); best effort, the unread count is also polled.
+      this.realtime
+        ?.to(`user:${n.userId}`)
+        .emit('notification:new', { type: n.type, title: n.title });
     }
     if (enabled('EMAIL') && user.emailVerified) {
       const rendered = await renderEmail('notification', {

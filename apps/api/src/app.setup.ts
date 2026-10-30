@@ -5,6 +5,7 @@ import { ENV, type Env } from './config/env.js';
 import type { Auth } from './modules/auth/auth.factory.js';
 import { AUTH } from './modules/auth/auth.tokens.js';
 import { ValidationException } from './modules/platform/problem-details.filter.js';
+import { RedisIoAdapter } from './modules/realtime/redis-io.adapter.js';
 
 /**
  * HTTP wiring shared by main.ts and integration tests.
@@ -23,5 +24,6 @@ export function configureApp(app: INestApplication): void {
       exceptionFactory: (issues) => new ValidationException(issues),
     }),
   );
+  app.useWebSocketAdapter(new RedisIoAdapter(app, env));
   app.enableShutdownHooks();
 }

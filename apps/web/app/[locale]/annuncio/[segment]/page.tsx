@@ -12,6 +12,7 @@ import { FavoriteButton } from '@/components/listing/favorite-button';
 import { Gallery } from '@/components/listing/gallery';
 import { RecentlyViewedTracker } from '@/components/listing/recently-viewed-tracker';
 import { ShareButton } from '@/components/listing/share-button';
+import { ContactSeller } from '@/components/messaging/contact-seller';
 import { CardGrid } from '@/components/search/card-grid';
 import { Link } from '@/i18n/navigation';
 import { formatPrice } from '@/lib/format';
@@ -250,6 +251,13 @@ export default async function ListingPage({ params }: PageProps<'/[locale]/annun
                 date: format.dateTime(new Date(l.publishedAt), { dateStyle: 'long' }),
               })}
             </p>
+          ) : null}
+          {!l.owner && (l.status === 'ACTIVE' || l.status === 'RESERVED') ? (
+            <ContactSeller
+              listingId={l.id}
+              priceCents={l.priceCents}
+              canOffer={l.status === 'ACTIVE' && l.isNegotiable && l.protectedPaymentEnabled}
+            />
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
             <ShareButton title={l.title} />

@@ -8,6 +8,7 @@ import { LifecycleProcessor, LifecycleScheduler } from './lifecycle.js';
 import { MediaProcessor } from './media/media.processor.js';
 import { NotificationsProcessor } from './notifications/notifications.processor.js';
 import { Notifier } from './notifications/notifier.js';
+import { OffersProcessor, OffersScheduler } from './offers.js';
 import { OutboxDispatcher } from './outbox.dispatcher.js';
 import { QUEUES } from './queues.js';
 import { SavedSearchAlertsProcessor, SavedSearchScheduler } from './search/saved-search-alerts.js';
@@ -36,6 +37,7 @@ import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-inde
       { name: QUEUES.lifecycle },
       { name: QUEUES.searchIndex },
       { name: QUEUES.savedSearchAlerts },
+      { name: QUEUES.offers },
     ),
   ],
   providers: [
@@ -51,6 +53,8 @@ import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-inde
     SearchIndexProcessor,
     SavedSearchScheduler,
     SavedSearchAlertsProcessor,
+    OffersScheduler,
+    OffersProcessor,
   ],
 })
 export class WorkerModule {}

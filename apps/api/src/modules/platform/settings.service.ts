@@ -14,6 +14,12 @@ export interface PlatformSettings {
     { priceCents: number; maxKg: number; dimensionsCm: number[] }
   >;
   feedback: { windowDays: number; minOrderCents: number };
+  offers: {
+    expiryHours: number;
+    minPercent: number;
+    acceptedCheckoutHours: number;
+    maxActivePerBuyerAndListing: number;
+  };
 }
 
 const TTL_SECONDS = 60;

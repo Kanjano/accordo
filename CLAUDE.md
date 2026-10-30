@@ -56,6 +56,12 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - Senza Meilisearch l'API risponde con `degraded: true` (fallback PostgreSQL). Indici vuoti dopo un reset del DB: `pnpm search:reindex`.
 - Test API con ricerca: `startTestApp({ search: true })` avvia anche Meilisearch.
 
+## Note di implementazione (Fase 5)
+
+- Realtime: `RealtimeGateway.emit(userIds, event, payload)` nell'API (dopo il commit), `REALTIME` (redis-emitter) nel worker; stanze solo `user:{id}`. Il web invalida le query in `lib/realtime.tsx`.
+- Messaggi e offerte in `modules/messaging`; regole delle offerte in `packages/domain/src/offers.ts`. L'ordine dei moduli in `app.module.ts` conta (vedi ADR-0035).
+- Il testo mascherato è l'unico salvato (ADR-0034).
+
 ## Regole d'oro del dominio
 
 - Lo stato di un ordine cambia **solo** tramite `OrderStateMachine` (§6.4) e `OrdersService.transition()`; mai `update` diretti sulla colonna `status`.

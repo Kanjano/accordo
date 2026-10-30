@@ -765,6 +765,8 @@ model Offer {
   listingId     String
   buyerId       String
   sellerId      String
+  /// Buyer for the first offer, then alternating with each counter-offer.
+  proposedById  String
   amountCents   Int
   status        OfferStatus @default(PENDING)
   parentOfferId String?

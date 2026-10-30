@@ -8,7 +8,9 @@ import type { Queue } from 'bullmq';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Env } from '../src/env.js';
 import { LifecycleProcessor } from '../src/lifecycle.js';
+import { NotificationsProcessor } from '../src/notifications/notifications.processor.js';
 import { Notifier } from '../src/notifications/notifier.js';
+import { OffersProcessor } from '../src/offers.js';
 import { OutboxDispatcher } from '../src/outbox.dispatcher.js';
 import { SavedSearchAlertsProcessor } from '../src/search/saved-search-alerts.js';
 
@@ -257,5 +259,98 @@ describe('saved-search alerts', () => {
     // Nothing new since: no duplicate alert.
     expect(await processor.run('INSTANT')).toEqual({ notified: 0 });
     expect(sent).toHaveLength(1);
+  });
+});
+
+describe('offers and messages', () => {
+  it('expires pending offers and releases reservations not paid within the window', async () => {
+    const buyer = await db.user.create({
+      data: { name: 'Paola', email: 'paola@example.test', emailVerified: true },
+    });
+    const make = async (n: number, status: 'ACTIVE' | 'RESERVED') => {
+      const l = await db.listing.create({
+        data: {
+          shortId: `OFR${String(n).padStart(5, '0')}`,
+          slug: 'x',
+          sellerId,
+          categoryId,
+          status,
+          title: `Synth ${n}`,
+          description: 'x',
+          condition: 'GOOD',
+          priceCents: 100_000,
+          comuneId: '015146',
+        },
+      });
+      await db.conversation.create({ data: { listingId: l.id, buyerId: buyer.id, sellerId } });
+      return l;
+    };
+    const free = await make(1, 'ACTIVE');
+    const reserved = await make(2, 'RESERVED');
+    const past = new Date(Date.now() - 60_000);
+    const offer = (listingId: string, status: 'PENDING' | 'ACCEPTED', expiresAt: Date) =>
+      db.offer.create({
+        data: {
+          listingId,
+          buyerId: buyer.id,
+          sellerId,
+          proposedById: buyer.id,
+          amountCents: 80_000,
+          status,
+          expiresAt,
+        },
+      });
+    const pending = await offer(free.id, 'PENDING', past);
+    const fresh = await offer(free.id, 'PENDING', new Date(Date.now() + 3_600_000));
+    const accepted = await offer(reserved.id, 'ACCEPTED', past);
+
+    const processor = new OffersProcessor(db);
+    expect(await processor.run(new Date())).toEqual({ expired: 2, released: 1 });
+    const status = async (id: string) =>
+      (await db.offer.findUniqueOrThrow({ where: { id } })).status;
+    expect([await status(pending.id), await status(fresh.id), await status(accepted.id)]).toEqual([
+      'EXPIRED',
+      'PENDING',
+      'EXPIRED',
+    ]);
+    expect((await db.listing.findUniqueOrThrow({ where: { id: reserved.id } })).status).toBe(
+      'ACTIVE',
+    );
+    expect(
+      await db.outboxEvent.count({ where: { type: 'listing.released', aggregateId: reserved.id } }),
+    ).toBe(1);
+    expect(await db.outboxEvent.count({ where: { type: 'offer.expired' } })).toBe(4);
+    expect(await processor.run(new Date())).toEqual({ expired: 0, released: 0 });
+  });
+
+  it('notifies a new message once per unread burst, honouring the email preference', async () => {
+    sent.length = 0;
+    const buyer = await db.user.create({
+      data: { name: 'Carla', email: 'carla@example.test', emailVerified: true },
+    });
+    const l = await db.listing.findFirstOrThrow({ where: { sellerId } });
+    const c = await db.conversation.create({
+      data: { listingId: l.id, buyerId: buyer.id, sellerId },
+    });
+    const m = await db.message.create({
+      data: { conversationId: c.id, senderId: buyer.id, body: 'Ciao, è disponibile?' },
+    });
+    const processor = new NotificationsProcessor(db, new Notifier(env, db, email));
+    const job = (firstUnread: boolean) =>
+      ({
+        name: 'message.created',
+        data: { messageId: m.id, conversationId: c.id, recipientId: sellerId, firstUnread },
+      }) as never;
+    await processor.process(job(true));
+    await processor.process(job(false));
+    expect(sent.map((e) => e.subject)).toEqual(['Nuovo messaggio da Carla']);
+    await db.notificationPreference.create({
+      data: { userId: sellerId, type: 'message.new', channel: 'EMAIL', enabled: false },
+    });
+    await processor.process(job(true));
+    expect(sent).toHaveLength(1);
+    expect(await db.notification.count({ where: { userId: sellerId, type: 'message.new' } })).toBe(
+      2,
+    );
   });
 });

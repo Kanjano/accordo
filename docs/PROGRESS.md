@@ -103,3 +103,28 @@
 
 **Rimandato**
 - Endpoint `/api/revalidate` e pagine con tag di cache (Fase 12, ADR-0033); barra inferiore mobile (Fase 12); negozi nella sitemap (Fase 10); editor admin dei sinonimi (Fase 11); `trust proxy` di produzione (Fase 12).
+
+## Fase 5 — Messaggistica, offerte e notifiche
+
+**Piano**
+1. Dominio: regole delle offerte (importo minimo, chi può rispondere, transizioni) come funzioni pure; `scanMessage` già pronto (Fase 1).
+2. API `messaging`: conversazioni (una per annuncio e acquirente, limiti §13.2, blocchi), messaggi con `scanMessage` (mascheramento per account nuovi, flag e avvisi, utente `LIMITED` dopo 5 conversazioni segnalate in 24 h), letto/archiviato, segnalazione di un messaggio.
+3. Realtime: gateway Socket.IO su `/ws` con adapter Redis, autenticazione col cookie di sessione, stanze `user:{id}`; eventi `message:new`, `conversation:read`, `offer:updated`, `notification:new` (anche dal worker via emitter Redis).
+4. API `offers`: proposta (annunci trattabili con pagamento protetto, minimo 50%, max 3 attive, 48 h), accetta/rifiuta/controproposta/ritira, messaggi di sistema nella conversazione; offerta accettata → annuncio `RESERVED` per 24 h.
+5. Worker: scadenza delle offerte e rilascio delle riserve ogni minuto; notifiche di messaggi e offerte secondo le preferenze.
+6. Web: "Contatta" e "Fai un'offerta" sulla pagina annuncio, `/messaggi` e `/messaggi/[id]` in tempo reale (polling di riserva), banner di sicurezza, offerte nella chat, blocco e segnalazione, campanella in tempo reale.
+7. Test: integrazione (mascheramento, flag, IDOR, blocchi, offerte e riserva, scadenze, preferenze email, socket), e2e J6.
+
+**Fatto**
+- Dominio: regole delle offerte (`minOfferCents`, `offerAmountError`, `offerActionError`, `counterProposer`), copertura 99,6%.
+- Database: `Offer.proposedById` con backfill e vincolo sull'importo (migrazione `offer_proposer`).
+- API `messaging`: conversazioni (una per annuncio e acquirente, limiti, blocchi, archivio, letti), messaggi con `scanMessage` (mascheramento per account nuovi, flag, avviso al destinatario, `LIMITED` dopo 5 conversazioni con avviso in 24 h), segnalazione di un messaggio, offerte con controproposta, ritiro, rifiuto e accettazione che riserva l'annuncio per 24 h, `GET /me/offers`.
+- Realtime: Socket.IO `/ws` con adapter Redis e controllo dell'Origin; eventi `message:new`, `conversation:read`, `offer:updated`, `notification:new` (anche dal worker).
+- Worker: notifiche di messaggi (una per gruppo di non letti) e offerte secondo le preferenze; sweeper delle offerte ogni minuto con rilascio delle riserve.
+- Web: "Contatta il venditore" e "Fai un'offerta" sulla pagina annuncio; `/messaggi` (in arrivo e archiviate) e `/messaggi/[id]` con aggiornamento in tempo reale e polling di riserva, banner di sicurezza, avvisi sui messaggi sospetti, nota sul mascheramento, pannello offerte (accetta, rifiuta, controproponi, ritira), blocco, archivio e segnalazione; icona Messaggi con badge nell'header; campanella in tempo reale.
+- Criteri: e2e J6 (due browser, IBAN con avviso in meno di 3 s, quindi via socket e non via polling); un telefono da un account nuovo è mascherato e resta mascherato finché il mittente non ha 7 giorni (integrazione); un'offerta accettata porta l'annuncio a `RESERVED` con scadenza a 24 h e blocca altre accettazioni (integrazione), lo sweeper la rilascia (integrazione worker); le email rispettano le preferenze (integrazione worker + email reali in Mailpit).
+- Test: 4 unitari del dominio, 7 di integrazione API (conversazioni, mascheramento, IBAN e `LIMITED`, blocchi e segnalazioni, socket, offerte), 2 di integrazione worker, e2e J6 (6 e2e in totale).
+- Decisioni: ADR-0034…0036.
+
+**Rimandato**
+- Immagini nei messaggi (ADR-0034), revisione staff degli account `LIMITED` e delle segnalazioni (Fase 11), checkout dell'offerta accettata (Fase 6), notifiche push (dopo l'MVP).

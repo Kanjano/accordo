@@ -1,6 +1,7 @@
 'use client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
+import { RealtimeProvider } from '@/lib/realtime';
 import { StepUpProvider } from './step-up';
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -9,7 +10,9 @@ export function Providers({ children }: { children: ReactNode }) {
   );
   return (
     <QueryClientProvider client={client}>
-      <StepUpProvider>{children}</StepUpProvider>
+      <RealtimeProvider>
+        <StepUpProvider>{children}</StepUpProvider>
+      </RealtimeProvider>
     </QueryClientProvider>
   );
 }

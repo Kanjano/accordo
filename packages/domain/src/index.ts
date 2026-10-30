@@ -6,6 +6,7 @@ export * from './ids.js';
 export * from './ledger.js';
 export * from './listing-checks.js';
 export * from './money.js';
+export * from './offers.js';
 export * from './order-state-machine.js';
 export * from './perceptual-hash.js';
 export * from './reputation.js';

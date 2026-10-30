@@ -37,3 +37,14 @@ flowchart LR
   A -->|errore o timeout 1,5 s| PG[(PostgreSQL: ILIKE + pg_trgm)]
   R[pnpm search:reindex] -->|indice _next + swapIndexes| MS
 ```
+
+## Messaggi e realtime (Fase 5)
+
+```mermaid
+flowchart LR
+  B[Browser] -- Socket.IO /ws, cookie di sessione --> GW[API RealtimeGateway]
+  GW <--> R[(Redis adapter)]
+  WK[Worker: notifiche, scadenze offerte] -- redis-emitter --> R
+  B -- REST --> API[API messaging: scanMessage, offerte] --> PG[(PostgreSQL + outbox)]
+  API -- dopo il commit --> GW
+```

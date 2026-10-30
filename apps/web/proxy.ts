@@ -12,7 +12,7 @@ const SESSION_COOKIES = ['better-auth.session_token', '__Secure-better-auth.sess
  */
 export default function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const isPrivate = /^\/(en\/)?(account|vendi)(\/|$)/.test(pathname);
+  const isPrivate = /^\/(en\/)?(account|vendi|messaggi)(\/|$)/.test(pathname);
   if (isPrivate && !SESSION_COOKIES.some((c) => request.cookies.has(c))) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.startsWith('/en/') ? '/en/accedi' : '/accedi';
