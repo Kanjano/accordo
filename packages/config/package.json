@@ -1,0 +1,14 @@
+{
+  "name": "@accordo/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.lib.json": "./tsconfig.lib.json",
+    "./vitest": "./vitest.preset.js"
+  },
+  "devDependencies": {
+    "vitest": "5.0.5"
+  }
+}

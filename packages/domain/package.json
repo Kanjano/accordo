@@ -1,0 +1,25 @@
+{
+  "name": "@accordo/domain",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure domain logic without I/O: amounts, order state machine, reputation, anti-fraud",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@accordo/config": "workspace:*",
+    "@types/node": "26.6.6",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

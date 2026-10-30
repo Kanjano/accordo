@@ -1,0 +1,32 @@
+{
+  "Metadata": {
+    "title": "Accordo — New and used musical instruments",
+    "description": "Buy and sell musical instruments, audio, DJ and lighting gear with protected payments and verified feedback."
+  },
+  "Header": {
+    "skipToContent": "Skip to content",
+    "home": "Accordo, go to home page",
+    "nav": "Main navigation",
+    "listings": "Listings",
+    "sell": "Sell",
+    "signIn": "Sign in"
+  },
+  "Home": {
+    "title": "Buy and sell musical instruments safely",
+    "subtitle": "Free listings for instruments, audio, DJ and lighting. You pay on the platform and the seller is paid only after you confirm you received the item.",
+    "pillars": "Why Accordo",
+    "protectedTitle": "Protected payment",
+    "protectedText": "Your payment is held until you confirm receipt or the inspection window ends.",
+    "feedbackTitle": "Verified feedback",
+    "feedbackText": "Only buyers and sellers who completed a real order on the platform can leave feedback.",
+    "safetyTitle": "Anti-scam protection",
+    "safetyText": "In-app chat with filters, non-clickable external links and identity-verified sellers.",
+    "comingSoon": "The site is under construction."
+  },
+  "Footer": {
+    "rights": "© {year} Accordo. All rights reserved.",
+    "legal": "Legal notice",
+    "privacy": "Privacy",
+    "terms": "Terms of service"
+  }
+}

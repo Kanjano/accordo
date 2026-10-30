@@ -1,0 +1,39 @@
+import { z } from 'zod';
+
+const secret = z.string().min(32, 'must be at least 32 characters');
+
+/**
+ * Environment contract. The API refuses to start when this fails.
+ * ponytail: only variables used so far; each phase adds the ones it consumes (see docs/DECISIONS.md).
+ */
+export const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  API_PORT: z.coerce.number().int().default(4000),
+  WEB_URL: z.url(),
+  API_URL: z.url(),
+  DATABASE_URL: z.url(),
+  REDIS_URL: z.url(),
+  MEILI_HOST: z.url(),
+  MEILI_MASTER_KEY: z.string().min(16),
+  S3_ENDPOINT: z.url(),
+  S3_REGION: z.string().min(1),
+  S3_ACCESS_KEY_ID: z.string().min(1),
+  S3_SECRET_ACCESS_KEY: z.string().min(1),
+  S3_BUCKET_PUBLIC: z.string().min(3),
+  S3_BUCKET_PRIVATE: z.string().min(3),
+  S3_FORCE_PATH_STYLE: z.stringbool().default(false),
+  BETTER_AUTH_SECRET: secret,
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+export const ENV = Symbol('ENV');
+
+export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
+  const result = envSchema.safeParse(source);
+  if (!result.success) {
+    throw new Error(`Invalid environment configuration:\n${z.prettifyError(result.error)}`);
+  }
+  return result.data;
+}

@@ -1,0 +1,39 @@
+{
+  "name": "accordo",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "dev": "turbo run dev --concurrency 20",
+    "build": "turbo run build",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "playwright test",
+    "infra:up": "docker compose -f infra/compose/docker-compose.yml --env-file .env up -d --wait",
+    "infra:down": "docker compose -f infra/compose/docker-compose.yml down",
+    "db:migrate": "pnpm --filter @accordo/db exec prisma migrate dev",
+    "db:deploy": "pnpm --filter @accordo/db exec prisma migrate deploy",
+    "db:reset": "pnpm --filter @accordo/db exec prisma migrate reset --force",
+    "db:seed": "pnpm --filter @accordo/db run seed",
+    "db:seed:demo": "pnpm --filter @accordo/db run seed:demo",
+    "db:seed:big": "pnpm --filter @accordo/db run seed:big",
+    "db:studio": "pnpm --filter @accordo/db exec prisma studio",
+    "geo:import": "tsx scripts/import-geo.ts",
+    "search:reindex": "tsx scripts/reindex.ts",
+    "stripe:listen": "stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@types/node": "26.6.6",
+    "@vitest/coverage-v8": "5.0.5",
+    "tsx": "4.23.15",
+    "turbo": "2.11.10",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

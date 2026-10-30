@@ -1,0 +1,47 @@
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+
+export function SiteHeader() {
+  const t = useTranslations('Header');
+  return (
+    <header className="border-b">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:ring-2 focus:ring-ring"
+      >
+        {t('skipToContent')}
+      </a>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+        <Link
+          href="/"
+          aria-label={t('home')}
+          className="text-xl font-bold tracking-tight text-primary"
+        >
+          Accordo
+        </Link>
+        <nav aria-label={t('nav')}>
+          <ul className="flex items-center gap-1 text-sm font-medium sm:gap-4">
+            <li>
+              <Link href="/annunci" className="rounded-md px-3 py-2 hover:bg-accent">
+                {t('listings')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/vendi" className="rounded-md px-3 py-2 hover:bg-accent">
+                {t('sell')}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/accedi"
+                className="rounded-md bg-primary px-3 py-2 text-primary-foreground hover:bg-primary/90"
+              >
+                {t('signIn')}
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+  );
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "@accordo/config/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false,
+    "sourceMap": true,
+    "incremental": true,
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["src"]
+}

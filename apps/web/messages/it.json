@@ -1,0 +1,32 @@
+{
+  "Metadata": {
+    "title": "Accordo — Strumenti musicali nuovi e usati",
+    "description": "Compra e vendi strumenti musicali, audio, DJ e luci con il pagamento protetto e feedback verificati."
+  },
+  "Header": {
+    "skipToContent": "Vai al contenuto",
+    "home": "Accordo, vai alla home",
+    "nav": "Navigazione principale",
+    "listings": "Annunci",
+    "sell": "Vendi",
+    "signIn": "Accedi"
+  },
+  "Home": {
+    "title": "Compra e vendi strumenti musicali in sicurezza",
+    "subtitle": "Annunci gratuiti per strumenti, audio, DJ e luci. Paghi sulla piattaforma e i soldi arrivano al venditore solo quando confermi di aver ricevuto l'oggetto.",
+    "pillars": "Perché scegliere Accordo",
+    "protectedTitle": "Pagamento protetto",
+    "protectedText": "Il pagamento resta trattenuto finché confermi la ricezione o scade la finestra di verifica.",
+    "feedbackTitle": "Feedback verificati",
+    "feedbackText": "Solo chi ha concluso un ordine reale sulla piattaforma può lasciare un feedback.",
+    "safetyTitle": "Sicurezza anti-truffa",
+    "safetyText": "Chat interna con filtri, link esterni non cliccabili e venditori con identità verificata.",
+    "comingSoon": "Il sito è in costruzione."
+  },
+  "Footer": {
+    "rights": "© {year} Accordo. Tutti i diritti riservati.",
+    "legal": "Note legali",
+    "privacy": "Privacy",
+    "terms": "Termini di servizio"
+  }
+}

@@ -1,0 +1,31 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  "@swc/core": true
+  "@nestjs/core": false
+  prisma: true
+  "@prisma/engines": true
+  unrs-resolver: true
+  msgpackr-extract: true
+  "@parcel/watcher": false
+
+minimumReleaseAgeExclude:
+  - "@aws-sdk/checksums@3.1002.0"
+  - "@aws-sdk/client-s3@3.1160.0"
+  - "@aws-sdk/core@3.979.0"
+  - "@aws-sdk/credential-provider-env@3.972.79"
+  - "@aws-sdk/credential-provider-http@3.972.81"
+  - "@aws-sdk/credential-provider-ini@3.973.24"
+  - "@aws-sdk/credential-provider-login@3.972.86"
+  - "@aws-sdk/credential-provider-node@3.972.91"
+  - "@aws-sdk/credential-provider-process@3.972.79"
+  - "@aws-sdk/credential-provider-sso@3.973.23"
+  - "@aws-sdk/credential-provider-web-identity@3.972.85"
+  - "@aws-sdk/middleware-sdk-s3@3.972.84"
+  - "@aws-sdk/nested-clients@3.997.53"
+  - "@aws-sdk/token-providers@3.1160.0"
+  - lucide-react@1.65.0
