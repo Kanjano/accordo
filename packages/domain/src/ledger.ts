@@ -154,3 +154,53 @@ export function chargebackLossEntries(amountCents: number): LedgerTransactionDra
     credit('CASH_STRIPE', amountCents),
   ]);
 }
+
+/** Refund after the transfer (SPEC §6.7): the buyer is refunded, the seller now owes the amount. */
+export function refundAfterTransferEntries(
+  amountCents: number,
+  sellerId: string,
+): LedgerTransactionDraft {
+  return finalize('REFUND_AFTER_TRANSFER', [
+    debit('SELLER_RECEIVABLE', amountCents, sellerId),
+    credit('CASH_STRIPE', amountCents),
+  ]);
+}
+
+/** Transfer reversal: money back from the seller's account settles the receivable. */
+export function transferReversalEntries(
+  amountCents: number,
+  sellerId: string,
+): LedgerTransactionDraft {
+  return finalize('TRANSFER_REVERSAL', [
+    debit('CASH_STRIPE', amountCents),
+    credit('SELLER_RECEIVABLE', amountCents, sellerId),
+  ]);
+}
+
+/** Transfer net of what the seller owes: the offset settles the receivable (SPEC §6.7). */
+export function transferWithOffsetEntries(
+  payableCents: number,
+  offsetCents: number,
+  sellerId: string,
+): LedgerTransactionDraft {
+  if (offsetCents > payableCents) throw new UnbalancedLedgerError('offset exceeds payable');
+  return finalize('TRANSFER_TO_SELLER', [
+    debit('SELLER_PAYABLE', payableCents, sellerId),
+    credit('CASH_STRIPE', payableCents - offsetCents),
+    credit('SELLER_RECEIVABLE', offsetCents, sellerId),
+  ]);
+}
+
+/** Chargeback lost by a seller without protection, before the transfer: the payable is cancelled. */
+export function chargebackSellerLiableEntries(
+  amountCents: number,
+  payableCents: number,
+  sellerId: string,
+): LedgerTransactionDraft {
+  const fromSeller = Math.min(amountCents, payableCents);
+  return finalize('CHARGEBACK_LOST', [
+    debit('SELLER_PAYABLE', fromSeller, sellerId),
+    debit('CHARGEBACK_LOSSES', amountCents - fromSeller),
+    credit('CASH_STRIPE', amountCents),
+  ]);
+}

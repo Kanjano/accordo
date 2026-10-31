@@ -998,7 +998,13 @@ model Dispute {
   resolvedAt          DateTime?
   resolvedById        String?
   resolutionNotes     String?           @db.Text
+  /// Set when the outcome is the seller's responsibility (lost dispute, return label charged).
+  sellerAtFault       Boolean?
   appealedAt          DateTime?
+  appealResolvedAt    DateTime?
+  appealResolvedById  String?
+  appealUpheld        Boolean?
+  appealNotes         String?           @db.Text
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   order               Order             @relation(fields: [orderId], references: [id])

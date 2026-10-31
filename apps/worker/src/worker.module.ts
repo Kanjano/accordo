@@ -10,6 +10,7 @@ import { NotificationsProcessor } from './notifications/notifications.processor.
 import { Notifier } from './notifications/notifier.js';
 import { OffersProcessor, OffersScheduler } from './offers.js';
 import { OutboxDispatcher } from './outbox.dispatcher.js';
+import { ChargebackService } from './payments/chargebacks.js';
 import { NightlyChecks, OrdersScheduler, OrdersSweeper } from './payments/orders-sweeper.js';
 import { PaymentsProcessor } from './payments/payments.processor.js';
 import { QUEUES } from './queues.js';
@@ -64,6 +65,7 @@ import { ShippingService } from './shipping/shipping.service.js';
     OffersScheduler,
     OffersProcessor,
     PaymentsProcessor,
+    ChargebackService,
     OrdersScheduler,
     OrdersSweeper,
     NightlyChecks,

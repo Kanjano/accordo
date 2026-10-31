@@ -71,6 +71,7 @@ export class WebhooksController {
 }
 
 const outcome = z.object({ outcome: z.enum(['succeeded', 'failed']) });
+const chargebackOutcome = z.object({ status: z.enum(['won', 'lost']) });
 
 /** Simulations for development and e2e with the fake provider; 404 in production. */
 @Controller('dev')
@@ -130,12 +131,50 @@ export class DevPaymentsController {
     });
   }
 
-  /** Makes the order's pending timer due now (the sweeper runs it within a minute). */
+  /** Runs the order's pending timer now (ship deadline, auto-completion, dispute deadline…). */
   @Post('orders/:id/run-timer')
-  @HttpCode(204)
+  @HttpCode(200)
   async runTimer(@CurrentAuth() auth: AuthSession, @Param('id', ParseUUIDPipe) id: string) {
     this.guard();
     await this.orders.party(auth.user.id, id);
-    await this.orders.dueNow(id);
+    return this.orders.runTimerNow(id);
+  }
+
+  /** Simulated bank dispute (Stripe test card 4000 0000 0000 0259 with the real provider). */
+  @Post('orders/:id/chargeback')
+  @HttpCode(200)
+  async chargeback(@CurrentAuth() auth: AuthSession, @Param('id', ParseUUIDPipe) id: string) {
+    this.guard();
+    const o = await this.orders.party(auth.user.id, id);
+    if (!o.chargeId) throw new NotFoundException();
+    const disputeId = `fake_dp_${o.id}`;
+    await this.payments.simulate({
+      kind: 'dispute.created',
+      disputeId,
+      chargeId: o.chargeId,
+      amountCents: o.totalCents,
+      reason: 'fraudulent',
+      evidenceDueBy: new Date(Date.now() + 7 * 86_400_000),
+    });
+    return { disputeId };
+  }
+
+  @Post('payment-disputes/:id/close')
+  @HttpCode(200)
+  async closeChargeback(
+    @CurrentAuth() auth: AuthSession,
+    @Param('id') id: string,
+    @Body({ schema: chargebackOutcome }) body: z.infer<typeof chargebackOutcome>,
+  ) {
+    this.guard();
+    const orderId = id.replace(/^fake_dp_/, '');
+    const o = await this.orders.party(auth.user.id, orderId);
+    return this.payments.simulate({
+      kind: 'dispute.closed',
+      disputeId: id,
+      chargeId: o.chargeId as string,
+      status: body.status,
+      amountCents: o.totalCents,
+    });
   }
 }

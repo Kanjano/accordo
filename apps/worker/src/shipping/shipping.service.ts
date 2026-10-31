@@ -114,6 +114,21 @@ export class ShippingService {
     return true;
   }
 
+  /** SPEC §6.7, configurable by admins (`refundPolicy`). */
+  private async policy() {
+    const row = await this.db.platformSetting.findUnique({ where: { key: 'refundPolicy' } });
+    return {
+      chargeLabelOnSellerCancel: true,
+      chargeLabelOnMutualCancel: false,
+      chargeReturnLabelWhenSellerAtFault: true,
+      ...(row?.value as object | undefined),
+    } as {
+      chargeLabelOnSellerCancel: boolean;
+      chargeLabelOnMutualCancel: boolean;
+      chargeReturnLabelWhenSellerAtFault: boolean;
+    };
+  }
+
   /** Return label (dispute with return, SPEC §6.6): the buyer ships back to the seller. */
   async createReturnLabel(orderId: string): Promise<boolean> {
     if (await this.db.shipment.findFirst({ where: { orderId, direction: 'RETURN' } })) return false;
@@ -146,6 +161,23 @@ export class ShippingService {
       where: { id: shipment.id },
       data: { labelKey: await this.storeLabel(orderId, shipment.id, label.labelPdf) },
     });
+    // The return is on the seller when the problem is theirs (SPEC §6.7).
+    const dispute = await this.db.dispute.findUnique({ where: { orderId } });
+    if (dispute?.sellerAtFault && (await this.policy()).chargeReturnLabelWhenSellerAtFault) {
+      const sizes = await this.db.platformSetting.findUnique({ where: { key: 'parcelSizes' } });
+      const price =
+        (sizes?.value as Record<string, { priceCents: number }> | undefined)?.[size]?.priceCents ??
+        0;
+      if (price)
+        await this.db.$transaction((tx) =>
+          writeLedger(
+            tx,
+            orderId,
+            sellerChargeEntries(price, o.sellerId, 'SHIPPING_PAYABLE'),
+            `return-label:${orderId}`,
+          ),
+        );
+    }
     return true;
   }
 
@@ -185,7 +217,13 @@ export class ShippingService {
       where: { orderId, toStatus: 'CANCELLED' },
       orderBy: { createdAt: 'desc' },
     });
-    if (last && SELLER_FAULT.includes(last.event) && o.shippingPriceCents > 0) {
+    const policy = await this.policy();
+    const charge = last
+      ? SELLER_FAULT.includes(last.event)
+        ? policy.chargeLabelOnSellerCancel
+        : last.event === 'MUTUAL_CANCEL' && policy.chargeLabelOnMutualCancel
+      : false;
+    if (charge && o.shippingPriceCents > 0) {
       await this.db.$transaction((tx) =>
         writeLedger(
           tx,

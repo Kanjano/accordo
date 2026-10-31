@@ -4,7 +4,10 @@ import {
   type OrderEffect,
   partialRefundEntries,
   processorFeeEntries,
+  refundAfterTransferEntries,
+  transferReversalEntries,
   transferToSellerEntries,
+  transferWithOffsetEntries,
 } from '@accordo/domain';
 import { applyOrderEvent, paymentInputOf, writeLedger } from '@accordo/orders';
 import type { PaymentEvent, PaymentProvider } from '@accordo/payments';
@@ -15,6 +18,7 @@ import { ENV, type Env } from '../env.js';
 import { PAYMENTS, PRISMA } from '../infra.js';
 import { QUEUES } from '../queues.js';
 import { ShippingService } from '../shipping/shipping.service.js';
+import { ChargebackService, sellerReceivable } from './chargebacks.js';
 import { ORDER_TEMPLATES } from './order-templates.js';
 
 interface EffectsJob {
@@ -38,6 +42,7 @@ export class PaymentsProcessor extends WorkerHost {
     @Inject(ENV) private readonly env: Env,
     @InjectQueue(QUEUES.notifications) private readonly notifications: Queue,
     private readonly shipping: ShippingService,
+    private readonly chargebacks: ChargebackService,
   ) {
     super();
   }
@@ -138,29 +143,10 @@ export class PaymentsProcessor extends WorkerHost {
         if (status.transfersEnabled) await this.releaseHeldTransfers(event.accountId);
         return;
       }
-      case 'dispute.created': {
-        const order = await this.db.order.findFirst({ where: { chargeId: event.chargeId } });
-        if (!order) return;
-        await this.db.paymentDispute.upsert({
-          where: { providerDisputeId: event.disputeId },
-          create: {
-            orderId: order.id,
-            providerDisputeId: event.disputeId,
-            amountCents: event.amountCents,
-            reason: event.reason,
-            status: 'needs_response',
-            evidenceDueBy: event.evidenceDueBy,
-          },
-          update: {},
-        });
-        // SPEC §6.8: hold the transfer if it has not left yet; evidence handling in Phase 8.
-        await this.db.order.updateMany({
-          where: { id: order.id, payoutStatus: { in: ['NOT_DUE', 'SCHEDULED'] } },
-          data: { payoutStatus: 'ON_HOLD' },
-        });
-        this.logger.warn(`Chargeback opened on order ${order.number}`);
-        return;
-      }
+      case 'dispute.created':
+        return this.chargebacks.opened(event);
+      case 'dispute.closed':
+        return this.chargebacks.closed(event, (orderId, amount) => this.transfer(orderId, amount));
       default:
         return;
     }
@@ -237,31 +223,44 @@ export class PaymentsProcessor extends WorkerHost {
       where: { id: orderId },
       include: { seller: { select: { paymentAccount: true } }, paymentDisputes: true },
     });
-    if (o.transferId || amountCents <= 0) return;
+    const ref = `transfer:${o.id}`;
+    if (
+      amountCents <= 0 ||
+      (await this.db.ledgerTransaction.findUnique({ where: { externalRef: ref } }))
+    )
+      return;
     const account = o.seller.paymentAccount;
-    if (!account?.transfersEnabled || o.paymentDisputes.length || !o.chargeId) {
+    const openChargeback = o.paymentDisputes.some((d) => d.status !== 'won' && d.status !== 'lost');
+    if (!account?.transfersEnabled || openChargeback || !o.chargeId) {
       await this.db.order.update({ where: { id: o.id }, data: { payoutStatus: 'ON_HOLD' } });
       return;
     }
-    const t = await this.provider.createTransfer({
-      amountCents,
-      currency: o.currency,
-      destination: account.providerAccountId,
-      sourceTransaction: o.chargeId,
-      transferGroup: o.transferGroup,
-      orderId: o.id,
-      idempotencyKey: `transfer:${o.id}`,
-    });
+    // What the seller owes (refunds after transfer, labels…) is offset first (SPEC §6.7).
+    const offset = Math.min(await sellerReceivable(this.db, o.sellerId), amountCents);
+    const t =
+      amountCents > offset
+        ? await this.provider.createTransfer({
+            amountCents: amountCents - offset,
+            currency: o.currency,
+            destination: account.providerAccountId,
+            sourceTransaction: o.chargeId,
+            transferGroup: o.transferGroup,
+            orderId: o.id,
+            idempotencyKey: ref,
+          })
+        : null;
     await this.db.$transaction(async (tx) => {
       await tx.order.update({
         where: { id: o.id },
-        data: { transferId: t.id, transferredAt: new Date(), payoutStatus: 'TRANSFERRED' },
+        data: { transferId: t?.id ?? null, transferredAt: new Date(), payoutStatus: 'TRANSFERRED' },
       });
       await writeLedger(
         tx,
         o.id,
-        transferToSellerEntries(amountCents, o.sellerId),
-        `transfer:${o.id}`,
+        offset
+          ? transferWithOffsetEntries(amountCents, offset, o.sellerId)
+          : transferToSellerEntries(amountCents, o.sellerId),
+        ref,
       );
     });
   }
@@ -281,6 +280,9 @@ export class PaymentsProcessor extends WorkerHost {
       orderId,
       idempotencyKey: key,
     });
+    const afterTransfer = !!o.transferredAt;
+    if (afterTransfer && amountCents > o.sellerNetCents)
+      throw new Error(`Refund ${key} above what the seller received: handle manually`);
     await this.db.$transaction(async (tx) => {
       await tx.refund.upsert({
         where: { providerRefundId: r.id },
@@ -297,9 +299,11 @@ export class PaymentsProcessor extends WorkerHost {
       const fresh = await writeLedger(
         tx,
         orderId,
-        includesBuyerFee && amountCents === o.totalCents
-          ? fullRefundBeforeTransferEntries(paymentInputOf(o))
-          : partialRefundEntries(amountCents, o.sellerId),
+        afterTransfer
+          ? refundAfterTransferEntries(amountCents, o.sellerId)
+          : includesBuyerFee && amountCents === o.totalCents
+            ? fullRefundBeforeTransferEntries(paymentInputOf(o))
+            : partialRefundEntries(amountCents, o.sellerId),
         key,
       );
       if (fresh)
@@ -308,6 +312,26 @@ export class PaymentsProcessor extends WorkerHost {
           data: { refundedCents: { increment: amountCents } },
         });
     });
+    // After the transfer, try to take it back; otherwise the receivable is offset later.
+    if (afterTransfer && o.transferId)
+      await this.reverse(o.id, o.transferId, o.sellerId, amountCents, key);
+  }
+
+  async reverse(
+    orderId: string,
+    transferId: string,
+    sellerId: string,
+    amountCents: number,
+    key: string,
+  ) {
+    try {
+      await this.provider.reverseTransfer(transferId, amountCents, `reversal:${key}`);
+      await this.db.$transaction((tx) =>
+        writeLedger(tx, orderId, transferReversalEntries(amountCents, sellerId), `reversal:${key}`),
+      );
+    } catch (e) {
+      this.logger.warn(`Transfer reversal ${key} failed, seller credit kept: ${String(e)}`);
+    }
   }
 
   private async notify(

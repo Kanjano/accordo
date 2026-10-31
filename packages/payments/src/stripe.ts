@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import {
   type ConnectedAccountStatus,
+  type DisputeEvidence,
   InvalidWebhookSignatureError,
   type ParsedWebhook,
   type PaymentEvent,
@@ -146,6 +147,30 @@ export class StripePaymentProvider implements PaymentProvider {
     return { id: r.id };
   }
 
+  async reverseTransfer(transferId: string, amountCents: number, idempotencyKey: string) {
+    const r = await this.stripe.transfers.createReversal(
+      transferId,
+      { amount: amountCents },
+      { idempotencyKey },
+    );
+    return { id: r.id };
+  }
+
+  async submitDisputeEvidence(disputeId: string, e: DisputeEvidence) {
+    await this.stripe.disputes.update(disputeId, {
+      evidence: {
+        product_description: e.productDescription,
+        customer_name: e.customerName,
+        customer_email_address: e.customerEmail,
+        shipping_carrier: e.shippingCarrier,
+        shipping_tracking_number: e.shippingTrackingNumber,
+        shipping_date: e.shippingDate,
+        uncategorized_text: e.uncategorizedText,
+      },
+      submit: true,
+    });
+  }
+
   parseWebhook(rawBody: Buffer, signature: string | undefined): ParsedWebhook {
     let e: Stripe.Event;
     try {
@@ -193,6 +218,16 @@ function normalise(e: Stripe.Event): PaymentEvent {
         evidenceDueBy: d.evidence_details?.due_by
           ? new Date(d.evidence_details.due_by * 1000)
           : null,
+      };
+    }
+    case 'charge.dispute.closed': {
+      const d = e.data.object;
+      return {
+        kind: 'dispute.closed',
+        disputeId: d.id,
+        chargeId: typeof d.charge === 'string' ? d.charge : d.charge.id,
+        status: d.status === 'won' ? 'won' : 'lost',
+        amountCents: d.amount,
       };
     }
     case 'transfer.reversed':

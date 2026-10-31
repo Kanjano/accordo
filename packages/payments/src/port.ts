@@ -27,6 +27,13 @@ export type PaymentEvent =
       reason: string;
       evidenceDueBy: Date | null;
     }
+  | {
+      kind: 'dispute.closed';
+      disputeId: string;
+      chargeId: string;
+      status: 'won' | 'lost';
+      amountCents: number;
+    }
   | { kind: 'transfer.reversed'; transferId: string }
   | { kind: 'ignored' };
 
@@ -78,6 +85,26 @@ export interface PaymentProvider {
     orderId: string;
     idempotencyKey: string;
   }): Promise<{ id: string }>;
+  /** Takes back (part of) a transfer already made to the seller (SPEC §6.7). */
+  reverseTransfer(
+    transferId: string,
+    amountCents: number,
+    idempotencyKey: string,
+  ): Promise<{ id: string }>;
+  /** Submits chargeback evidence before the deadline (SPEC §6.8). */
+  submitDisputeEvidence(disputeId: string, evidence: DisputeEvidence): Promise<void>;
   /** Verifies the signature on the raw body, then normalises the event. */
   parseWebhook(rawBody: Buffer, signature: string | undefined): ParsedWebhook;
+}
+
+/** Evidence collected automatically for a chargeback (SPEC §6.8). */
+export interface DisputeEvidence {
+  productDescription: string;
+  customerName: string;
+  customerEmail: string;
+  shippingCarrier?: string;
+  shippingTrackingNumber?: string;
+  shippingDate?: string;
+  /** Delivery events, chat excerpt, hand-delivery verification log, 3DS outcome… */
+  uncategorizedText: string;
 }

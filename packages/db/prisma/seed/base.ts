@@ -197,6 +197,12 @@ export function defaultPlatformSettings(): Record<string, Prisma.InputJsonValue>
       newSellerDays: 30,
       newSellerReviewAboveCents: 200_000,
     },
+    // SPEC §6.7, configurable (ADR-0042): who pays labels and returns in each case.
+    refundPolicy: {
+      chargeLabelOnSellerCancel: true,
+      chargeLabelOnMutualCancel: false,
+      chargeReturnLabelWhenSellerAtFault: true,
+    },
     bannedTerms: BANNED_TERMS,
     featureFlags: {},
   };

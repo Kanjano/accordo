@@ -169,6 +169,19 @@ export async function applyOrderEvent(
     },
   });
   await applySyncEffects(tx, order, result.effects, opts.handoverPepper);
+  // An order closed by its dispute (return accepted or not shipped, release…) closes the dispute.
+  if (result.to === 'COMPLETED' || result.to === 'REFUNDED')
+    await tx.dispute.updateMany({
+      where: {
+        orderId,
+        status: { in: ['OPEN', 'AWAITING_BUYER', 'UNDER_REVIEW', 'AWAITING_RETURN'] },
+      },
+      data: {
+        status: 'RESOLVED',
+        resolvedAt: now,
+        ...(event.type === 'RETURN_NOT_SHIPPED' ? { outcome: 'RELEASE_TO_SELLER' as const } : {}),
+      },
+    });
   const asyncEffects = result.effects.filter((e) => ASYNC_EFFECTS.has(e.type));
   if (asyncEffects.length)
     await outbox(tx, 'Order', orderId, 'order.effects', {

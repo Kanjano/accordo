@@ -90,7 +90,8 @@ export type OrderAction =
   | 'acceptCancel'
   | 'confirmReceipt'
   | 'showHandoverCode'
-  | 'verifyHandover';
+  | 'verifyHandover'
+  | 'openDispute';
 
 export interface OrderSummary {
   id: string;
@@ -135,6 +136,7 @@ export interface OrderDetail extends OrderSummary {
   /** Pending mutual-cancellation request, if any. */
   cancelRequest: { byMe: boolean; at: string } | null;
   handoverLockedTill: string | null;
+  dispute: { id: string; status: string } | null;
 }
 
 export interface PaymentAccountDto {

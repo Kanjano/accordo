@@ -73,6 +73,11 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - Spedizioni via `packages/shipping` (`SHIPPING_PROVIDER=mock` in sviluppo e test; `sendcloud` con chiavi reali). Etichette nel bucket privato, mai URL pubblici. Gli eventi di tracking arrivano solo via webhook firmato → coda `shipping`; in sviluppo `POST /api/v1/dev/shipments/:id/advance`.
 - Per vendere con spedizione integrata il venditore deve avere un indirizzo `SENDER`.
 
+## Note di implementazione (Fase 8)
+
+- Controversie: regole in `packages/domain/src/disputes.ts`, applicazione con `applyDisputeAction` (`packages/orders`); il denaro si muove solo tramite gli eventi dell'ordine. `runDueAction` esegue i timer (sweeper e `POST /api/v1/dev/orders/:id/run-timer`).
+- Rimborsi dopo il trasferimento e chargeback persi creano crediti `SELLER_RECEIVABLE`, compensati nei trasferimenti successivi.
+
 ## Regole d'oro del dominio
 
 - Lo stato di un ordine cambia **solo** tramite `OrderStateMachine` (§6.4) e `OrdersService.transition()`; mai `update` diretti sulla colonna `status`.

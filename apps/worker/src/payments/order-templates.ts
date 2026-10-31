@@ -95,4 +95,78 @@ export const ORDER_TEMPLATES: Record<string, Text> = {
     'Controversia aperta',
     `È stata aperta una controversia sull'ordine ${n} («${t}»).`,
   ],
+  'dispute.seller_responded': (_to, t, n) => [
+    'Il venditore ha risposto',
+    `Il venditore ha risposto alla controversia sull'ordine ${n} («${t}»). Controlla la proposta nella pagina dell'ordine.`,
+  ],
+  'dispute.proposal_accepted': (_to, t, n) => [
+    'Proposta accettata',
+    `L'acquirente ha accettato il rimborso parziale proposto per l'ordine ${n} («${t}»). Il resto del pagamento ti viene trasferito.`,
+  ],
+  'dispute.escalated': (_to, t, n) => [
+    'Controversia al supporto',
+    `La controversia sull'ordine ${n} («${t}») passa al nostro supporto, che deciderà entro 5 giorni lavorativi. Potrebbe chiedervi altre prove.`,
+  ],
+  'dispute.withdrawn': (_to, t, n) => [
+    'Controversia ritirata',
+    `L'acquirente ha ritirato la controversia sull'ordine ${n} («${t}»): il pagamento ti viene trasferito.`,
+  ],
+  'dispute.resolved': (_to, t, n) => [
+    'Controversia decisa',
+    `Il supporto ha deciso la controversia sull'ordine ${n} («${t}»). Trovi la motivazione nella pagina dell'ordine; puoi presentare ricorso entro 7 giorni.`,
+  ],
+  'dispute.appealed': (_to, t, n) => [
+    'Ricorso presentato',
+    `È stato presentato un ricorso sulla decisione per l'ordine ${n} («${t}»). Lo esaminerà un altro membro dello staff.`,
+  ],
+  'dispute.appeal_decided': (_to, t, n) => [
+    'Esito del ricorso',
+    `Il ricorso sull'ordine ${n} («${t}») è stato esaminato. Trovi l'esito nella pagina dell'ordine.`,
+  ],
+  'dispute.return_required': (to, t, n) =>
+    to === 'BUYER'
+      ? [
+          'Reso richiesto',
+          `Per l'ordine ${n} («${t}») è previsto il reso: scarica l'etichetta dalla pagina dell'ordine e spedisci entro 5 giorni lavorativi. Il rimborso parte quando il venditore lo riceve.`,
+        ]
+      : [
+          'Reso in arrivo',
+          `L'acquirente ti rispedirà «${t}» (ordine ${n}). Alla consegna avrai 48 ore per segnalare problemi sullo stato dell'oggetto.`,
+        ],
+  'dispute.resolved.full_refund': (_to, t, n) => [
+    'Rimborso totale',
+    `La controversia sull'ordine ${n} («${t}») si è chiusa con il rimborso totale all'acquirente.`,
+  ],
+  'dispute.resolved.partial_refund': (_to, t, n) => [
+    'Rimborso parziale',
+    `La controversia sull'ordine ${n} («${t}») si è chiusa con un rimborso parziale; il resto è trasferito al venditore.`,
+  ],
+  'dispute.resolved.release': (_to, t, n) => [
+    'Controversia chiusa',
+    `La controversia sull'ordine ${n} («${t}») si è chiusa: il pagamento è trasferito al venditore.`,
+  ],
+  'dispute.return_accepted': (_to, t, n) => [
+    'Reso accettato',
+    `Il reso dell'ordine ${n} («${t}») è stato accettato: rimborso totale all'acquirente.`,
+  ],
+  'dispute.return_not_shipped': (_to, t, n) => [
+    'Reso non spedito',
+    `Il reso dell'ordine ${n} («${t}») non è stato spedito in tempo: il pagamento è trasferito al venditore.`,
+  ],
+  'chargeback.opened': (_to, t, n) => [
+    'Contestazione bancaria',
+    `L'acquirente ha contestato con la banca il pagamento dell'ordine ${n} («${t}»). Abbiamo inviato le prove a Stripe; il trasferimento è sospeso fino all'esito.`,
+  ],
+  'chargeback.won': (_to, t, n) => [
+    'Contestazione respinta',
+    `La banca ha respinto la contestazione sull'ordine ${n} («${t}»).`,
+  ],
+  'chargeback.lost_protected': (_to, t, n) => [
+    'Sei protetto',
+    `La contestazione sull'ordine ${n} («${t}») è stata accolta dalla banca, ma hai rispettato le regole: la perdita è a carico nostro.`,
+  ],
+  'chargeback.lost_seller': (_to, t, n) => [
+    'Contestazione accolta',
+    `La contestazione sull'ordine ${n} («${t}») è stata accolta dalla banca e l'importo viene recuperato dai tuoi incassi.`,
+  ],
 };

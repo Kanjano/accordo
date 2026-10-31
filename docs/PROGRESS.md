@@ -186,3 +186,31 @@ Provider scelto dall'utente: **Sendcloud**. Credenziali sandbox non disponibili:
 
 **Rimandato**
 - Ticket di supporto per eccezioni e resi al mittente (Fase 11), tracking multi-corriere per la spedizione autonoma (dopo l'MVP), riconciliazione delle fatture del provider (Fase 11).
+
+## Fase 8 — Controversie, rimborsi, chargeback
+
+**Piano**
+1. Dominio: macchina a stati della controversia (§6.6: risposta del venditore, proposta parziale, accettazione, escalation, ritiro, scadenze, decisione dello staff, ricorso) come funzione pura; scritture del ledger per storno del trasferimento e compensazione dei crediti verso il venditore.
+2. `packages/orders`: `applyDisputeAction` (aggiorna controversia, timer dell'ordine, evento dell'ordine via `applyOrderEvent`, controversie perse, notifiche) e `runDueAction` condiviso tra sweeper e endpoint di sviluppo.
+3. API: apertura con prove (foto nel bucket privato), dettaglio, messaggi, prove aggiuntive, risposta del venditore, accetta proposta, escalation, ritiro, ricorso; admin: elenco, richiesta prove, decisione motivata, esito del ricorso; endpoint di sviluppo per timer e chargeback.
+4. Worker: scadenze della controversia, rimborsi anche dopo il trasferimento (storno o credito `SELLER_RECEIVABLE`, compensato nei trasferimenti successivi), chargeback (`ON_HOLD`, raccolta e invio prove, esito vinto/perso con protezione venditore), politica §6.7 configurabile (`refundPolicy`).
+5. Web: apertura della controversia con foto, pannello controversia nella pagina ordine per entrambe le parti, admin controversie.
+6. Test: dominio, integrazione (flussi §6.6, ledger bilanciato in ogni esito, chargeback vinto e perso), e2e J5 e J8.
+
+**Fatto**
+- Dominio: `disputeStep` (procedura §6.6 completa, ricorso con revisore diverso), `disputeOpeningError`, scritture del ledger per rimborso dopo trasferimento, storno, compensazione dei crediti, chargeback a carico del venditore. Copertura 99,7%.
+- Database: campi del ricorso e `sellerAtFault` sulla controversia (2 migrazioni), impostazione `refundPolicy`.
+- `packages/orders`: `applyDisputeAction` e `runDueAction` (sweeper + endpoint di sviluppo); chiusura della controversia quando l'ordine si chiude.
+- API: apertura con prove nel bucket privato, dettaglio con azioni disponibili, messaggi, prove aggiuntive, risposta del venditore, accetta proposta, escalation, ritiro, ricorso; admin: coda, richiesta prove, decisione motivata, esame del ricorso, rimborso manuale; sviluppo: timer eseguito subito, chargeback simulati.
+- Porta pagamenti: `reverseTransfer`, `submitDisputeEvidence`, evento `dispute.closed` (adapter finto e Stripe).
+- Worker: scadenze delle controversie, rimborsi prima/dopo il trasferimento, compensazione dei crediti nei trasferimenti, chargeback con prove automatiche e protezione del venditore, addebiti di etichette e resi secondo `refundPolicy`, notifiche di controversie e chargeback.
+- Web: "Segnala un problema" con foto, pannello controversia nella pagina ordine (scadenze, proposta, esito e motivazione, prove, messaggi, risposta del venditore, accetta, escalation, ritiro, ricorso), `/admin/controversie` (coda, decisione, ricorso).
+- Criteri: e2e J5 (non conforme con 2 foto → proposta di 30 € → accettata → rimborso parziale → resto trasferito) e J8 (timer forzati → annullamento → rimborso totale); chargeback simulato vinto, perso con protezione, perso senza protezione e dopo trasferimento (integrazione worker) e sul database di sviluppo; ledger bilanciato in tutti i casi (controllo notturno a zero nei test, 0 transazioni sbilanciate sul database di sviluppo).
+- Test: dominio (controversie e ledger), 6 integrazione API (apertura e regole, proposta parziale, scadenza + decisione + ricorso, reso, ritiro, J8), 5 integrazione worker (rimborso parziale, chargeback vinto/perso con e senza protezione, storno e compensazione), e2e J5 e J8 (11 e2e in totale).
+- Decisioni: ADR-0042, ADR-0043.
+
+**Da verificare con Stripe test**
+- Carta `4000 0000 0000 0259` → `charge.dispute.created`, invio prove e `charge.dispute.closed`; storni dei trasferimenti.
+
+**Rimandato**
+- Notifiche allo staff in una casella del backoffice (oggi log + notifiche agli admin; Fase 11), timer per la decisione dello staff entro 5 giorni lavorativi (avviso, Fase 11).

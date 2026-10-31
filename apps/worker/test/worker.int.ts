@@ -16,6 +16,7 @@ import { NotificationsProcessor } from '../src/notifications/notifications.proce
 import { Notifier } from '../src/notifications/notifier.js';
 import { OffersProcessor } from '../src/offers.js';
 import { OutboxDispatcher } from '../src/outbox.dispatcher.js';
+import { ChargebackService, sellerReceivable } from '../src/payments/chargebacks.js';
 import { NightlyChecks, OrdersSweeper } from '../src/payments/orders-sweeper.js';
 import { PaymentsProcessor } from '../src/payments/payments.processor.js';
 import { SavedSearchAlertsProcessor } from '../src/search/saved-search-alerts.js';
@@ -370,6 +371,7 @@ describe('payments', () => {
   const penv = { ...env, HANDOVER_CODE_PEPPER: pepper } as Env;
   const provider = new FakePaymentProvider('secret');
   const transfers: unknown[] = [];
+  let reversalWorks = true;
   const refunds: unknown[] = [];
   const spy = Object.assign(Object.create(provider), {
     createTransfer: async (i: { idempotencyKey: string }) => {
@@ -379,6 +381,10 @@ describe('payments', () => {
     refund: async (i: { idempotencyKey: string }) => {
       refunds.push(i);
       return provider.refund(i as never);
+    },
+    reverseTransfer: async (id: string, amount: number, key: string) => {
+      if (!reversalWorks) throw new Error('balance too low');
+      return provider.reverseTransfer(id, amount, key);
     },
   }) as FakePaymentProvider;
   const notifications = { add: vi.fn() } as unknown as Queue;
@@ -396,7 +402,14 @@ describe('payments', () => {
     const shippingService = new ShippingService(db, shippingProvider, shippingProvider, s3, {
       S3_BUCKET_PRIVATE: 'private',
     } as Env);
-    processor = new PaymentsProcessor(db, spy, penv, notifications, shippingService);
+    processor = new PaymentsProcessor(
+      db,
+      spy,
+      penv,
+      notifications,
+      shippingService,
+      new ChargebackService(db, spy),
+    );
     await db.platformSetting.createMany({
       data: [
         { key: 'orderTimings', value: {} },
@@ -704,5 +717,179 @@ describe('payments', () => {
     expect((await db.shipment.findFirstOrThrow({ where: { orderId: other.id } })).status).toBe(
       'CANCELLED',
     );
+  });
+
+  const apply = (orderId: string, event: never, role: 'SELLER' | 'SYSTEM' = 'SYSTEM') =>
+    db.$transaction((tx) =>
+      applyOrderEvent(
+        tx,
+        orderId,
+        event,
+        { role, id: role === 'SELLER' ? sellerId : null },
+        { handoverPepper: pepper },
+      ),
+    );
+  const nightly = () => new NightlyChecks(db, new Notifier(env, db, email)).run(new Date());
+  const zeroReport = {
+    unbalancedTransactions: 0,
+    closedOrdersWithPayable: 0,
+    heldOver60Days: 0,
+    heldOver85Days: 0,
+    shippingExceptionsOver5Days: 0,
+  };
+
+  it('dispute with partial refund: refund on the item, the rest transferred, ledger balanced', async () => {
+    const o = await order('SHIPPING_SELF');
+    await succeeded(o);
+    await apply(o.id, {
+      type: 'SHIPMENT_CONFIRMED',
+      carrier: 'BRT',
+      trackingNumber: 'BRT1234567',
+    } as never);
+    await apply(o.id, { type: 'DELIVERED', deliveredAt: new Date() } as never);
+    await apply(o.id, { type: 'DISPUTE_OPENED', reason: 'NOT_AS_DESCRIBED' } as never);
+    await apply(o.id, { type: 'RESOLVED_PARTIAL_REFUND', refundCents: 3000 } as never);
+    // An earlier test left a label charge on this seller: it is offset on this transfer.
+    const owed = await sellerReceivable(db, sellerId);
+    await runEffects(o.id);
+    await runEffects(o.id);
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      status: 'COMPLETED',
+      refundedCents: 3000,
+      payoutStatus: 'TRANSFERRED',
+    });
+    expect(transfers.at(-1)).toMatchObject({ amountCents: 13_000 - 3000 - owed });
+    expect(await nightly()).toEqual(zeroReport);
+  });
+
+  it('chargeback: evidence submitted, transfer held, released when won', async () => {
+    const o = await order('HAND_DELIVERY');
+    await succeeded(o);
+    await webhook({
+      kind: 'dispute.created',
+      disputeId: `dp_${o.id}`,
+      chargeId: `ch_${o.id}`,
+      amountCents: o.totalCents,
+      reason: 'fraudulent',
+      evidenceDueBy: null,
+    });
+    expect(
+      await db.paymentDispute.findUniqueOrThrow({ where: { providerDisputeId: `dp_${o.id}` } }),
+    ).toMatchObject({ status: 'under_review' });
+    await apply(o.id, { type: 'HANDOVER_CODE_VERIFIED' } as never, 'SELLER');
+    await runEffects(o.id);
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      payoutStatus: 'ON_HOLD',
+      transferredAt: null,
+    });
+    await webhook({
+      kind: 'dispute.closed',
+      disputeId: `dp_${o.id}`,
+      chargeId: `ch_${o.id}`,
+      status: 'won',
+      amountCents: o.totalCents,
+    });
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      payoutStatus: 'TRANSFERRED',
+    });
+    expect(await nightly()).toEqual(zeroReport);
+  });
+
+  it('chargeback lost with seller protection: the platform bears it, the seller is paid', async () => {
+    const o = await order('HAND_DELIVERY');
+    await succeeded(o);
+    await apply(o.id, { type: 'HANDOVER_CODE_VERIFIED' } as never, 'SELLER');
+    await webhook({
+      kind: 'dispute.created',
+      disputeId: `dp_${o.id}`,
+      chargeId: `ch_${o.id}`,
+      amountCents: o.totalCents,
+      reason: 'fraudulent',
+      evidenceDueBy: null,
+    });
+    await runEffects(o.id); // completion effects: transfer held by the open chargeback
+    await webhook({
+      kind: 'dispute.closed',
+      disputeId: `dp_${o.id}`,
+      chargeId: `ch_${o.id}`,
+      status: 'lost',
+      amountCents: o.totalCents,
+    });
+    expect(
+      await db.ledgerTransaction.count({
+        where: { externalRef: `chargeback:dp_${o.id}`, type: 'CHARGEBACK_LOST' },
+      }),
+    ).toBe(1);
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      payoutStatus: 'TRANSFERRED',
+    });
+    expect(await nightly()).toEqual(zeroReport);
+  });
+
+  it('chargeback lost without protection before the transfer: the seller payable is cancelled', async () => {
+    const o = await order('SHIPPING_SELF');
+    await succeeded(o);
+    await webhook({
+      kind: 'dispute.created',
+      disputeId: `dp_${o.id}`,
+      chargeId: `ch_${o.id}`,
+      amountCents: o.totalCents,
+      reason: 'fraudulent',
+      evidenceDueBy: null,
+    });
+    await webhook({
+      kind: 'dispute.closed',
+      disputeId: `dp_${o.id}`,
+      chargeId: `ch_${o.id}`,
+      status: 'lost',
+      amountCents: o.totalCents,
+    });
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      payoutStatus: 'REVERSED',
+    });
+    const payable = await db.ledgerEntry.findMany({
+      where: { account: 'SELLER_PAYABLE', transaction: { orderId: o.id } },
+    });
+    const balance = payable.reduce(
+      (n, e) => n + (e.direction === 'CREDIT' ? e.amountCents : -e.amountCents),
+      0,
+    );
+    expect(balance).toBe(0);
+    expect(await nightly()).toEqual(zeroReport);
+  });
+
+  it('refund after the transfer: reversal, or a seller credit offset on the next transfer', async () => {
+    const done = async () => {
+      const o = await order('HAND_DELIVERY');
+      await succeeded(o);
+      await apply(o.id, { type: 'HANDOVER_CODE_VERIFIED' } as never, 'SELLER');
+      await runEffects(o.id);
+      return o;
+    };
+    const refundEffect = (orderId: string, amountCents: number, key: string) =>
+      processor.process({
+        name: 'order.effects',
+        data: {
+          orderId,
+          eventId: key,
+          effects: [{ type: 'REFUND', amountCents, includesBuyerFee: false }],
+        },
+      } as never);
+
+    const a = await done();
+    await refundEffect(a.id, 2000, 'admin-1');
+    expect(await sellerReceivable(db, sellerId)).toBe(0); // reversed
+    reversalWorks = false;
+    const b = await done();
+    await refundEffect(b.id, 2000, 'admin-2');
+    expect(await sellerReceivable(db, sellerId)).toBe(2000); // the seller owes it
+    reversalWorks = true;
+    const c = await done(); // next transfer is net of the credit
+    expect(transfers.at(-1)).toMatchObject({ amountCents: 12_000 - 2000 });
+    expect(await sellerReceivable(db, sellerId)).toBe(0);
+    expect(await db.order.findUniqueOrThrow({ where: { id: c.id } })).toMatchObject({
+      payoutStatus: 'TRANSFERRED',
+    });
+    expect((await nightly()).unbalancedTransactions).toBe(0);
   });
 });

@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@accordo/db';
-import { type NextAction, OrderTransitionError, sweeperStep } from '@accordo/domain';
-import { applyOrderEvent, OrderConflictError, snapshot } from '@accordo/orders';
+import { DisputeActionError, OrderTransitionError } from '@accordo/domain';
+import { OrderConflictError, runDueAction } from '@accordo/orders';
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import type { Queue } from 'bullmq';
@@ -52,51 +52,14 @@ export class OrdersSweeper extends WorkerHost {
     });
     let handled = 0;
     for (const order of due) {
-      const step = sweeperStep(order.nextAction as NextAction, snapshot(order));
       try {
-        await this.db.$transaction(async (tx) => {
-          if (!step) {
-            // Dispute deadlines arrive with Phase 8: park the timer instead of looping on it.
-            await tx.order.update({ where: { id: order.id }, data: { nextActionAt: null } });
-          } else if (step.kind === 'event') {
-            await applyOrderEvent(
-              tx,
-              order.id,
-              step.event,
-              { role: 'SYSTEM', id: null },
-              {
-                handoverPepper: this.env.HANDOVER_CODE_PEPPER,
-                now,
-              },
-            );
-          } else {
-            const { count } = await tx.order.updateMany({
-              where: { id: order.id, version: order.version },
-              data: {
-                nextAction: step.timer?.action ?? null,
-                nextActionAt: step.timer?.at ?? null,
-                version: { increment: 1 },
-              },
-            });
-            if (!count) throw new OrderConflictError(order.id);
-            await tx.outboxEvent.create({
-              data: {
-                aggregateType: 'Order',
-                aggregateId: order.id,
-                type: 'order.effects',
-                payload: {
-                  orderId: order.id,
-                  eventId: `${order.nextAction}:${order.version}`,
-                  effects: step.effects as object[],
-                },
-              },
-            });
-          }
-        });
+        await this.db.$transaction((tx) =>
+          runDueAction(tx, order, now, this.env.HANDOVER_CODE_PEPPER),
+        );
         handled++;
       } catch (e) {
         if (e instanceof OrderConflictError) continue; // changed meanwhile: next run
-        if (e instanceof OrderTransitionError) {
+        if (e instanceof OrderTransitionError || e instanceof DisputeActionError) {
           this.logger.warn(`Order ${order.number}: ${e.message}; timer cleared`);
           await this.db.order.update({ where: { id: order.id }, data: { nextActionAt: null } });
           continue;

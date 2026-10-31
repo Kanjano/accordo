@@ -65,6 +65,12 @@ export class FakePaymentProvider implements PaymentProvider {
     return { id: id('fake_tr', i.idempotencyKey) };
   }
 
+  async reverseTransfer(_transferId: string, _amountCents: number, idempotencyKey: string) {
+    return { id: id('fake_trr', idempotencyKey) };
+  }
+
+  async submitDisputeEvidence() {}
+
   async refund(i: { idempotencyKey: string }) {
     return { id: id('fake_re', i.idempotencyKey) };
   }

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Prisma, PrismaClient } from '@accordo/db';
 import {
   computeOrderAmounts,
+  DisputeActionError,
   deriveHandoverCode,
   generateOrderNumber,
   handoverCodeMatches,
@@ -15,6 +16,7 @@ import {
   applyOrderEvent,
   loadOrderSettings,
   OrderConflictError,
+  runDueAction,
 } from '@accordo/orders';
 import type { PaymentProvider } from '@accordo/payments';
 import type {
@@ -65,6 +67,7 @@ function rethrow(e: unknown): never {
       detail: e.message,
     });
   if (e instanceof OrderConflictError) throw new ConflictException({ code: 'ORDER_CHANGED' });
+  if (e instanceof DisputeActionError) throw new ConflictException({ code: e.code });
   throw e;
 }
 
@@ -386,9 +389,10 @@ export class OrdersService {
 
   async detail(userId: string, id: string, staff = false): Promise<OrderDetail> {
     const o = await this.party(userId, id, staff);
-    const [events, shipments] = await Promise.all([
+    const [events, shipments, dispute] = await Promise.all([
       this.db.orderEvent.findMany({ where: { orderId: id }, orderBy: { createdAt: 'asc' } }),
       this.db.shipment.findMany({ where: { orderId: id }, orderBy: { createdAt: 'asc' } }),
+      this.db.dispute.findUnique({ where: { orderId: id }, select: { id: true, status: true } }),
     ]);
     const isBuyer = o.buyerId === userId;
     const cancelRequest = this.pendingCancelRequest(events);
@@ -398,6 +402,8 @@ export class OrdersService {
       if (s === 'CHECKOUT_PENDING') actions.push('pay');
       if (s === 'HANDOVER_PENDING') actions.push('showHandoverCode');
       if (s === 'SHIPPED' || s === 'DELIVERED') actions.push('confirmReceipt');
+      // Timing rules (not received only after the expected delivery) are checked on submit.
+      if ((s === 'SHIPPED' || s === 'DELIVERED') && !dispute) actions.push('openDispute');
     } else if (o.sellerId === userId) {
       if (s === 'PAID' && o.deliveryMethod === 'SHIPPING_SELF') actions.push('ship');
       if (s === 'PAID') actions.push('cancel');
@@ -454,6 +460,7 @@ export class OrdersService {
         ? { byMe: cancelRequest.actorId === userId, at: cancelRequest.createdAt.toISOString() }
         : null,
       handoverLockedTill: o.handoverLockedTill?.toISOString() ?? null,
+      dispute,
     };
   }
 
@@ -471,12 +478,51 @@ export class OrdersService {
     return last?.event === 'CANCEL_REQUESTED' ? last : null;
   }
 
-  /** Development only (via DevPaymentsController). */
-  async dueNow(id: string) {
-    await this.db.order.updateMany({
-      where: { id, nextAction: { not: null } },
-      data: { nextActionAt: new Date() },
-    });
+  /** Development only: runs the order's pending timer now, like the sweeper would (J8). */
+  async runTimerNow(id: string) {
+    const order = await this.db.order.findUniqueOrThrow({ where: { id } });
+    if (!order.nextAction) throw new ConflictException({ code: 'NO_TIMER' });
+    try {
+      const ran = await this.db.$transaction((tx) =>
+        runDueAction(tx, order, new Date(), this.env.HANDOVER_CODE_PEPPER),
+      );
+      return { action: order.nextAction, ran };
+    } catch (e) {
+      rethrow(e);
+    }
+  }
+
+  /** Staff refund on a completed order: a REFUND effect for the worker (no state change). */
+  async adminRefund(staffId: string, id: string, amountCents: number, reason: string) {
+    const o = await this.db.order.findUniqueOrThrow({ where: { id } });
+    if (o.status !== 'COMPLETED') throw new ConflictException({ code: 'ORDER_NOT_COMPLETED' });
+    if (amountCents > o.sellerNetCents - o.refundedCents)
+      throw new UnprocessableEntityException({ code: 'REFUND_OUT_OF_RANGE' });
+    const eventId = `admin-refund:${randomUUID()}`;
+    await this.db.$transaction([
+      this.db.outboxEvent.create({
+        data: {
+          aggregateType: 'Order',
+          aggregateId: id,
+          type: 'order.effects',
+          payload: {
+            orderId: id,
+            eventId,
+            effects: [{ type: 'REFUND', amountCents, includesBuyerFee: false }],
+          },
+        },
+      }),
+      this.db.auditLog.create({
+        data: {
+          actorId: staffId,
+          action: 'order.refund',
+          entityType: 'Order',
+          entityId: id,
+          metadata: { amountCents, reason, eventId },
+        },
+      }),
+    ]);
+    return { queued: true, eventId };
   }
 
   // ───────────── Actions ─────────────

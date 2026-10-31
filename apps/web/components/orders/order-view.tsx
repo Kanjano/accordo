@@ -15,6 +15,7 @@ import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { formatPrice } from '@/lib/format';
 import { useErrorMessage } from '@/lib/use-error-message';
+import { DisputePanel } from './dispute';
 
 export function Amounts({
   amounts: a,
@@ -207,6 +208,14 @@ export function OrderView({ id }: { id: string }) {
               {t('showCode')}
             </Button>
           ) : null}
+          {can('openDispute') ? (
+            <Link
+              href={`/account/acquisti/${o.id}/controversia`}
+              className={buttonVariants({ variant: 'outline' })}
+            >
+              {t('openDispute')}
+            </Link>
+          ) : null}
           {can('cancel') ? (
             <Button
               variant="outline"
@@ -262,6 +271,8 @@ export function OrderView({ id }: { id: string }) {
           />
         ) : null}
       </section>
+
+      {o.dispute ? <DisputePanel disputeId={o.dispute.id} /> : null}
 
       <div className="grid gap-6 md:grid-cols-2">
         <section aria-labelledby="amounts" className="grid content-start gap-2">

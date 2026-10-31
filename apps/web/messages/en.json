@@ -123,7 +123,23 @@
     "NO_CANCEL_REQUEST": "There's no cancellation request to accept.",
     "TRACKING_INVALID": "Invalid tracking number.",
     "SERVICE_POINT_NOT_FOUND": "The chosen pickup point is not available.",
-    "INVALID_CAP": "Invalid postcode."
+    "INVALID_CAP": "Invalid postcode.",
+    "DESCRIPTION_TOO_SHORT": "Describe the problem in at least 30 characters.",
+    "PHOTOS_REQUIRED": "This reason needs at least 2 photos.",
+    "DISPUTE_NOT_ALLOWED": "A dispute can't be opened right now (for \"not received\" wait for the expected delivery date plus 3 days; for other reasons you have 72 hours from delivery).",
+    "DISPUTE_EXISTS": "There is already a dispute on this order.",
+    "DISPUTE_CLOSED": "The dispute is closed.",
+    "INVALID_DISPUTE_STATE": "This action isn't available in the dispute's current state.",
+    "REFUND_OUT_OF_RANGE": "The amount must be positive and not above the item price.",
+    "NOT_ALLOWED": "Action not allowed.",
+    "ALREADY_APPEALED": "You already appealed.",
+    "APPEAL_WINDOW_CLOSED": "The 7-day appeal period is over.",
+    "SAME_REVIEWER": "The appeal must be reviewed by another staff member.",
+    "NO_PENDING_APPEAL": "There is no appeal to review.",
+    "OUTCOME_NOT_AVAILABLE": "Outcome not available after the return.",
+    "NOTES_TOO_SHORT": "Write a motivation of at least 20 characters.",
+    "INVALID_UPLOAD_KEY": "Invalid upload.",
+    "ORDER_NOT_COMPLETED": "The order is not completed."
   },
   "Validation": {
     "EMAIL_INVALID": "Enter a valid email address.",
@@ -142,7 +158,8 @@
     "TITLE_TOO_LONG": "At most 120 characters.",
     "DESCRIPTION_TOO_LONG": "At most 5,000 characters.",
     "PRICE_INVALID": "Enter a valid price, for example 650 or 649.90.",
-    "CATEGORY_REQUIRED": "Choose a category."
+    "CATEGORY_REQUIRED": "Choose a category.",
+    "DESCRIPTION_TOO_SHORT": "Describe the problem in at least 30 characters."
   },
   "Auth": {
     "signIn": {
@@ -963,7 +980,8 @@
     "downloadLabel": "Download the label (PDF)",
     "trackingLink": "Track the parcel",
     "devAdvance": "Simulate progress (development)",
-    "packingGuide": "How to pack an instrument"
+    "packingGuide": "How to pack an instrument",
+    "openDispute": "Report a problem"
   },
   "Checkout": {
     "title": "Buy with protected payment",
@@ -1022,5 +1040,88 @@
     "total": "Total",
     "payout": "Payout",
     "created": "Created"
+  },
+  "Disputes": {
+    "title": "Dispute",
+    "openTitle": "Open a dispute",
+    "openIntro": "Explain what is wrong: the seller has 72 hours to answer. The payment stays blocked until the dispute is closed.",
+    "reasonLabel": "Reason",
+    "reason": {
+      "NOT_RECEIVED": "Not received",
+      "NOT_AS_DESCRIBED": "Not as described",
+      "DAMAGED": "Damaged",
+      "COUNTERFEIT": "Counterfeit",
+      "INCOMPLETE": "Incomplete",
+      "OTHER": "Other"
+    },
+    "description": "Description",
+    "descriptionHint": "At least 30 characters ({count}).",
+    "photosRequired": "Photos (at least 2)",
+    "photosOptional": "Photos (optional)",
+    "photos": "{count, plural, =0 {No photos uploaded} one {# photo uploaded} other {# photos uploaded}}",
+    "uploading": "Uploading photos…",
+    "submit": "Open the dispute",
+    "status": {
+      "OPEN": "Open: waiting for the seller",
+      "AWAITING_BUYER": "Waiting for the buyer",
+      "UNDER_REVIEW": "With support",
+      "AWAITING_RETURN": "Return in progress",
+      "RESOLVED": "Closed",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "sellerDue": "The seller must answer by {date}.",
+    "proposal": "The seller proposes a partial refund of {amount}.",
+    "buyerDue": "Answer by {date}, otherwise support decides.",
+    "outcome": {
+      "REFUND_FULL": "Full refund",
+      "REFUND_FULL_WITH_RETURN": "Full refund with return",
+      "REFUND_PARTIAL": "Partial refund",
+      "RELEASE_TO_SELLER": "Payment to the seller"
+    },
+    "motivation": "Motivation:",
+    "appealUpheld": "Appeal reviewed: decision upheld.",
+    "appealOverturned": "Appeal reviewed: decision overturned.",
+    "appealPending": "Appeal under review",
+    "evidence": "Evidence",
+    "evidenceAlt": "Evidence {n} ({who})",
+    "role": {
+      "BUYER": "Buyer",
+      "SELLER": "Seller",
+      "SUPPORT": "Support",
+      "SYSTEM": "System"
+    },
+    "thread": "Dispute messages",
+    "acceptProposal": "Accept the proposal",
+    "escalate": "Ask support to step in",
+    "withdraw": "Withdraw the dispute",
+    "withdrawConfirm": "Withdraw the dispute? The payment will be transferred to the seller.",
+    "appeal": "Appeal",
+    "writeMessage": "Write a message",
+    "askEvidence": "Ask the parties for evidence (48 hours)",
+    "send": "Send",
+    "addEvidence": "Add evidence",
+    "sendEvidence": "Send the evidence",
+    "respondTitle": "Your answer",
+    "respond": {
+      "ACCEPT_REFUND_WITH_RETURN": "I accept a full refund with return",
+      "ACCEPT_REFUND": "I accept a full refund without return",
+      "PROPOSE_PARTIAL": "I propose a partial refund",
+      "REJECT": "I reject (support decides)"
+    },
+    "amount": "Refund amount (max {max})",
+    "respondMessage": "Message for the buyer",
+    "sendResponse": "Send the answer",
+    "adminTitle": "Disputes",
+    "statusFilter": "Status",
+    "all": "All",
+    "decide": "Decision",
+    "outcomeLabel": "Outcome",
+    "sellerAtFault": "Seller's responsibility (counts as a lost dispute)",
+    "motivationLabel": "Written motivation (sent to both parties)",
+    "confirmDecision": "Confirm the decision",
+    "appealReview": "Appeal review",
+    "appealReviewHint": "The appeal must be reviewed by a staff member other than the one who decided.",
+    "uphold": "Uphold the decision",
+    "overturn": "Overturn the decision"
   }
 }

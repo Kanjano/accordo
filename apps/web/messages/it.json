@@ -123,7 +123,23 @@
     "NO_CANCEL_REQUEST": "Non c'è una richiesta di annullamento da accettare.",
     "TRACKING_INVALID": "Numero di tracking non valido.",
     "SERVICE_POINT_NOT_FOUND": "Il punto di ritiro scelto non è disponibile.",
-    "INVALID_CAP": "CAP non valido."
+    "INVALID_CAP": "CAP non valido.",
+    "DESCRIPTION_TOO_SHORT": "Descrivi il problema con almeno 30 caratteri.",
+    "PHOTOS_REQUIRED": "Per questo motivo servono almeno 2 foto.",
+    "DISPUTE_NOT_ALLOWED": "Non è possibile aprire una controversia in questo momento (per «non ricevuto» bisogna attendere la data di consegna prevista più 3 giorni; per gli altri motivi hai 72 ore dalla consegna).",
+    "DISPUTE_EXISTS": "C'è già una controversia su questo ordine.",
+    "DISPUTE_CLOSED": "La controversia è chiusa.",
+    "INVALID_DISPUTE_STATE": "Questa azione non è disponibile nello stato attuale della controversia.",
+    "REFUND_OUT_OF_RANGE": "L'importo deve essere positivo e non superiore al prezzo dell'oggetto.",
+    "NOT_ALLOWED": "Azione non consentita.",
+    "ALREADY_APPEALED": "Hai già presentato ricorso.",
+    "APPEAL_WINDOW_CLOSED": "Il termine di 7 giorni per il ricorso è scaduto.",
+    "SAME_REVIEWER": "Il ricorso deve essere esaminato da un altro membro dello staff.",
+    "NO_PENDING_APPEAL": "Non ci sono ricorsi da esaminare.",
+    "OUTCOME_NOT_AVAILABLE": "Esito non disponibile dopo il reso.",
+    "NOTES_TOO_SHORT": "Scrivi una motivazione di almeno 20 caratteri.",
+    "INVALID_UPLOAD_KEY": "Caricamento non valido.",
+    "ORDER_NOT_COMPLETED": "L'ordine non è completato."
   },
   "Validation": {
     "EMAIL_INVALID": "Inserisci un indirizzo email valido.",
@@ -142,7 +158,8 @@
     "TITLE_TOO_LONG": "Al massimo 120 caratteri.",
     "DESCRIPTION_TOO_LONG": "Al massimo 5.000 caratteri.",
     "PRICE_INVALID": "Inserisci un prezzo valido, per esempio 650 o 649,90.",
-    "CATEGORY_REQUIRED": "Scegli una categoria."
+    "CATEGORY_REQUIRED": "Scegli una categoria.",
+    "DESCRIPTION_TOO_SHORT": "Descrivi il problema con almeno 30 caratteri."
   },
   "Auth": {
     "signIn": {
@@ -963,7 +980,8 @@
     "downloadLabel": "Scarica l'etichetta (PDF)",
     "trackingLink": "Segui la spedizione",
     "devAdvance": "Simula avanzamento (sviluppo)",
-    "packingGuide": "Come imballare uno strumento"
+    "packingGuide": "Come imballare uno strumento",
+    "openDispute": "Segnala un problema"
   },
   "Checkout": {
     "title": "Compra con pagamento protetto",
@@ -1022,5 +1040,88 @@
     "total": "Totale",
     "payout": "Trasferimento",
     "created": "Creato"
+  },
+  "Disputes": {
+    "title": "Controversia",
+    "openTitle": "Apri una controversia",
+    "openIntro": "Spiega cosa non va: il venditore ha 72 ore per rispondere. Il pagamento resta bloccato finché la controversia non è chiusa.",
+    "reasonLabel": "Motivo",
+    "reason": {
+      "NOT_RECEIVED": "Non ricevuto",
+      "NOT_AS_DESCRIBED": "Non conforme alla descrizione",
+      "DAMAGED": "Danneggiato",
+      "COUNTERFEIT": "Contraffatto",
+      "INCOMPLETE": "Incompleto",
+      "OTHER": "Altro"
+    },
+    "description": "Descrizione",
+    "descriptionHint": "Almeno 30 caratteri ({count}).",
+    "photosRequired": "Foto (almeno 2)",
+    "photosOptional": "Foto (facoltative)",
+    "photos": "{count, plural, =0 {Nessuna foto caricata} one {# foto caricata} other {# foto caricate}}",
+    "uploading": "Caricamento delle foto…",
+    "submit": "Apri la controversia",
+    "status": {
+      "OPEN": "Aperta: in attesa del venditore",
+      "AWAITING_BUYER": "In attesa dell'acquirente",
+      "UNDER_REVIEW": "Al supporto",
+      "AWAITING_RETURN": "Reso in corso",
+      "RESOLVED": "Chiusa",
+      "WITHDRAWN": "Ritirata"
+    },
+    "sellerDue": "Il venditore deve rispondere entro il {date}.",
+    "proposal": "Il venditore propone un rimborso parziale di {amount}.",
+    "buyerDue": "Rispondi entro il {date}, altrimenti decide il supporto.",
+    "outcome": {
+      "REFUND_FULL": "Rimborso totale",
+      "REFUND_FULL_WITH_RETURN": "Rimborso totale con reso",
+      "REFUND_PARTIAL": "Rimborso parziale",
+      "RELEASE_TO_SELLER": "Pagamento al venditore"
+    },
+    "motivation": "Motivazione:",
+    "appealUpheld": "Ricorso esaminato: decisione confermata.",
+    "appealOverturned": "Ricorso esaminato: decisione riformata.",
+    "appealPending": "Ricorso in esame",
+    "evidence": "Prove",
+    "evidenceAlt": "Prova {n} ({who})",
+    "role": {
+      "BUYER": "Acquirente",
+      "SELLER": "Venditore",
+      "SUPPORT": "Supporto",
+      "SYSTEM": "Sistema"
+    },
+    "thread": "Messaggi della controversia",
+    "acceptProposal": "Accetta la proposta",
+    "escalate": "Chiedi l'intervento del supporto",
+    "withdraw": "Ritira la controversia",
+    "withdrawConfirm": "Ritirare la controversia? Il pagamento verrà trasferito al venditore.",
+    "appeal": "Presenta ricorso",
+    "writeMessage": "Scrivi un messaggio",
+    "askEvidence": "Chiedi prove alle parti (48 ore)",
+    "send": "Invia",
+    "addEvidence": "Aggiungi prove",
+    "sendEvidence": "Invia le prove",
+    "respondTitle": "La tua risposta",
+    "respond": {
+      "ACCEPT_REFUND_WITH_RETURN": "Accetto il rimborso totale con reso",
+      "ACCEPT_REFUND": "Accetto il rimborso totale senza reso",
+      "PROPOSE_PARTIAL": "Propongo un rimborso parziale",
+      "REJECT": "Respingo (decide il supporto)"
+    },
+    "amount": "Importo del rimborso (max {max})",
+    "respondMessage": "Messaggio per l'acquirente",
+    "sendResponse": "Invia la risposta",
+    "adminTitle": "Controversie",
+    "statusFilter": "Stato",
+    "all": "Tutte",
+    "decide": "Decisione",
+    "outcomeLabel": "Esito",
+    "sellerAtFault": "Responsabilità del venditore (conta come controversia persa)",
+    "motivationLabel": "Motivazione scritta (inviata a entrambe le parti)",
+    "confirmDecision": "Conferma la decisione",
+    "appealReview": "Esame del ricorso",
+    "appealReviewHint": "Il ricorso va esaminato da un membro dello staff diverso da chi ha deciso.",
+    "uphold": "Conferma la decisione",
+    "overturn": "Riforma la decisione"
   }
 }

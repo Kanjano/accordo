@@ -4,13 +4,17 @@ import {
   accountBalance,
   assertBalanced,
   chargebackLossEntries,
+  chargebackSellerLiableEntries,
   fullRefundBeforeTransferEntries,
   type LedgerEntryDraft,
   partialRefundEntries,
   paymentSucceededEntries,
   processorFeeEntries,
+  refundAfterTransferEntries,
   sellerChargeEntries,
+  transferReversalEntries,
   transferToSellerEntries,
+  transferWithOffsetEntries,
   UnbalancedLedgerError,
 } from './ledger.js';
 
@@ -121,5 +125,24 @@ describe('ledger', () => {
     ).toThrow(UnbalancedLedgerError);
     expect(() => transferToSellerEntries(-5, seller)).toThrow(UnbalancedLedgerError);
     expect(() => processorFeeEntries(0)).toThrow(UnbalancedLedgerError);
+  });
+});
+
+describe('refunds after transfer and seller credits (SPEC §6.7)', () => {
+  it('builds balanced transactions and rejects an offset above the payable', () => {
+    for (const t of [
+      refundAfterTransferEntries(500, 'seller'),
+      transferReversalEntries(500, 'seller'),
+      transferWithOffsetEntries(1000, 300, 'seller'),
+      chargebackSellerLiableEntries(1200, 1000, 'seller'),
+      chargebackSellerLiableEntries(800, 1000, 'seller'),
+    ])
+      assertBalanced(t.entries);
+    expect(transferWithOffsetEntries(1000, 300, 'seller').entries).toEqual([
+      { account: 'SELLER_PAYABLE', direction: 'DEBIT', amountCents: 1000, userId: 'seller' },
+      { account: 'CASH_STRIPE', direction: 'CREDIT', amountCents: 700 },
+      { account: 'SELLER_RECEIVABLE', direction: 'CREDIT', amountCents: 300, userId: 'seller' },
+    ]);
+    expect(() => transferWithOffsetEntries(100, 300, 'seller')).toThrow();
   });
 });
