@@ -1,4 +1,5 @@
 import { createPrismaClient } from '@accordo/db';
+import { createPaymentProvider } from '@accordo/payments';
 import { createSearchClient } from '@accordo/search';
 import { S3Client } from '@aws-sdk/client-s3';
 import type { Provider } from '@nestjs/common';
@@ -9,6 +10,7 @@ export const PRISMA = Symbol('PRISMA');
 export const REDIS = Symbol('REDIS');
 export const S3 = Symbol('S3');
 export const SEARCH = Symbol('SEARCH');
+export const PAYMENTS = Symbol('PAYMENTS');
 
 export const infraProviders: Provider[] = [
   {
@@ -46,4 +48,5 @@ export const infraProviders: Provider[] = [
     // Short timeout: a hung Meilisearch must fall back to PostgreSQL quickly (SPEC §9.3).
     useFactory: (env: Env) => createSearchClient(env.MEILI_HOST, env.MEILI_MASTER_KEY, 1500),
   },
+  { provide: PAYMENTS, inject: [ENV], useFactory: (env: Env) => createPaymentProvider(env) },
 ];

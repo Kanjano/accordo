@@ -13,6 +13,7 @@ import { Gallery } from '@/components/listing/gallery';
 import { RecentlyViewedTracker } from '@/components/listing/recently-viewed-tracker';
 import { ShareButton } from '@/components/listing/share-button';
 import { ContactSeller } from '@/components/messaging/contact-seller';
+import { BuyBox } from '@/components/orders/buy-box';
 import { CardGrid } from '@/components/search/card-grid';
 import { Link } from '@/i18n/navigation';
 import { formatPrice } from '@/lib/format';
@@ -122,8 +123,12 @@ function jsonLd(l: ListingDetail, baseUrl: string) {
   ];
 }
 
-export default async function ListingPage({ params }: PageProps<'/[locale]/annuncio/[segment]'>) {
+export default async function ListingPage({
+  params,
+  searchParams,
+}: PageProps<'/[locale]/annuncio/[segment]'>) {
   const { locale, segment } = await params;
+  const offerId = (await searchParams).offerta;
   setRequestLocale(locale as Locale);
   const { listing: l, similar } = await load(segment);
   const t = await getTranslations('Listing');
@@ -251,6 +256,23 @@ export default async function ListingPage({ params }: PageProps<'/[locale]/annun
                 date: format.dateTime(new Date(l.publishedAt), { dateStyle: 'long' }),
               })}
             </p>
+          ) : null}
+          {!l.owner &&
+          l.protectedPaymentEnabled &&
+          (l.status === 'ACTIVE' || (l.status === 'RESERVED' && typeof offerId === 'string')) ? (
+            <div id="acquista">
+              <BuyBox
+                listingId={l.id}
+                priceCents={l.priceCents}
+                selfShippingPriceCents={l.selfShippingPriceCents}
+                // Integrated shipping arrives with the shipping provider (Phase 7, ADR-0038).
+                methods={[
+                  ...(l.shippingSelf ? (['SHIPPING_SELF'] as const) : []),
+                  ...(l.handDeliveryEnabled ? (['HAND_DELIVERY'] as const) : []),
+                ]}
+                offerId={typeof offerId === 'string' ? offerId : undefined}
+              />
+            </div>
           ) : null}
           {!l.owner && (l.status === 'ACTIVE' || l.status === 'RESERVED') ? (
             <ContactSeller

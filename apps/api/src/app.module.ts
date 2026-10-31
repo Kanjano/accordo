@@ -11,6 +11,7 @@ import { GeoModule } from './modules/geo/geo.module.js';
 import { ListingsModule } from './modules/listings/listings.module.js';
 import { MessagingModule } from './modules/messaging/messaging.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { OrdersModule } from './modules/orders/orders.module.js';
 import { InfraModule } from './modules/platform/infra.module.js';
 import { PlatformModule } from './modules/platform/platform.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
@@ -56,6 +57,7 @@ import { UsersModule } from './modules/users/users.module.js';
     ListingsModule,
     SearchModule,
     EngagementModule,
+    OrdersModule,
     ComplianceModule,
   ],
 })

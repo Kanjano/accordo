@@ -5,6 +5,15 @@ export function generateHandoverCode(): string {
   return randomInt(0, 1_000_000).toString().padStart(6, '0');
 }
 
+/**
+ * The order's code, re-derivable only with the server secret (HMAC is a cryptographic PRF), so the
+ * buyer can display it again after step-up while the database keeps only its hash (ADR-0039).
+ */
+export function deriveHandoverCode(orderId: string, pepper: string): string {
+  const n = createHmac('sha256', pepper).update(`code:${orderId}`).digest().readUInt32BE(0);
+  return (n % 1_000_000).toString().padStart(6, '0');
+}
+
 /** Stored form: HMAC-SHA256(pepper, orderId:code). The code itself is never persisted. */
 export function hashHandoverCode(code: string, orderId: string, pepper: string): string {
   return createHmac('sha256', pepper).update(`${orderId}:${code}`).digest('hex');

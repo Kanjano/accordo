@@ -10,6 +10,8 @@ import { NotificationsProcessor } from './notifications/notifications.processor.
 import { Notifier } from './notifications/notifier.js';
 import { OffersProcessor, OffersScheduler } from './offers.js';
 import { OutboxDispatcher } from './outbox.dispatcher.js';
+import { NightlyChecks, OrdersScheduler, OrdersSweeper } from './payments/orders-sweeper.js';
+import { PaymentsProcessor } from './payments/payments.processor.js';
 import { QUEUES } from './queues.js';
 import { SavedSearchAlertsProcessor, SavedSearchScheduler } from './search/saved-search-alerts.js';
 import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-index.processor.js';
@@ -38,6 +40,9 @@ import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-inde
       { name: QUEUES.searchIndex },
       { name: QUEUES.savedSearchAlerts },
       { name: QUEUES.offers },
+      { name: QUEUES.payments },
+      { name: QUEUES.orders },
+      { name: QUEUES.nightly },
     ),
   ],
   providers: [
@@ -55,6 +60,10 @@ import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-inde
     SavedSearchAlertsProcessor,
     OffersScheduler,
     OffersProcessor,
+    PaymentsProcessor,
+    OrdersScheduler,
+    OrdersSweeper,
+    NightlyChecks,
   ],
 })
 export class WorkerModule {}

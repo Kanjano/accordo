@@ -214,3 +214,32 @@ Formato: contesto → decisione → conseguenze.
 - Accettazione: aggiornamento condizionato (`status = PENDING`) dell'offerta e dell'annuncio (`ACTIVE → RESERVED`) nella stessa transazione: due accettazioni concorrenti non possono riservare due volte. `expiresAt` dell'offerta accettata diventa la scadenza del checkout (24 h); `listing.reserved` aggiorna l'indice.
 - Le altre offerte in attesa restano `PENDING` ma non sono accettabili finché l'annuncio è riservato; scadono da sole.
 - Sweeper ogni minuto nel worker: offerte `PENDING` scadute → `EXPIRED`; offerte `ACCEPTED` scadute senza ordine → `EXPIRED` e annuncio `RESERVED → ACTIVE` (`listing.released`). Ogni evento lascia un messaggio `OFFER` nella conversazione e notifica le parti. Il checkout al prezzo concordato (`CONSUMED`) arriva con la Fase 6.
+
+## ADR-0037 — Porta `PaymentProvider` e adapter finto
+
+- `packages/payments`: porta (account connessi, onboarding, PaymentIntent, commissioni, trasferimenti con `source_transaction`, rimborsi, webhook normalizzati) con due adapter scelti da `PAYMENT_PROVIDER`.
+- **Scelta dell'utente (Fase 6): `fake`.** Nessuna rete; gli id derivano dalle chiavi di idempotenza (un retry restituisce lo stesso oggetto); gli eventi passano dal **vero** endpoint webhook, firmati HMAC (`x-fake-signature`). Endpoint di sviluppo (404 in produzione): `POST /dev/orders/:id/payment` (riuscito/rifiutato), `POST /dev/payments/onboarding-complete`, `POST /dev/orders/:id/run-timer`. Il checkout mostra "Paga (simulazione)".
+- Adapter `stripe`: Accounts v2 (`dashboard: express`, `losses_collector`/`fees_collector = application`, `recipient` con `stripe_balance.stripe_transfers`, `identity.country = it`), Account Link di onboarding, PaymentIntent con `transfer_group` e `automatic_payment_methods`, trasferimenti e rimborsi con chiavi idempotenti, verifica della firma con `constructEvent`. **Non ancora provato con un account test**: restano da verificare con le chiavi il criterio "trasferimento visibile nella Dashboard", la mappatura degli eventi degli account v2 (oggi gestito `account.updated`) e il Payment Element con 3DS (`4000 0027 6000 3184`).
+- Stripe.js si carica solo quando il provider è `stripe`.
+
+## ADR-0038 — Motore degli ordini condiviso
+
+- La regola d'oro "lo stato cambia solo tramite `OrdersService.transition()`" è implementata da `applyOrderEvent` in `packages/orders`, perché la usano sia l'API (azioni, webhook) sia il worker (sweeper, webhook): macchina a stati del dominio, lock ottimistico su `version` (`ORDER_CHANGED` 409), `OrderEvent`, timer `nextAction`.
+- Effetti sincroni nella stessa transazione: ledger del pagamento (`payment:{orderId}`), offerta `CONSUMED`, stato dell'annuncio (+ eventi `listing.*` per l'indice), hash del codice di consegna, conteggio delle cancellazioni del venditore. Effetti esterni in una riga outbox `order.effects` → coda `payments` del worker (trasferimento, rimborso, annullamento del PaymentIntent, notifiche).
+- La creazione dell'ordine (`CHECKOUT_STARTED`) è nel checkout dell'API: guardie del dominio, importi da `computeOrderAmounts` con le impostazioni correnti "fotografate" sull'ordine, indice unico parziale per un solo ordine attivo per annuncio (due acquisti concorrenti → un 201 e un 409 `LISTING_NOT_AVAILABLE`), `Idempotency-Key` obbligatoria (tabella `IdempotencyKey`, 24 h; stesso corpo → stessa risposta, altro corpo → 422).
+- **Spedizione integrata non offerta al checkout fino alla Fase 7** (servono provider ed etichetta); `CREATE_SHIPPING_LABEL`, `REGISTER_TRACKING`, `CREATE_RETURN_LABEL` sono no-op fino ad allora. `OPEN_FEEDBACK` è implicito (Fase 9: feedback possibile sugli ordini `COMPLETED`).
+- Annullamento concordato: la richiesta è un `OrderEvent` `CANCEL_REQUESTED` senza cambio di stato; l'accettazione dell'altra parte applica `MUTUAL_CANCEL`. L'annullamento unilaterale del venditore vale solo per ordini `PAID` (come da §6.4).
+- Pagamento di un'offerta accettata: link "Paga ora" dalla chat alla pagina annuncio con `?offerta=` (il prezzo è quello concordato, l'annuncio riservato è acquistabile solo da quell'acquirente).
+
+## ADR-0039 — Codice di consegna a mano
+
+- Il codice è `HMAC(HANDOVER_CODE_PEPPER, "code:" + orderId)` ridotto a 6 cifre: l'acquirente può rivederlo dopo lo step-up, ma nel database c'è solo il suo hash (`HMAC(pepper, orderId:code)`, confronto a tempo costante, 5 tentativi poi 1 ora di blocco). Chi legge il database non può ricavarlo senza il segreto.
+- Gli ordini demo già presenti nel database locale usano ancora il codice fisso `123456` del seed.
+
+## ADR-0040 — Webhook, rimborsi, riconciliazione
+
+- `POST /api/v1/webhooks/stripe`: corpo grezzo (`express.raw` montato prima del parser JSON), firma verificata, `WebhookEvent` (`provider` + `eventId`) e riga outbox `webhook.received` nella stessa transazione, 200 subito; un duplicato risponde 200 senza nuova elaborazione. Il worker elabora con retry esponenziale e scrive `ALERT` nei log dopo 5 fallimenti (il pannello "Log webhook" arriva col backoffice, Fase 11).
+- Pagamento riuscito su un ordine già scaduto → rimborso automatico (`late-refund:{orderId}`).
+- Rimborsi con chiave `refund:{orderId}:{eventId}` (l'evento di transizione che li ha generati): stabile tra i retry. Rimborso totale prima del trasferimento → storno simmetrico del pagamento; parziale → riduce `SELLER_PAYABLE`. Trasferimento sospeso (`ON_HOLD`) se l'account del venditore non è abilitato o c'è un chargeback; ripartono quando arriva `account.updated` con trasferimenti attivi.
+- Chargeback (`dispute.created`): `PaymentDispute` e trasferimento in `ON_HOLD`; prove e invio a Stripe con la Fase 8.
+- Controllo notturno (03:30): transazioni sbilanciate, ordini chiusi con saldo `SELLER_PAYABLE` ≠ 0, fondi trattenuti oltre 60 e 85 giorni (`funds-hold-guard`); in caso di anomalie notifica agli admin. Il confronto con le _balance transaction_ di Stripe si aggiunge qui quando l'adapter reale sarà attivo.

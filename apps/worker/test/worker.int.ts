@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { createPrismaClient, type PrismaClient } from '@accordo/db';
 import type { EmailProvider, OutgoingEmail } from '@accordo/emails';
+import { applyOrderEvent } from '@accordo/orders';
+import { FakePaymentProvider, type PaymentEvent } from '@accordo/payments';
 import { createSearchClient, ensureIndexes, syncListings } from '@accordo/search';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { Queue } from 'bullmq';
@@ -12,6 +14,8 @@ import { NotificationsProcessor } from '../src/notifications/notifications.proce
 import { Notifier } from '../src/notifications/notifier.js';
 import { OffersProcessor } from '../src/offers.js';
 import { OutboxDispatcher } from '../src/outbox.dispatcher.js';
+import { NightlyChecks, OrdersSweeper } from '../src/payments/orders-sweeper.js';
+import { PaymentsProcessor } from '../src/payments/payments.processor.js';
 import { SavedSearchAlertsProcessor } from '../src/search/saved-search-alerts.js';
 
 let pg: StartedPostgreSqlContainer;
@@ -95,7 +99,9 @@ describe('outbox dispatcher', () => {
     const media = { add: vi.fn() } as unknown as Queue;
     const notifications = { add: vi.fn() } as unknown as Queue;
     const searchIndex = { add: vi.fn() } as unknown as Queue;
-    const dispatcher = new OutboxDispatcher(env, db, media, notifications, searchIndex);
+    const dispatcher = new OutboxDispatcher(env, db, media, notifications, searchIndex, {
+      add: vi.fn(),
+    } as unknown as Queue);
 
     expect(await dispatcher.tick()).toBe(2); // the future-dated row waits
     const [name, payload, opts] = (media.add as ReturnType<typeof vi.fn>).mock.calls[0] as [
@@ -126,7 +132,7 @@ describe('outbox dispatcher', () => {
     const failing = {
       add: vi.fn().mockRejectedValue(new Error('valkey down')),
     } as unknown as Queue;
-    await new OutboxDispatcher(env, db, failing, failing, failing).tick();
+    await new OutboxDispatcher(env, db, failing, failing, failing, failing).tick();
     const row = await db.outboxEvent.findFirstOrThrow();
     expect(row).toMatchObject({ status: 'PENDING', attempts: 1, lastError: 'Error: valkey down' });
     expect(row.availableAt.getTime()).toBeGreaterThan(Date.now());
@@ -351,6 +357,218 @@ describe('offers and messages', () => {
     expect(sent).toHaveLength(1);
     expect(await db.notification.count({ where: { userId: sellerId, type: 'message.new' } })).toBe(
       2,
+    );
+  });
+});
+
+describe('payments', () => {
+  const pepper = 'test-pepper';
+  const penv = { ...env, HANDOVER_CODE_PEPPER: pepper } as Env;
+  const provider = new FakePaymentProvider('secret');
+  const transfers: unknown[] = [];
+  const refunds: unknown[] = [];
+  const spy = Object.assign(Object.create(provider), {
+    createTransfer: async (i: { idempotencyKey: string }) => {
+      transfers.push(i);
+      return provider.createTransfer(i as never);
+    },
+    refund: async (i: { idempotencyKey: string }) => {
+      refunds.push(i);
+      return provider.refund(i as never);
+    },
+  }) as FakePaymentProvider;
+  const notifications = { add: vi.fn() } as unknown as Queue;
+  let processor: PaymentsProcessor;
+  let buyerId: string;
+  let n = 0;
+
+  beforeAll(async () => {
+    processor = new PaymentsProcessor(db, spy, penv, notifications);
+    await db.platformSetting.createMany({
+      data: [
+        { key: 'orderTimings', value: {} },
+        {
+          key: 'fees',
+          value: {
+            buyerFeeBps: 400,
+            buyerFeeFixedCents: 50,
+            buyerFeeMinCents: 100,
+            buyerFeeMaxCents: 2500,
+            sellerCommissionBps: 0,
+            vatRateBps: 2200,
+          },
+        },
+      ],
+      skipDuplicates: true,
+    });
+    await db.paymentAccount.create({
+      data: {
+        userId: sellerId,
+        provider: 'fake',
+        providerAccountId: 'fake_acct_seller',
+        transfersEnabled: true,
+      },
+    });
+    buyerId = (
+      await db.user.create({
+        data: { name: 'Gianni', email: 'gianni@example.test', emailVerified: true },
+      })
+    ).id;
+  });
+
+  async function order(deliveryMethod: 'HAND_DELIVERY' | 'SHIPPING_SELF') {
+    const l = await db.listing.create({
+      data: {
+        shortId: `PAY${String(++n).padStart(5, '0')}`,
+        slug: 'x',
+        sellerId,
+        categoryId,
+        status: 'ACTIVE',
+        title: `Tromba ${n}`,
+        description: 'x',
+        condition: 'GOOD',
+        priceCents: 12_000,
+        comuneId: '015146',
+        protectedPaymentEnabled: true,
+      },
+    });
+    const shipping = deliveryMethod === 'SHIPPING_SELF' ? 1000 : 0;
+    return db.order.create({
+      data: {
+        number: `26-PAY${n}`,
+        transferGroup: `order_26-PAY${n}`,
+        listingId: l.id,
+        buyerId,
+        sellerId,
+        deliveryMethod,
+        listingSnapshot: { title: l.title },
+        itemPriceCents: 12_000,
+        shippingPriceCents: shipping,
+        buyerFeeCents: 530,
+        buyerFeeVatCents: 96,
+        totalCents: 12_530 + shipping,
+        sellerNetCents: 12_000 + shipping,
+        paymentIntentId: `fake_pi_${n}`,
+      },
+    });
+  }
+
+  const webhook = async (event: PaymentEvent) => {
+    const eventId = `evt_${Math.random()}`;
+    await db.webhookEvent.create({
+      data: { provider: 'fake', eventId, type: event.kind, payload: { event } as object },
+    });
+    const job = {
+      name: 'webhook.received',
+      data: { provider: 'fake', eventId },
+      attemptsMade: 0,
+    } as never;
+    await processor.process(job);
+    await processor.process(job); // redelivered: processed once
+    return eventId;
+  };
+  const runEffects = async (orderId: string) => {
+    const rows = await db.outboxEvent.findMany({
+      where: { aggregateId: orderId, type: 'order.effects' },
+      orderBy: { createdAt: 'asc' },
+    });
+    for (const r of rows)
+      await processor.process({ name: 'order.effects', data: r.payload } as never);
+  };
+  const succeeded = (o: { id: string; paymentIntentId: string | null; totalCents: number }) =>
+    webhook({
+      kind: 'payment.succeeded',
+      paymentIntentId: o.paymentIntentId as string,
+      chargeId: `ch_${o.id}`,
+      amountCents: o.totalCents,
+      currency: 'eur',
+      orderId: o.id,
+    });
+
+  it('payment webhook → PAID once with the ledger; completion transfers with source_transaction', async () => {
+    const o = await order('HAND_DELIVERY');
+    const eventId = await succeeded(o);
+    const paid = await db.order.findUniqueOrThrow({ where: { id: o.id } });
+    expect(paid).toMatchObject({ status: 'HANDOVER_PENDING', chargeId: `ch_${o.id}`, version: 1 });
+    expect(
+      await db.ledgerTransaction.count({ where: { orderId: o.id, type: 'PAYMENT_SUCCEEDED' } }),
+    ).toBe(1);
+    expect(
+      (await db.webhookEvent.findFirstOrThrow({ where: { eventId } })).processedAt,
+    ).not.toBeNull();
+
+    await db.$transaction((tx) =>
+      applyOrderEvent(
+        tx,
+        o.id,
+        { type: 'HANDOVER_CODE_VERIFIED' },
+        { role: 'SELLER', id: sellerId },
+        { handoverPepper: pepper },
+      ),
+    );
+    await runEffects(o.id);
+    await runEffects(o.id); // retried job: still one transfer
+    expect(transfers).toEqual([
+      expect.objectContaining({
+        amountCents: 12_000,
+        destination: 'fake_acct_seller',
+        sourceTransaction: `ch_${o.id}`,
+        transferGroup: o.transferGroup,
+        idempotencyKey: `transfer:${o.id}`,
+      }),
+    ]);
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      payoutStatus: 'TRANSFERRED',
+    });
+    expect(
+      await db.ledgerTransaction.count({ where: { orderId: o.id, type: 'TRANSFER_TO_SELLER' } }),
+    ).toBe(1);
+  });
+
+  it('a cancelled paid order is refunded in full; ledger invariants hold', async () => {
+    const o = await order('SHIPPING_SELF');
+    await succeeded(o);
+    await db.$transaction((tx) =>
+      applyOrderEvent(
+        tx,
+        o.id,
+        { type: 'SELLER_CANCELLED' },
+        { role: 'SELLER', id: sellerId },
+        { handoverPepper: pepper },
+      ),
+    );
+    await runEffects(o.id);
+    await runEffects(o.id);
+    expect(refunds).toHaveLength(1);
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      status: 'CANCELLED',
+      refundedCents: 13_530,
+    });
+    const report = await new NightlyChecks(db, new Notifier(env, db, email)).run(new Date());
+    expect(report).toEqual({
+      unbalancedTransactions: 0,
+      closedOrdersWithPayable: 0,
+      heldOver60Days: 0,
+      heldOver85Days: 0,
+    });
+  });
+
+  it('the sweeper expires unpaid checkouts and frees the listing', async () => {
+    const o = await order('HAND_DELIVERY');
+    await db.order.update({
+      where: { id: o.id },
+      data: { nextAction: 'EXPIRE_RESERVATION', nextActionAt: new Date(Date.now() - 1000) },
+    });
+    const { handled } = await new OrdersSweeper(db, penv).run(new Date());
+    expect(handled).toBeGreaterThanOrEqual(1);
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      status: 'EXPIRED',
+      nextAction: null,
+    });
+    // A late success on an expired order is refunded automatically.
+    await succeeded(o);
+    expect(refunds).toContainEqual(
+      expect.objectContaining({ idempotencyKey: `late-refund:${o.id}` }),
     );
   });
 });

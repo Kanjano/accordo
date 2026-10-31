@@ -54,6 +54,28 @@ export class NotificationsProcessor extends WorkerHost {
   }
 
   async process(job: Job): Promise<void> {
+    if (job.name === 'order.notify') {
+      const n = job.data as {
+        userId: string;
+        type: string;
+        title: string;
+        body: string;
+        path: string;
+        orderId: string;
+      };
+      // Order updates are transactional: never opted out (SPEC §3.9).
+      return this.notifier.notify({
+        userId: n.userId,
+        preference: 'order.updates',
+        mandatory: true,
+        type: n.type,
+        title: n.title,
+        body: n.body,
+        path: n.path,
+        cta: "Vedi l'ordine",
+        data: { orderId: n.orderId },
+      });
+    }
     if (job.name === 'message.created') return this.message(job.data as MessagePayload);
     if (job.name.startsWith('offer.')) return this.offer(job.name, job.data as OfferPayload);
     const { listingId } = job.data as { listingId: string };

@@ -17,6 +17,8 @@ export function configureApp(app: INestApplication): void {
   app.enableCors({ origin: [env.WEB_URL], credentials: true });
   http.set('trust proxy', env.NODE_ENV === 'production' ? 1 : false);
   http.all('/api/auth/{*path}', toNodeHandler(app.get<Auth>(AUTH)));
+  // Webhook signatures are computed on the raw body (SPEC §6.10).
+  http.use('/api/v1/webhooks', express.raw({ type: '*/*', limit: '1mb' }));
   http.use(express.json({ limit: '1mb' }));
   app.setGlobalPrefix('api/v1', { exclude: ['health/live', 'health/ready'] });
   app.useGlobalPipes(

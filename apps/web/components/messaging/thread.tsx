@@ -6,7 +6,7 @@ import {
   type OfferItem,
   type Page,
 } from '@accordo/shared';
-import { Alert, Button, cn, Label, Textarea } from '@accordo/ui';
+import { Alert, Button, buttonVariants, cn, Label, Textarea } from '@accordo/ui';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -365,6 +365,14 @@ function OfferPanel({
       <h2 id="offers" className="font-semibold">
         {t('title')}
       </h2>
+      {accepted && c.role === 'BUYER' ? (
+        <Link
+          href={`/annuncio/${c.listing.slug}-${c.listing.shortId}?offerta=${accepted.id}#acquista`}
+          className={buttonVariants({ className: 'justify-self-start' })}
+        >
+          {t('payNow')}
+        </Link>
+      ) : null}
       {accepted ? (
         <Alert tone="success">
           {t('accepted', {

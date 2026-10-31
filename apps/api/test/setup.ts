@@ -91,6 +91,9 @@ export async function startTestApp(opts: { search?: boolean } = {}): Promise<Tes
     SMTP_HOST: 'localhost',
     SMTP_PORT: '1025',
     LOG_LEVEL: 'error',
+    PAYMENT_PROVIDER: 'fake',
+    STRIPE_WEBHOOK_SECRET: 'test-webhook-secret',
+    HANDOVER_CODE_PEPPER: 'test-handover-pepper',
   });
 
   const emails = new FakeEmailProvider();

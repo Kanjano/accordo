@@ -45,6 +45,6 @@ pnpm infra:down
 
 ## Dati demo
 
-`pnpm db:seed` in sviluppo crea 60 utenti (`admin@accordo.local`, `moderatore@accordo.local`, `supporto@accordo.local`, `negozio@accordo.local`, `utente@accordo.local`, …), 2.000 annunci e ordini in ogni stato. Password di tutti gli utenti demo: `accordo-demo-2026`. Lo staff dovrà attivare la 2FA per il backoffice. Codice di consegna a mano degli ordini demo: `123456`. Solo per sviluppo.
+`pnpm db:seed` in sviluppo crea 60 utenti (`admin@accordo.local`, `moderatore@accordo.local`, `supporto@accordo.local`, `negozio@accordo.local`, `utente@accordo.local`, …), 2.000 annunci e ordini in ogni stato. Password di tutti gli utenti demo: `accordo-demo-2026`. Pagamenti: con `PAYMENT_PROVIDER=fake` (predefinito) il checkout mostra "Paga (simulazione)"; con `stripe` servono le chiavi test e `pnpm stripe:listen`. Lo staff dovrà attivare la 2FA per il backoffice. Codice di consegna a mano degli ordini demo: `123456`. Solo per sviluppo.
 
 Dati geografici: ISTAT (CC BY 4.0) e Wikidata (CC0), vedi `docs/DATA_SOURCES.md`.

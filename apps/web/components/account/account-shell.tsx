@@ -8,6 +8,9 @@ import { useSession } from '@/lib/auth-client';
 const NAV = [
   ['/account', 'overview'],
   ['/account/annunci', 'listings'],
+  ['/account/acquisti', 'purchases'],
+  ['/account/vendite', 'sales'],
+  ['/account/incassi', 'payouts'],
   ['/account/preferiti', 'favorites'],
   ['/account/ricerche-salvate', 'savedSearches'],
   ['/account/visti-di-recente', 'recentlyViewed'],
@@ -46,10 +49,17 @@ export function AccountShell({ children, bare = false }: { children: ReactNode; 
             <li key={href}>
               <Link
                 href={href}
-                aria-current={pathname === href ? 'page' : undefined}
+                aria-current={
+                  pathname === href || (href !== '/account' && pathname.startsWith(`${href}/`))
+                    ? 'page'
+                    : undefined
+                }
                 className={cn(
                   'block whitespace-nowrap rounded-md px-3 py-2 text-sm hover:bg-accent',
-                  pathname === href && 'bg-accent font-medium',
+                  pathname === href ||
+                    (href !== '/account' &&
+                      pathname.startsWith(`${href}/`) &&
+                      'bg-accent font-medium'),
                 )}
               >
                 {t(`nav.${key}`)}

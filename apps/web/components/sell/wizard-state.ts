@@ -13,6 +13,7 @@ export interface WizardForm {
   description: string;
   price: string;
   isNegotiable: boolean;
+  protectedPaymentEnabled: boolean;
   acceptsTrades: boolean;
   shippingIntegrated: boolean;
   parcelSize: ParcelSize | null;
@@ -33,6 +34,7 @@ export const EMPTY_FORM: WizardForm = {
   description: '',
   price: '',
   isNegotiable: false,
+  protectedPaymentEnabled: false,
   acceptsTrades: false,
   shippingIntegrated: true,
   parcelSize: null,
@@ -54,6 +56,7 @@ export function formFromListing(l: ListingDetail): WizardForm {
     description: l.description,
     price: centsToInput(l.priceCents),
     isNegotiable: l.isNegotiable,
+    protectedPaymentEnabled: l.protectedPaymentEnabled,
     acceptsTrades: l.acceptsTrades,
     shippingIntegrated: l.shippingIntegrated,
     parcelSize: l.parcelSize,
@@ -84,6 +87,7 @@ export function toPayload(f: WizardForm): ListingUpdate {
     description: f.description,
     priceCents: price ?? 0,
     isNegotiable: f.isNegotiable,
+    protectedPaymentEnabled: f.protectedPaymentEnabled,
     acceptsTrades: f.acceptsTrades,
     shippingIntegrated: f.shippingIntegrated,
     parcelSize: f.shippingIntegrated ? f.parcelSize : null,

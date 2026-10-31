@@ -6,6 +6,9 @@ export const QUEUES = {
   searchIndex: 'search-index',
   savedSearchAlerts: 'saved-search-alerts',
   offers: 'offers',
+  payments: 'payments',
+  orders: 'order-sweeper',
+  nightly: 'nightly-checks',
 } as const;
 
 const NOTIFIED = new Set(['listing.price_dropped', 'listing.review_pending']);
@@ -16,6 +19,7 @@ export function routesFor(type: string): string[] {
   if (type.startsWith('media.')) queues.push(QUEUES.media);
   if (NOTIFIED.has(type) || type === 'message.created' || type.startsWith('offer.'))
     queues.push(QUEUES.notifications);
+  if (type === 'webhook.received' || type === 'order.effects') queues.push(QUEUES.payments);
   // Every listing change may add, update or remove the search document (SPEC §9.3).
   if (type.startsWith('listing.')) queues.push(QUEUES.searchIndex);
   return queues;

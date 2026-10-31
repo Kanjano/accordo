@@ -62,6 +62,12 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - Messaggi e offerte in `modules/messaging`; regole delle offerte in `packages/domain/src/offers.ts`. L'ordine dei moduli in `app.module.ts` conta (vedi ADR-0035).
 - Il testo mascherato è l'unico salvato (ADR-0034).
 
+## Note di implementazione (Fase 6)
+
+- Ordini: ogni cambio di stato passa da `applyOrderEvent` (`packages/orders`), chiamato da `OrdersService.transition()` nell'API e dal worker; mai `update` diretti di `status`.
+- Pagamenti: `PAYMENT_PROVIDER=fake` in sviluppo e test (pagamento simulato dal checkout, endpoint `/api/v1/dev/*`); `stripe` richiede chiavi test reali. Effetti esterni nel worker, coda `payments`, con chiavi idempotenti e `writeLedger(…, externalRef)`.
+- Gli e2e degli ordini consumano gli annunci demo del negozio (`negozio@accordo.local`): dopo molte esecuzioni rilancia il seed demo.
+
 ## Regole d'oro del dominio
 
 - Lo stato di un ordine cambia **solo** tramite `OrderStateMachine` (§6.4) e `OrdersService.transition()`; mai `update` diretti sulla colonna `status`.

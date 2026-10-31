@@ -55,3 +55,44 @@ export async function rejectCookies(
   );
   await context.addCookies([{ name: 'accordo_consent', value, url: baseURL }]);
 }
+
+/** Signs a context in through the API (the session cookie is shared by web and API). */
+export async function signIn(context: BrowserContext, email: string): Promise<void> {
+  await rejectCookies(context);
+  const res = await context.request.post(`${API}/api/auth/sign-in/email`, {
+    headers: { origin: 'http://localhost:3000' },
+    data: { email, password: 'accordo-demo-2026' },
+  });
+  expect(res.ok()).toBe(true);
+}
+
+/** Satisfies step-up for the context (new device → emailed code read from Mailpit). */
+export async function stepUp(context: BrowserContext, email: string): Promise<void> {
+  const since = Date.now();
+  const headers = { origin: 'http://localhost:3000' };
+  await context.request.post(`${API}/api/v1/auth/step-up/email-code`, { headers });
+  let code: string | undefined;
+  await expect
+    .poll(
+      async () => {
+        const res = await fetch(
+          `${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`,
+        );
+        const { messages } = (await res.json()) as {
+          messages: Array<{ Subject: string; Created: string }>;
+        };
+        const m = messages.find(
+          (x) => Date.parse(x.Created) >= since - 1000 && /è il tuo codice/.test(x.Subject),
+        );
+        code = m ? /(\d{6})/.exec(m.Subject)?.[1] : undefined;
+        return code;
+      },
+      { timeout: 20_000 },
+    )
+    .toBeTruthy();
+  const ok = await context.request.post(`${API}/api/v1/auth/step-up`, {
+    headers,
+    data: { emailCode: code },
+  });
+  expect(ok.ok()).toBe(true);
+}

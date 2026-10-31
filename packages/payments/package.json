@@ -1,0 +1,28 @@
+{
+  "name": "@accordo/payments",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PaymentProvider port with Stripe (Connect, Accounts v2) and fake adapters",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "stripe": "23.0.0"
+  },
+  "devDependencies": {
+    "@accordo/config": "workspace:*",
+    "@types/node": "26.6.6",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

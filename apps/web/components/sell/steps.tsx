@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { type KeyboardEvent, useEffect, useId, useState } from 'react';
 import { ComuneCombobox } from '@/components/comune-combobox';
+import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import type { WizardForm } from './wizard-state';
 
@@ -412,13 +413,10 @@ export function PriceStep({ form, set, errors, shippable }: StepProps & { shippa
           />
           {t('trades')}
         </label>
-        <label className="flex items-start gap-2">
-          <Checkbox className="mt-0.5" checked={false} disabled />
-          <span>
-            {t('protectedPayment')}
-            <span className="block text-muted-foreground">{t('protectedPaymentHelp')}</span>
-          </span>
-        </label>
+        <ProtectedPaymentToggle
+          checked={form.protectedPaymentEnabled}
+          onChange={(v) => set('protectedPaymentEnabled', v)}
+        />
       </div>
       <fieldset className="grid gap-3 text-sm">
         <legend className="mb-2 font-medium">{t('delivery')}</legend>
@@ -489,5 +487,46 @@ export function PriceStep({ form, set, errors, shippable }: StepProps & { shippa
         <ComuneCombobox value={form.comune} onChange={(c) => set('comune', c)} />
       </Field>
     </div>
+  );
+}
+
+/** Enabled once the seller's payment account can receive transfers (SPEC §6.2). */
+function ProtectedPaymentToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  const t = useTranslations('Sell');
+  const { data } = useQuery({
+    queryKey: ['payment-account'],
+    queryFn: () => api.get<{ transfersEnabled?: boolean }>('/api/v1/payments/account'),
+  });
+  const enabled = !!data?.transfersEnabled;
+  return (
+    <label className="flex items-start gap-2">
+      <Checkbox
+        className="mt-0.5"
+        checked={enabled && checked}
+        disabled={!enabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span>
+        {t('protectedPayment')}
+        <span className="block text-muted-foreground">
+          {enabled ? (
+            t('protectedPaymentOn')
+          ) : (
+            <>
+              {t('protectedPaymentHelp')}{' '}
+              <Link href="/account/incassi" className="underline">
+                {t('protectedPaymentActivate')}
+              </Link>
+            </>
+          )}
+        </span>
+      </span>
+    </label>
   );
 }

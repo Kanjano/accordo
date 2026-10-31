@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  deriveHandoverCode,
   generateHandoverCode,
   handoverCodeMatches,
   hashHandoverCode,
@@ -51,5 +52,15 @@ describe('registerHandoverAttempt', () => {
       outcome: 'VERIFIED',
       state: { attempts: 0, lockedTill: null },
     });
+  });
+});
+
+describe('deriveHandoverCode', () => {
+  it('is a stable 6-digit code per order and secret', () => {
+    const a = deriveHandoverCode('order-1', 'pepper');
+    expect(a).toMatch(/^\d{6}$/);
+    expect(deriveHandoverCode('order-1', 'pepper')).toBe(a);
+    expect(deriveHandoverCode('order-2', 'pepper')).not.toBe(a);
+    expect(deriveHandoverCode('order-1', 'other')).not.toBe(a);
   });
 });

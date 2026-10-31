@@ -21,3 +21,14 @@ Obiettivo: OWASP ASVS livello 2 e Top 10 (SPEC §13). Documento aggiornato a ogn
 - [ ] CSP con nonce e header di sicurezza (Fase 12).
 - [ ] Limite di login per account, revisione dei limiti (Fase 12).
 - [ ] gitleaks, CodeQL, `pnpm audit` in CI (Fase 12).
+
+## Regole Radar (pagamenti, SPEC §6.11)
+
+Da configurare nella Dashboard Stripe (Radar for Platforms) quando l'account sarà attivo:
+
+- `Block if :cvc_check: = 'fail'` e `Block if :address_zip_check: = 'fail'` (quando disponibile).
+- `Request 3D Secure if :amount_in_eur: > 500`; `Request 3D Secure if :risk_level: = 'elevated'`; `Block if :risk_level: = 'highest'`.
+- Velocità: `Block if :total_charges_per_card_number_hourly: > 3`, `Review if :total_charges_per_email_daily: > 5`.
+- Paese: `Review if :card_country: != 'IT' and :ip_country: != :card_country:`.
+- Collusione (lato piattaforma, Fase 12): blocco degli ordini tra account che condividono dispositivo, IP o impronta della carta (`:card_fingerprint:` nei metadati dell'ordine).
+- Già applicati nell'API: account < 7 giorni max 3 ordini in 24 h; conferma di ricezione e codice di consegna solo con step-up; solo indirizzi in Italia.

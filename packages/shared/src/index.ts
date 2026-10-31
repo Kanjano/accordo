@@ -9,4 +9,5 @@ export * from './users.js';
 export const CURRENCY = 'EUR' as const;
 export type Currency = typeof CURRENCY;
 export * from './messaging.js';
+export * from './orders.js';
 export * from './search.js';

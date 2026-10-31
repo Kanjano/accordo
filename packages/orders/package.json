@@ -1,0 +1,29 @@
+{
+  "name": "@accordo/orders",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Order engine: applies the domain state machine to the database (shared by API and worker)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@accordo/db": "workspace:*",
+    "@accordo/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "@accordo/config": "workspace:*",
+    "@types/node": "26.6.6",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

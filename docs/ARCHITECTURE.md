@@ -48,3 +48,18 @@ flowchart LR
   B -- REST --> API[API messaging: scanMessage, offerte] --> PG[(PostgreSQL + outbox)]
   API -- dopo il commit --> GW
 ```
+
+## Ordini e pagamenti (Fase 6)
+
+```mermaid
+flowchart LR
+  W[Web checkout] -- POST /orders + Idempotency-Key --> API
+  API -- PaymentIntent --> P[PaymentProvider: fake | stripe]
+  P -- webhook firmato --> API
+  API -- WebhookEvent + outbox --> PG[(PostgreSQL)]
+  PG --> WK[Worker coda payments]
+  WK -- applyOrderEvent --> PG
+  WK -- transfer source_transaction / refund --> P
+  SW[Sweeper ogni minuto] -- applyOrderEvent --> PG
+  N[Controlli notturni: ledger, fondi trattenuti] --> PG
+```

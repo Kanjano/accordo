@@ -1,17 +1,7 @@
-import { type BrowserContext, expect, test } from '@playwright/test';
-import { API, rejectCookies, waitForApi } from './helpers';
+import { expect, test } from '@playwright/test';
+import { API, signIn, waitForApi } from './helpers';
 
 test.beforeAll(waitForApi);
-
-/** Signs a browser context in through the API (the session cookie is shared by web and API). */
-async function signIn(context: BrowserContext, email: string) {
-  await rejectCookies(context);
-  const res = await context.request.post(`${API}/api/auth/sign-in/email`, {
-    headers: { origin: 'http://localhost:3000' },
-    data: { email, password: 'accordo-demo-2026' },
-  });
-  expect(res.ok()).toBe(true);
-}
 
 test('J6: real-time chat between two browsers, with a warning on an IBAN (SPEC §15.1)', async ({
   browser,

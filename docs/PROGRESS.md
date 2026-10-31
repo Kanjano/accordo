@@ -128,3 +128,32 @@
 
 **Rimandato**
 - Immagini nei messaggi (ADR-0034), revisione staff degli account `LIMITED` e delle segnalazioni (Fase 11), checkout dell'offerta accettata (Fase 6), notifiche push (dopo l'MVP).
+
+## Fase 6 — Pagamento protetto e ordini
+
+Scelta dell'utente: **adapter di pagamento finto** (niente chiavi Stripe per ora). L'adapter Stripe reale esiste dietro la stessa porta; i criteri che richiedono la Dashboard Stripe restano da verificare quando ci saranno le chiavi test.
+
+**Piano**
+1. `packages/payments`: porta `PaymentProvider` (account connessi, PaymentIntent, trasferimenti con `source_transaction`, rimborsi, webhook normalizzati), adapter `fake` (webhook firmati HMAC, endpoint di sviluppo per simulare pagamento/onboarding) e adapter `stripe` (Accounts v2).
+2. `packages/orders`: motore che applica la macchina a stati del dominio con lock ottimistico (`version`), `OrderEvent`, effetti sincroni (annuncio, ledger del pagamento, codice di consegna) e outbox per quelli esterni; usato da API (azioni, webhook) e worker (sweeper).
+3. API: `POST /orders` con `Idempotency-Key`, dettaglio e timeline, spedizione autonoma con tracking, conferma ricezione con step-up, codice di consegna (step-up) e verifica, annullamento e annullamento concordato, onboarding e stato account, saldo dal ledger, webhook con verifica firma sul corpo grezzo e `WebhookEvent`, vista ordini admin.
+4. Worker: coda `payments` (elaborazione webhook, trasferimenti, rimborsi, annullamento PaymentIntent con chiavi idempotenti), sweeper degli ordini ogni minuto, riconciliazione notturna (invarianti del ledger), `funds-hold-guard`.
+5. Web: "Compra" con scelta della consegna, `/checkout/[orderId]` (Payment Element con Stripe, pagamento simulato con l'adapter finto), `/account/acquisti`, `/account/vendite` con timeline e azioni, `/account/incassi`, admin ordini.
+6. Test: integrazione (acquisti concorrenti → 409, `Idempotency-Key`, firma e duplicati dei webhook, trasferimento con `source_transaction`, rimborsi, invarianti del ledger), e2e J3 (consegna a mano) e spedizione autonoma completa.
+
+**Fatto**
+- `packages/payments`: porta `PaymentProvider`, adapter `fake` (webhook firmati HMAC, id idempotenti) e `stripe` (Accounts v2, separate charges and transfers).
+- `packages/orders`: `applyOrderEvent` (macchina a stati, lock ottimistico, `OrderEvent`, effetti sincroni, outbox `order.effects`), ledger con riferimenti univoci.
+- Dominio: `deriveHandoverCode`.
+- API: `POST /orders` con `Idempotency-Key` (importi §6.3, un solo ordine attivo per annuncio, limite account nuovi, prezzo dell'offerta accettata), dettaglio con timeline e azioni disponibili, elenco acquisti/vendite, spedizione autonoma con tracking validato, conferma di ricezione con step-up, codice di consegna (step-up) e verifica con blocco, annullamento del venditore e annullamento concordato, onboarding e stato dell'account pagamenti, saldo dal ledger, webhook con firma sul corpo grezzo e `WebhookEvent`, vista ordini admin, endpoint di sviluppo per l'adapter finto.
+- Worker: coda `payments` (webhook: pagamento riuscito/rifiutato, aggiornamento account, chargeback; trasferimenti con `source_transaction`, rimborsi totali e parziali, annullamento PaymentIntent, notifiche degli ordini), sweeper degli ordini ogni minuto, controlli notturni (invarianti del ledger, fondi trattenuti oltre 60/85 giorni).
+- Web: box "Compra con pagamento protetto" (consegna, indirizzo), `/checkout/[orderId]` (Payment Element con Stripe, pagamento simulato con l'adapter finto), `/account/acquisti` e `/account/vendite` con dettaglio, cronologia, importi, azioni (spedisci, conferma ricezione, codice con QR, verifica codice, annullamenti), `/account/incassi` (attivazione e saldo), `/admin/ordini`, "Paga ora" dalla chat per le offerte accettate, interruttore "Pagamento protetto" nel wizard abilitato dall'account pagamenti.
+- Criteri (con adapter finto, scelta dell'utente): e2e J3 consegna a mano con codice (anche codice errato) e percorso completo con spedizione autonoma fino al trasferimento; due acquisti concorrenti → un 201 e un 409; `Idempotency-Key` ripetuta → stessa risposta; webhook duplicato memorizzato ed elaborato una volta; trasferimento con `source_transaction` e chiave idempotente; rimborso totale; invarianti del ledger verdi (test e database di sviluppo dopo gli e2e).
+- Test: 7 integrazione API ordini/webhook, 3 integrazione worker pagamenti, 2 unitari adapter finto, 1 unitario codice di consegna, 2 e2e (8 e2e in totale).
+- Decisioni: ADR-0037…0040; regole Radar in `docs/SECURITY.md`.
+
+**Da verificare con le chiavi Stripe test**
+- Trasferimento visibile sull'account connesso nella Dashboard; Payment Element con carte `4242…`, `4000 0027 6000 3184` (3DS), `4000 0000 0000 0002`; e2e J3 con `stripe listen`; eventi degli account v2.
+
+**Rimandato**
+- Spedizione integrata al checkout (Fase 7), controversie e prove dei chargeback (Fase 8), feedback (Fase 9), pannello log webhook e riconciliazione con le balance transaction (Fase 11 / chiavi Stripe), blocco anti-collusione (Fase 12).
