@@ -139,7 +139,23 @@
     "OUTCOME_NOT_AVAILABLE": "Outcome not available after the return.",
     "NOTES_TOO_SHORT": "Write a motivation of at least 20 characters.",
     "INVALID_UPLOAD_KEY": "Invalid upload.",
-    "ORDER_NOT_COMPLETED": "The order is not completed."
+    "ORDER_NOT_COMPLETED": "Feedback can only be left on completed orders.",
+    "WINDOW_CLOSED": "More than 60 days have passed since completion: feedback can no longer be left.",
+    "FEEDBACK_EXISTS": "You already left feedback for this order.",
+    "SELLER_ONLY_POSITIVE": "Buyers can only receive positive feedback.",
+    "COMMENT_REQUIRED": "A neutral or negative rating needs a comment.",
+    "COMMENT_LENGTH": "The comment must be 20 to 500 characters.",
+    "DSR_REQUIRED": "Rate each criterion from 1 to 5 stars.",
+    "DSR_NOT_ALLOWED": "This rating doesn't apply to this order.",
+    "DSR_RANGE": "Ratings go from 1 to 5 stars.",
+    "ALREADY_REPLIED": "You already replied to this feedback.",
+    "TEXT_NOT_ALLOWED": "The text contains contacts, links, personal data or forbidden words.",
+    "NOT_NEGATIVE_OR_NEUTRAL": "Revisions can only be requested for neutral or negative feedback.",
+    "TOO_OLD": "The feedback was received more than 30 days ago.",
+    "ALREADY_REQUESTED": "You already requested a revision for this order.",
+    "QUOTA_EXCEEDED": "You have used all the revision requests available this year.",
+    "REVISION_NOT_PENDING": "The revision request is no longer active.",
+    "REVISION_WORSE": "A revision can only improve the rating."
   },
   "Validation": {
     "EMAIL_INVALID": "Enter a valid email address.",
@@ -254,7 +270,8 @@
       "following": "Following",
       "purchases": "Purchases",
       "sales": "Sales",
-      "payouts": "Payouts"
+      "payouts": "Payouts",
+      "feedback": "Feedback"
     },
     "welcome": "Hi {name}!",
     "overviewText": "Manage your profile, addresses, security and preferences here. Listings, purchases and sales are coming soon.",
@@ -439,7 +456,8 @@
     "shop": "Shop page",
     "business": "Professional seller",
     "notFound": "User not found.",
-    "signInToFollow": "Sign in to follow this user."
+    "signInToFollow": "Sign in to follow this user.",
+    "allFeedback": "See all feedback"
   },
   "Condition": {
     "NEW": "New",
@@ -748,7 +766,8 @@
     "reserved": "Under offer",
     "distance": "{km} km",
     "protected": "Protected payment",
-    "positive": "{pct} positive"
+    "positive": "{pct} positive",
+    "topSeller": "Top Seller"
   },
   "SavedSearches": {
     "title": "Saved searches",
@@ -981,7 +1000,8 @@
     "trackingLink": "Track the parcel",
     "devAdvance": "Simulate progress (development)",
     "packingGuide": "How to pack an instrument",
-    "openDispute": "Report a problem"
+    "openDispute": "Report a problem",
+    "leaveFeedback": "Leave feedback"
   },
   "Checkout": {
     "title": "Buy with protected payment",
@@ -1123,5 +1143,147 @@
     "appealReviewHint": "The appeal must be reviewed by a staff member other than the one who decided.",
     "uphold": "Uphold the decision",
     "overturn": "Overturn the decision"
+  },
+  "Reputation": {
+    "level": "{name} level",
+    "levels": {
+      "NEWCOMER": "Newcomer",
+      "SESSION_PLAYER": "Session player",
+      "SOLOIST": "Soloist",
+      "PROFESSIONAL": "Professional",
+      "MAESTRO": "Maestro",
+      "LEGEND": "Legend"
+    },
+    "pageTitle": "{name}'s feedback",
+    "score": "Score {score}",
+    "noFeedback": "No feedback",
+    "positive": "{pct} positive",
+    "topSeller": "Top Seller",
+    "backToProfile": "Back to the profile",
+    "summary": "Feedback received as a seller",
+    "ratingCol": "Rating",
+    "period": {
+      "m1": "1 month",
+      "m6": "6 months",
+      "m12": "12 months"
+    },
+    "row": {
+      "positive": "Positive",
+      "neutral": "Neutral",
+      "negative": "Negative"
+    },
+    "dsrTitle": "Detailed ratings (12 months)",
+    "dsrValue": "{avg} out of 5 ({count})",
+    "dsrFew": "Fewer than 5 ratings",
+    "listTitle": "List",
+    "filters": "Filters",
+    "filter": {
+      "seller": "Received as a seller",
+      "buyer": "Received as a buyer",
+      "left": "Left"
+    },
+    "allRatings": "All ratings",
+    "emptyList": "No feedback.",
+    "more": "More feedback"
+  },
+  "Feedback": {
+    "title": "Feedback",
+    "tabs": {
+      "pending": "To leave",
+      "received": "Received",
+      "left": "Left",
+      "revisions": "Revision requests"
+    },
+    "nothingPending": "No feedback to leave.",
+    "forSeller": "Seller: {name}",
+    "forBuyer": "Buyer: {name}",
+    "deadline": "by {date}",
+    "leave": "Leave feedback",
+    "overall": "Overall rating",
+    "rating": {
+      "POSITIVE": "Positive",
+      "NEUTRAL": "Neutral",
+      "NEGATIVE": "Negative"
+    },
+    "sellerOnlyPositive": "Buyers only get positive feedback: report any problem privately to the staff.",
+    "dsr": {
+      "itemAsDescribed": "Item as described",
+      "communication": "Communication",
+      "shippingTime": "Shipping time",
+      "packaging": "Packaging"
+    },
+    "stars": "{count, plural, one {# star} other {# stars}}",
+    "starsValue": "{value} out of 5",
+    "commentOptional": "Comment (optional)",
+    "commentRequired": "Comment (required, 20–500 characters)",
+    "commentHint": "{count} of 500 characters",
+    "tryResolve": "Have you tried sorting it out with the other party? A message is often enough.",
+    "openChat": "Open the chat",
+    "publish": "Publish feedback",
+    "publishAnyway": "Publish anyway",
+    "none": "No feedback.",
+    "noRevisions": "No revision requests.",
+    "revisionMessage": "Seller's message",
+    "revisionStatus": {
+      "PENDING": "Waiting for your answer",
+      "ACCEPTED": "Accepted",
+      "DECLINED": "Declined",
+      "EXPIRED": "Expired"
+    },
+    "newComment": "New comment",
+    "acceptRevision": "Revise the feedback",
+    "declineRevision": "Leave it as it is",
+    "howItWorks": "How feedback works",
+    "fromBuyer": "from the buyer",
+    "fromSeller": "from the seller",
+    "verified": "Verified purchase",
+    "revised": "(revised)",
+    "status": {
+      "PUBLISHED": "Published",
+      "HIDDEN": "Under review",
+      "REMOVED": "Removed"
+    },
+    "replyBy": "Reply by {name}:",
+    "reply": "Reply",
+    "requestRevision": "Ask for a revision",
+    "report": "Report",
+    "reportReason": "Reason",
+    "reportReasons": {
+      "EXTORTION": "Extortion (threats or benefits in exchange)",
+      "OFFENSIVE": "Offensive",
+      "PERSONAL_DATA": "Personal data",
+      "CONTACT_OR_LINKS": "Contacts or links",
+      "UNRELATED": "Unrelated",
+      "OTHER": "Other"
+    },
+    "modeLabel": {
+      "reply": "Your reply (one only, max 500 characters)",
+      "revision": "Message for the buyer",
+      "report": "Details (optional)"
+    },
+    "send": "Send",
+    "cancel": "Cancel",
+    "sent": {
+      "reply": "Reply published.",
+      "revision": "Revision request sent.",
+      "report": "Report sent."
+    },
+    "adminTitle": "Feedback moderation",
+    "queueEmpty": "No feedback to moderate.",
+    "reports": "{count, plural, one {# report} other {# reports}}",
+    "removalReason": "Removal reason",
+    "removal": {
+      "OFFENSIVE": "Offensive",
+      "PERSONAL_DATA": "Personal data",
+      "CONTACT_OR_LINKS": "Contacts or links",
+      "EXTORTION": "Extortion",
+      "UNRELATED": "Unrelated",
+      "ILLEGAL": "Illegal",
+      "AUTHOR_BANNED_FOR_FRAUD": "Author banned for fraud",
+      "DISPUTE_ABUSE": "Dispute abuse"
+    },
+    "statement": "Statement of reasons (sent to both parties)",
+    "remove": "Remove",
+    "publishFeedback": "Publish"
   }
 }

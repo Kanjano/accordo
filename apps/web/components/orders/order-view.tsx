@@ -208,6 +208,11 @@ export function OrderView({ id }: { id: string }) {
               {t('showCode')}
             </Button>
           ) : null}
+          {can('leaveFeedback') ? (
+            <Link href={`/account/feedback?ordine=${o.id}`} className={buttonVariants()}>
+              {t('leaveFeedback')}
+            </Link>
+          ) : null}
           {can('openDispute') ? (
             <Link
               href={`/account/acquisti/${o.id}/controversia`}

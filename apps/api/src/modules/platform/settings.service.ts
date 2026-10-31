@@ -14,6 +14,7 @@ export interface PlatformSettings {
     { priceCents: number; maxKg: number; dimensionsCm: number[] }
   >;
   feedback: { windowDays: number; minOrderCents: number };
+  feedbackInsults: string[];
   offers: {
     expiryHours: number;
     minPercent: number;

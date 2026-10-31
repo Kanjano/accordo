@@ -8,6 +8,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import type { Locale } from 'next-intl';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { cache } from 'react';
+import { LevelIcon } from '@/components/feedback/level-icon';
 import { FavoriteButton } from '@/components/listing/favorite-button';
 import { Gallery } from '@/components/listing/gallery';
 import { RecentlyViewedTracker } from '@/components/listing/recently-viewed-tracker';
@@ -291,7 +292,9 @@ export default async function ListingPage({
             <h2 id="seller" className="text-sm font-medium text-muted-foreground">
               {t('seller')}
             </h2>
-            <p className="font-semibold">{l.seller.displayName}</p>
+            <p className="flex items-center gap-1 font-semibold">
+              {l.seller.displayName} <LevelIcon levelKey={l.seller.levelKey} />
+            </p>
             <p className="flex items-center gap-1 text-sm">
               <BadgeCheck aria-hidden className="size-4 text-primary" />
               {pct === null

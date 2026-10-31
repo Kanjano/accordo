@@ -8,9 +8,12 @@ import {
   formatPositivePct,
   levelFor,
   maskUsername,
+  moderateFeedbackText,
+  responseMetrics,
   responseTimeBucket,
   revisionRequestErrors,
   revisionRequestQuota,
+  suspiciousPairs,
   type TopSellerInput,
   unmetTopSellerRequirements,
   validateFeedbackInput,
@@ -379,5 +382,49 @@ describe('display helpers', () => {
     expect(responseTimeBucket(200)).toBe('WITHIN_HOURS');
     expect(responseTimeBucket(1000)).toBe('WITHIN_DAY');
     expect(responseTimeBucket(2000)).toBeNull();
+  });
+});
+
+describe('moderation and trust signals', () => {
+  it('hides feedback with contacts, links, personal data or insults', () => {
+    expect(moderateFeedbackText('Tutto perfetto, consigliato!', ['idiota'])).toEqual([]);
+    expect(moderateFeedbackText('Scrivimi su whatsapp 333 123 4567', [])).toEqual(
+      expect.arrayContaining(['CONTACT_OR_LINKS', 'PERSONAL_DATA']),
+    );
+    expect(moderateFeedbackText('Venditore IDIOTA, mai più', ['idiota'])).toEqual(['OFFENSIVE']);
+    expect(moderateFeedbackText('Idiotamente bravo', ['idiota'])).toEqual([]); // whole words only
+  });
+
+  it('computes median response time and response rate within 24 hours', () => {
+    const t = (min: number) => new Date(Date.UTC(2026, 0, 1) + min * 60_000);
+    expect(responseMetrics([])).toEqual({ medianMinutes: null, responseRateBps: null });
+    expect(
+      responseMetrics([
+        { firstBuyerAt: t(0), firstReplyAt: t(10) },
+        { firstBuyerAt: t(0), firstReplyAt: t(30) },
+        { firstBuyerAt: t(0), firstReplyAt: t(3000) },
+        { firstBuyerAt: t(0), firstReplyAt: null },
+      ]),
+    ).toEqual({ medianMinutes: 30, responseRateBps: 5000 });
+    expect(
+      responseMetrics([
+        { firstBuyerAt: t(0), firstReplyAt: t(20) },
+        { firstBuyerAt: t(0), firstReplyAt: t(40) },
+      ]).medianMinutes,
+    ).toBe(30);
+  });
+
+  it('flags pairs with more than 3 orders between them in 30 days', () => {
+    const now = new Date('2026-11-30T00:00:00Z');
+    const day = (d: number) => new Date(now.getTime() - d * 86_400_000);
+    const orders = [
+      { buyerId: 'a', sellerId: 'b', completedAt: day(1) },
+      { buyerId: 'b', sellerId: 'a', completedAt: day(2) },
+      { buyerId: 'a', sellerId: 'b', completedAt: day(3) },
+      { buyerId: 'a', sellerId: 'b', completedAt: day(4) },
+      { buyerId: 'c', sellerId: 'b', completedAt: day(1) },
+      { buyerId: 'a', sellerId: 'c', completedAt: day(40) },
+    ];
+    expect(suspiciousPairs(orders, now)).toEqual(new Set(['a|b']));
   });
 });

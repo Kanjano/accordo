@@ -1,6 +1,7 @@
 import type { DeliveryMethod } from './amounts.js';
 import { BUSINESS_TIMEZONE } from './business-days.js';
 import { divRoundHalfUp } from './money.js';
+import { scanMessage } from './scan-message.js';
 
 export type FeedbackRole = 'BUYER_TO_SELLER' | 'SELLER_TO_BUYER';
 export type FeedbackRating = 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
@@ -381,4 +382,68 @@ export function responseTimeBucket(medianMinutes: number | null): ResponseTimeBu
   if (medianMinutes <= 6 * 60) return 'WITHIN_HOURS';
   if (medianMinutes <= 24 * 60) return 'WITHIN_DAY';
   return null;
+}
+
+// ───────────────────────── Moderation and trust signals ─────────────────────────
+
+export type FeedbackFlag = 'CONTACT_OR_LINKS' | 'PERSONAL_DATA' | 'OFFENSIVE';
+
+const fold = (s: string) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/**
+ * SPEC §8.8 automatic checks before publication: contacts, links, IBAN and personal data (same
+ * detector as the chat) and insults from a configurable list. Any flag → HIDDEN for review.
+ */
+export function moderateFeedbackText(text: string, insults: readonly string[]): FeedbackFlag[] {
+  const flags = new Set<FeedbackFlag>();
+  const scan = scanMessage(text);
+  if (scan.flags.some((f) => f === 'LINK' || f === 'MESSAGING_APP')) flags.add('CONTACT_OR_LINKS');
+  if (scan.flags.some((f) => f === 'PHONE' || f === 'EMAIL' || f === 'IBAN'))
+    flags.add('PERSONAL_DATA');
+  const words = fold(text);
+  if (insults.some((w) => new RegExp(`(^|[^\\p{L}])${fold(w)}([^\\p{L}]|$)`, 'u').test(words)))
+    flags.add('OFFENSIVE');
+  return [...flags];
+}
+
+/**
+ * SPEC §8.7: median minutes between a buyer's first message and the seller's first reply, and
+ * the share of conversations answered within 24 hours (conversations of the last 30 days).
+ */
+export function responseMetrics(
+  conversations: ReadonlyArray<{ firstBuyerAt: Date; firstReplyAt: Date | null }>,
+): { medianMinutes: number | null; responseRateBps: number | null } {
+  if (!conversations.length) return { medianMinutes: null, responseRateBps: null };
+  const answered = conversations
+    .filter((c) => c.firstReplyAt)
+    .map((c) => ((c.firstReplyAt as Date).getTime() - c.firstBuyerAt.getTime()) / 60_000)
+    .sort((a, b) => a - b);
+  const within = answered.filter((m) => m <= 24 * 60).length;
+  const mid = answered.length >> 1;
+  const median = !answered.length
+    ? null
+    : Math.round(
+        answered.length % 2
+          ? (answered[mid] as number)
+          : ((answered[mid - 1] as number) + (answered[mid] as number)) / 2,
+      );
+  return {
+    medianMinutes: median,
+    responseRateBps: divRoundHalfUp(within * 10_000, conversations.length),
+  };
+}
+
+/** Pairs ("a|b", sorted ids) with more than 3 orders between them in 30 days (SPEC §8.8). */
+export function suspiciousPairs(
+  orders: ReadonlyArray<{ buyerId: string; sellerId: string; completedAt: Date }>,
+  now: Date,
+): Set<string> {
+  const since = now.getTime() - 30 * DAY;
+  const counts = new Map<string, number>();
+  for (const o of orders) {
+    if (o.completedAt.getTime() < since) continue;
+    const key = [o.buyerId, o.sellerId].sort().join('|');
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return new Set([...counts].filter(([, n]) => n > 3).map(([k]) => k));
 }

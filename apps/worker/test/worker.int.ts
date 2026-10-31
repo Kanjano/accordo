@@ -19,6 +19,7 @@ import { OutboxDispatcher } from '../src/outbox.dispatcher.js';
 import { ChargebackService, sellerReceivable } from '../src/payments/chargebacks.js';
 import { NightlyChecks, OrdersSweeper } from '../src/payments/orders-sweeper.js';
 import { PaymentsProcessor } from '../src/payments/payments.processor.js';
+import { ReputationProcessor } from '../src/reputation.js';
 import { SavedSearchAlertsProcessor } from '../src/search/saved-search-alerts.js';
 import { ShippingProcessor } from '../src/shipping/shipping.processor.js';
 import { ShippingService } from '../src/shipping/shipping.service.js';
@@ -90,8 +91,15 @@ describe('outbox dispatcher', () => {
           aggregateId: 'i1',
           type: 'media.uploaded',
           payload: { imageId: 'i1' },
+          availableAt: new Date(Date.now() - 60_000),
         },
-        { aggregateType: 'Listing', aggregateId: 'l1', type: 'listing.updated', payload: {} },
+        {
+          aggregateType: 'Listing',
+          aggregateId: 'l1',
+          type: 'listing.updated',
+          payload: {},
+          availableAt: new Date(Date.now() - 60_000),
+        },
         {
           aggregateType: 'Listing',
           aggregateId: 'l1',
@@ -132,12 +140,23 @@ describe('outbox dispatcher', () => {
         aggregateId: 'i2',
         type: 'media.deleted',
         payload: {},
+        // Prisma sets the default on the client; the container clock may lag a few ms.
+        availableAt: new Date(Date.now() - 60_000),
       },
     });
     const failing = {
       add: vi.fn().mockRejectedValue(new Error('valkey down')),
     } as unknown as Queue;
-    await new OutboxDispatcher(env, db, failing, failing, failing, failing).tick();
+    await new OutboxDispatcher(
+      env,
+      db,
+      failing,
+      failing,
+      failing,
+      failing,
+      failing,
+      failing,
+    ).tick();
     const row = await db.outboxEvent.findFirstOrThrow();
     expect(row).toMatchObject({ status: 'PENDING', attempts: 1, lastError: 'Error: valkey down' });
     expect(row.availableAt.getTime()).toBeGreaterThan(Date.now());
@@ -407,6 +426,7 @@ describe('payments', () => {
       spy,
       penv,
       notifications,
+      { add: vi.fn() } as unknown as Queue,
       shippingService,
       new ChargebackService(db, spy),
     );
@@ -891,5 +911,55 @@ describe('payments', () => {
       payoutStatus: 'TRANSFERRED',
     });
     expect((await nightly()).unbalancedTransactions).toBe(0);
+  });
+
+  it('recomputes the reputation from feedback, marks duplicates of the same week, sends reminders', async () => {
+    const repo = new ReputationProcessor(db, {} as never, new Notifier(env, db, email));
+    const orders = await db.order.findMany({ where: { sellerId, status: 'COMPLETED' }, take: 2 });
+    expect(orders.length).toBe(2);
+    const week = '2026-W45';
+    for (const [i, o] of orders.entries())
+      await db.feedback.create({
+        data: {
+          orderId: o.id,
+          authorId: buyerId,
+          recipientId: sellerId,
+          role: 'BUYER_TO_SELLER',
+          rating: i === 0 ? 'POSITIVE' : 'NEGATIVE',
+          comment: i === 0 ? null : 'Oggetto non conforme alla descrizione.',
+          dsrItemAsDescribed: 5,
+          dsrCommunication: 5,
+          weekKey: week,
+          createdAt: new Date(Date.now() - (2 - i) * 60_000),
+        },
+      });
+    await repo.process({
+      name: 'feedback.created',
+      data: { feedbackId: 'x', recipientId: sellerId, authorId: buyerId, orderId: orders[0]?.id },
+    } as never);
+    // These two users completed more than 3 orders together in 30 days (SPEC §8.8): nothing counts.
+    expect(
+      await db.userReputation.findUniqueOrThrow({ where: { userId: sellerId } }),
+    ).toMatchObject({ score: 0, sellerPositivePctBps: null });
+    await db.order.updateMany({
+      where: { sellerId, buyerId },
+      data: { completedAt: new Date(Date.now() - 40 * 86_400_000) },
+    });
+    await repo.recompute(sellerId);
+    const rep = await db.userReputation.findUniqueOrThrow({ where: { userId: sellerId } });
+    // Same author, recipient and week: only the first counts (SPEC §8.4).
+    expect(rep).toMatchObject({
+      score: 1,
+      sellerPositive12m: 1,
+      sellerNegative12m: 0,
+      sellerPositivePctBps: 10_000,
+      isTopSeller: false,
+    });
+    const counted = await db.feedback.findMany({
+      where: { recipientId: sellerId },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(counted.map((f) => f.countsTowardScore)).toEqual([true, false]);
+    expect((await repo.process({ name: 'nightly' } as never)).users).toBeGreaterThan(0);
   });
 });

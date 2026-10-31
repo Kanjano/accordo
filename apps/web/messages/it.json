@@ -139,7 +139,23 @@
     "OUTCOME_NOT_AVAILABLE": "Esito non disponibile dopo il reso.",
     "NOTES_TOO_SHORT": "Scrivi una motivazione di almeno 20 caratteri.",
     "INVALID_UPLOAD_KEY": "Caricamento non valido.",
-    "ORDER_NOT_COMPLETED": "L'ordine non è completato."
+    "ORDER_NOT_COMPLETED": "Il feedback si lascia solo sugli ordini completati.",
+    "WINDOW_CLOSED": "Sono passati più di 60 giorni dal completamento: non è più possibile lasciare il feedback.",
+    "FEEDBACK_EXISTS": "Hai già lasciato un feedback per questo ordine.",
+    "SELLER_ONLY_POSITIVE": "Agli acquirenti si può lasciare solo un feedback positivo.",
+    "COMMENT_REQUIRED": "Per un giudizio neutro o negativo serve un commento.",
+    "COMMENT_LENGTH": "Il commento deve avere tra 20 e 500 caratteri.",
+    "DSR_REQUIRED": "Dai una valutazione da 1 a 5 stelle per ogni criterio.",
+    "DSR_NOT_ALLOWED": "Questa valutazione non si applica a questo ordine.",
+    "DSR_RANGE": "Le valutazioni vanno da 1 a 5 stelle.",
+    "ALREADY_REPLIED": "Hai già risposto a questo feedback.",
+    "TEXT_NOT_ALLOWED": "Il testo contiene contatti, link, dati personali o parole non ammesse.",
+    "NOT_NEGATIVE_OR_NEUTRAL": "Si può chiedere la revisione solo di un feedback neutro o negativo.",
+    "TOO_OLD": "Il feedback è stato ricevuto più di 30 giorni fa.",
+    "ALREADY_REQUESTED": "Hai già chiesto una revisione per questo ordine.",
+    "QUOTA_EXCEEDED": "Hai esaurito le richieste di revisione disponibili quest'anno.",
+    "REVISION_NOT_PENDING": "La richiesta di revisione non è più attiva.",
+    "REVISION_WORSE": "La revisione può solo migliorare il giudizio."
   },
   "Validation": {
     "EMAIL_INVALID": "Inserisci un indirizzo email valido.",
@@ -254,7 +270,8 @@
       "following": "Seguiti",
       "purchases": "Acquisti",
       "sales": "Vendite",
-      "payouts": "Incassi"
+      "payouts": "Incassi",
+      "feedback": "Feedback"
     },
     "welcome": "Ciao {name}!",
     "overviewText": "Da qui gestisci profilo, indirizzi, sicurezza e preferenze. Annunci, acquisti e vendite arriveranno presto.",
@@ -439,7 +456,8 @@
     "shop": "Vetrina del negozio",
     "business": "Venditore professionale",
     "notFound": "Utente non trovato.",
-    "signInToFollow": "Accedi per seguire questo utente."
+    "signInToFollow": "Accedi per seguire questo utente.",
+    "allFeedback": "Vedi tutti i feedback"
   },
   "Condition": {
     "NEW": "Nuovo",
@@ -748,7 +766,8 @@
     "reserved": "In trattativa",
     "distance": "{km} km",
     "protected": "Pagamento protetto",
-    "positive": "{pct} positivi"
+    "positive": "{pct} positivi",
+    "topSeller": "Venditore Top"
   },
   "SavedSearches": {
     "title": "Ricerche salvate",
@@ -981,7 +1000,8 @@
     "trackingLink": "Segui la spedizione",
     "devAdvance": "Simula avanzamento (sviluppo)",
     "packingGuide": "Come imballare uno strumento",
-    "openDispute": "Segnala un problema"
+    "openDispute": "Segnala un problema",
+    "leaveFeedback": "Lascia un feedback"
   },
   "Checkout": {
     "title": "Compra con pagamento protetto",
@@ -1123,5 +1143,147 @@
     "appealReviewHint": "Il ricorso va esaminato da un membro dello staff diverso da chi ha deciso.",
     "uphold": "Conferma la decisione",
     "overturn": "Riforma la decisione"
+  },
+  "Reputation": {
+    "level": "Livello {name}",
+    "levels": {
+      "NEWCOMER": "Esordiente",
+      "SESSION_PLAYER": "Turnista",
+      "SOLOIST": "Solista",
+      "PROFESSIONAL": "Professionista",
+      "MAESTRO": "Maestro",
+      "LEGEND": "Leggenda"
+    },
+    "pageTitle": "Feedback di {name}",
+    "score": "Punteggio {score}",
+    "noFeedback": "Nessun feedback",
+    "positive": "{pct} positivi",
+    "topSeller": "Venditore Top",
+    "backToProfile": "Torna al profilo",
+    "summary": "Feedback ricevuti come venditore",
+    "ratingCol": "Giudizio",
+    "period": {
+      "m1": "1 mese",
+      "m6": "6 mesi",
+      "m12": "12 mesi"
+    },
+    "row": {
+      "positive": "Positivi",
+      "neutral": "Neutri",
+      "negative": "Negativi"
+    },
+    "dsrTitle": "Valutazioni dettagliate (12 mesi)",
+    "dsrValue": "{avg} su 5 ({count})",
+    "dsrFew": "Meno di 5 valutazioni",
+    "listTitle": "Elenco",
+    "filters": "Filtri",
+    "filter": {
+      "seller": "Ricevuti come venditore",
+      "buyer": "Ricevuti come acquirente",
+      "left": "Lasciati"
+    },
+    "allRatings": "Tutti i giudizi",
+    "emptyList": "Nessun feedback.",
+    "more": "Altri feedback"
+  },
+  "Feedback": {
+    "title": "Feedback",
+    "tabs": {
+      "pending": "Da lasciare",
+      "received": "Ricevuti",
+      "left": "Lasciati",
+      "revisions": "Richieste di revisione"
+    },
+    "nothingPending": "Nessun feedback da lasciare.",
+    "forSeller": "Venditore: {name}",
+    "forBuyer": "Acquirente: {name}",
+    "deadline": "entro il {date}",
+    "leave": "Lascia un feedback",
+    "overall": "Giudizio complessivo",
+    "rating": {
+      "POSITIVE": "Positivo",
+      "NEUTRAL": "Neutro",
+      "NEGATIVE": "Negativo"
+    },
+    "sellerOnlyPositive": "Agli acquirenti si lascia solo un feedback positivo: eventuali problemi segnalali in privato allo staff.",
+    "dsr": {
+      "itemAsDescribed": "Oggetto conforme alla descrizione",
+      "communication": "Comunicazione",
+      "shippingTime": "Tempi di spedizione",
+      "packaging": "Imballaggio"
+    },
+    "stars": "{count, plural, one {# stella} other {# stelle}}",
+    "starsValue": "{value} su 5",
+    "commentOptional": "Commento (facoltativo)",
+    "commentRequired": "Commento (obbligatorio, 20–500 caratteri)",
+    "commentHint": "{count} su 500 caratteri",
+    "tryResolve": "Hai provato a risolvere con l'altra parte? Spesso un messaggio basta.",
+    "openChat": "Apri la chat",
+    "publish": "Pubblica il feedback",
+    "publishAnyway": "Pubblica comunque",
+    "none": "Nessun feedback.",
+    "noRevisions": "Nessuna richiesta di revisione.",
+    "revisionMessage": "Messaggio del venditore",
+    "revisionStatus": {
+      "PENDING": "In attesa della tua risposta",
+      "ACCEPTED": "Accettata",
+      "DECLINED": "Rifiutata",
+      "EXPIRED": "Scaduta"
+    },
+    "newComment": "Nuovo commento",
+    "acceptRevision": "Rivedi il feedback",
+    "declineRevision": "Lascia com'è",
+    "howItWorks": "Come funzionano i feedback",
+    "fromBuyer": "dall'acquirente",
+    "fromSeller": "dal venditore",
+    "verified": "Acquisto verificato",
+    "revised": "(rivisto)",
+    "status": {
+      "PUBLISHED": "Pubblicato",
+      "HIDDEN": "In revisione",
+      "REMOVED": "Rimosso"
+    },
+    "replyBy": "Risposta di {name}:",
+    "reply": "Rispondi",
+    "requestRevision": "Chiedi una revisione",
+    "report": "Segnala",
+    "reportReason": "Motivo",
+    "reportReasons": {
+      "EXTORTION": "Estorsione (minacce o vantaggi in cambio)",
+      "OFFENSIVE": "Offensivo",
+      "PERSONAL_DATA": "Dati personali",
+      "CONTACT_OR_LINKS": "Contatti o link",
+      "UNRELATED": "Non pertinente",
+      "OTHER": "Altro"
+    },
+    "modeLabel": {
+      "reply": "La tua risposta (una sola, max 500 caratteri)",
+      "revision": "Messaggio per l'acquirente",
+      "report": "Dettagli (facoltativi)"
+    },
+    "send": "Invia",
+    "cancel": "Annulla",
+    "sent": {
+      "reply": "Risposta pubblicata.",
+      "revision": "Richiesta di revisione inviata.",
+      "report": "Segnalazione inviata."
+    },
+    "adminTitle": "Moderazione feedback",
+    "queueEmpty": "Nessun feedback da moderare.",
+    "reports": "{count, plural, one {# segnalazione} other {# segnalazioni}}",
+    "removalReason": "Motivo della rimozione",
+    "removal": {
+      "OFFENSIVE": "Offensivo",
+      "PERSONAL_DATA": "Dati personali",
+      "CONTACT_OR_LINKS": "Contatti o link",
+      "EXTORTION": "Estorsione",
+      "UNRELATED": "Non pertinente",
+      "ILLEGAL": "Illecito",
+      "AUTHOR_BANNED_FOR_FRAUD": "Autore bannato per frode",
+      "DISPUTE_ABUSE": "Abuso delle controversie"
+    },
+    "statement": "Motivazione (inviata a entrambe le parti)",
+    "remove": "Rimuovi",
+    "publishFeedback": "Pubblica"
   }
 }

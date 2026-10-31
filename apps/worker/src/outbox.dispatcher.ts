@@ -40,8 +40,10 @@ export class OutboxDispatcher implements OnApplicationBootstrap, OnApplicationSh
     @InjectQueue(QUEUES.searchIndex) searchIndex: Queue,
     @InjectQueue(QUEUES.payments) payments: Queue,
     @InjectQueue(QUEUES.shipping) shipping: Queue,
+    @InjectQueue(QUEUES.reputation) reputation: Queue,
   ) {
     this.queues = {
+      [QUEUES.reputation]: reputation,
       [QUEUES.shipping]: shipping,
       [QUEUES.payments]: payments,
       [QUEUES.media]: media,

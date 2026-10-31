@@ -41,6 +41,7 @@ export class PaymentsProcessor extends WorkerHost {
     @Inject(PAYMENTS) private readonly provider: PaymentProvider,
     @Inject(ENV) private readonly env: Env,
     @InjectQueue(QUEUES.notifications) private readonly notifications: Queue,
+    @InjectQueue(QUEUES.reputation) private readonly reputation: Queue,
     private readonly shipping: ShippingService,
     private readonly chargebacks: ChargebackService,
   ) {
@@ -211,8 +212,22 @@ export class PaymentsProcessor extends WorkerHost {
         case 'CREATE_RETURN_LABEL':
           await this.shipping.createReturnLabel(job.orderId);
           break;
+        case 'OPEN_FEEDBACK': {
+          // Completed sales/purchases feed the reputation (SPEC §8.4 `order.completed`).
+          const o = await this.db.order.findUniqueOrThrow({ where: { id: job.orderId } });
+          await this.reputation.add(
+            'order.completed',
+            { buyerId: o.buyerId, sellerId: o.sellerId },
+            {
+              jobId: `order.completed:${o.id}`,
+              attempts: 5,
+              backoff: { type: 'exponential', delay: 2000 },
+            },
+          );
+          break;
+        }
         default:
-          break; // OPEN_FEEDBACK: implicit (Phase 9, feedback on COMPLETED orders).
+          break;
       }
     }
   }

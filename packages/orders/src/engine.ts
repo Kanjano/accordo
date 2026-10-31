@@ -75,10 +75,11 @@ export async function loadOrderSettings(db: Db): Promise<{
   fees: FeeSettings;
   holidays: Set<string>;
 }> {
-  const [rows, holidays] = await Promise.all([
-    db.platformSetting.findMany({ where: { key: { in: ['orderTimings', 'fees'] } } }),
-    db.holiday.findMany({ select: { date: true } }),
-  ]);
+  // Sequential: `db` may be a transaction client (one connection, no concurrent queries).
+  const rows = await db.platformSetting.findMany({
+    where: { key: { in: ['orderTimings', 'fees'] } },
+  });
+  const holidays = await db.holiday.findMany({ select: { date: true } });
   const value = (key: string) => rows.find((r) => r.key === key)?.value as unknown;
   return {
     timings: { ...DEFAULT_ORDER_TIMINGS, ...(value('orderTimings') as Partial<OrderTimings>) },

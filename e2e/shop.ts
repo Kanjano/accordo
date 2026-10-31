@@ -22,33 +22,35 @@ export async function findListing(
   request: APIRequestContext,
   method: 'hand' | 'self' | 'integrated',
 ) {
-  const me = await (await request.get(`${API}/api/v1/me`)).json();
-  let cursor = '';
-  for (;;) {
-    const page = await (
-      await request.get(
-        `${API}/api/v1/users/${me.username}/listings?limit=50${cursor ? `&cursor=${cursor}` : ''}`,
-      )
-    ).json();
-    for (const item of page.items as Array<{ shortId: string }>) {
-      const l = (await (
-        await request.get(`${API}/api/v1/listings/${item.shortId}`)
-      ).json()) as Detail;
-      if (
-        l.status === 'ACTIVE' &&
-        l.protectedPaymentEnabled &&
-        (method === 'hand'
-          ? l.handDeliveryEnabled
-          : method === 'self'
-            ? l.shippingSelf && !!l.selfShippingPriceCents
-            : !!l.integratedShippingPriceCents)
-      )
-        return l;
+  const fits = (l: Detail) =>
+    l.protectedPaymentEnabled &&
+    (method === 'hand'
+      ? l.handDeliveryEnabled
+      : method === 'self'
+        ? l.shippingSelf && !!l.selfShippingPriceCents
+        : !!l.integratedShippingPriceCents);
+  // The seller's own list includes sold listings, usable as templates.
+  const mine = (await (await request.get(`${API}/api/v1/me/listings`)).json()) as Array<{
+    shortId: string;
+    status: string;
+  }>;
+  let template: Detail | null = null;
+  for (const item of mine.filter((x) => x.status === 'ACTIVE' || x.status === 'SOLD')) {
+    const l = (await (
+      await request.get(`${API}/api/v1/listings/${item.shortId}`)
+    ).json()) as Detail;
+    if (fits(l)) {
+      template = l;
+      break;
     }
-    if (!page.nextCursor)
-      throw new Error('No purchasable demo listing left: re-seed the demo data');
-    cursor = page.nextCursor;
   }
+  // Always a fresh ACTIVE copy (development endpoint): parallel tests never compete for the same
+  // listing and repeated runs don't use up the demo stock.
+  if (!template) throw new Error('No suitable demo listing: re-seed the demo data');
+  const copy = await (
+    await request.post(`${API}/api/v1/dev/listings/${template.id}/clone`, { headers })
+  ).json();
+  return (await (await request.get(`${API}/api/v1/listings/${copy.shortId}`)).json()) as Detail;
 }
 
 /** Buys through the listing page and the (fake provider) checkout; returns the order page path. */

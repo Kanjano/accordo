@@ -169,4 +169,8 @@ export const ORDER_TEMPLATES: Record<string, Text> = {
     'Contestazione accolta',
     `La contestazione sull'ordine ${n} («${t}») è stata accolta dalla banca e l'importo viene recuperato dai tuoi incassi.`,
   ],
+  'feedback.revision_requested': (_to, t, n) => [
+    'Richiesta di revisione del feedback',
+    `Il venditore ti chiede di rivedere il feedback lasciato per «${t}» (ordine ${n}). Hai 10 giorni per accettare o rifiutare: la revisione può solo migliorare il giudizio.`,
+  ],
 };

@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { CatalogModule } from './modules/catalog/catalog.module.js';
 import { ComplianceModule } from './modules/compliance/compliance.module.js';
 import { EngagementModule } from './modules/engagement/engagement.module.js';
+import { FeedbackModule } from './modules/feedback/feedback.module.js';
 import { GeoModule } from './modules/geo/geo.module.js';
 import { ListingsModule } from './modules/listings/listings.module.js';
 import { MessagingModule } from './modules/messaging/messaging.module.js';
@@ -58,6 +59,7 @@ import { UsersModule } from './modules/users/users.module.js';
     SearchModule,
     EngagementModule,
     OrdersModule,
+    FeedbackModule,
     ComplianceModule,
   ],
 })

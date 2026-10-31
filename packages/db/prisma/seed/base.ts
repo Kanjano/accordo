@@ -185,6 +185,17 @@ export function defaultPlatformSettings(): Record<string, Prisma.InputJsonValue>
       windowDays: int('FEEDBACK_WINDOW_DAYS', 60),
       minOrderCents: int('FEEDBACK_MIN_ORDER_CENTS', 300),
     },
+    // SPEC §8.8: words that send a feedback to review before publication (admins extend it).
+    feedbackInsults: [
+      'idiota',
+      'cretino',
+      'imbecille',
+      'deficiente',
+      'stronzo',
+      'coglione',
+      'bastardo',
+      'schifoso',
+    ],
     parcelSizes: {
       S: { priceCents: 590, maxKg: 2, dimensionsCm: [40, 30, 10] },
       M: { priceCents: 790, maxKg: 5, dimensionsCm: [60, 40, 20] },

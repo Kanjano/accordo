@@ -11,12 +11,16 @@ export async function GET(_req: Request, { params }: RouteContext<'/sitemaps/[fi
     const now = new Date().toISOString();
     return urlset(
       base,
-      ['/', '/annunci', '/guide/imballaggio', ...Object.keys(LEGAL_PAGES).map((p) => `/${p}`)].map(
-        (path) => ({
-          path,
-          lastModified: now,
-        }),
-      ),
+      [
+        '/',
+        '/annunci',
+        '/guide/imballaggio',
+        '/come-funzionano-i-feedback',
+        ...Object.keys(LEGAL_PAGES).map((p) => `/${p}`),
+      ].map((path) => ({
+        path,
+        lastModified: now,
+      })),
     );
   }
   if (name === 'categories' || name === 'brands')

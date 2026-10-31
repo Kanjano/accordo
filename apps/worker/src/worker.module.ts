@@ -14,6 +14,7 @@ import { ChargebackService } from './payments/chargebacks.js';
 import { NightlyChecks, OrdersScheduler, OrdersSweeper } from './payments/orders-sweeper.js';
 import { PaymentsProcessor } from './payments/payments.processor.js';
 import { QUEUES } from './queues.js';
+import { ReputationProcessor, ReputationScheduler } from './reputation.js';
 import { SavedSearchAlertsProcessor, SavedSearchScheduler } from './search/saved-search-alerts.js';
 import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-index.processor.js';
 import { ShippingProcessor } from './shipping/shipping.processor.js';
@@ -47,6 +48,7 @@ import { ShippingService } from './shipping/shipping.service.js';
       { name: QUEUES.orders },
       { name: QUEUES.nightly },
       { name: QUEUES.shipping },
+      { name: QUEUES.reputation },
     ),
   ],
   providers: [
@@ -71,6 +73,8 @@ import { ShippingService } from './shipping/shipping.service.js';
     NightlyChecks,
     ShippingService,
     ShippingProcessor,
+    ReputationScheduler,
+    ReputationProcessor,
   ],
 })
 export class WorkerModule {}

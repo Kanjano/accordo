@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { API, signIn, waitForApi } from './helpers';
+import { API, register, rejectCookies, signIn, waitForApi } from './helpers';
 
 test.beforeAll(waitForApi);
 
@@ -9,13 +9,23 @@ test('J6: real-time chat between two browsers, with a warning on an IBAN (SPEC �
   const sellerContext = await browser.newContext();
   const buyerContext = await browser.newContext();
   await signIn(sellerContext, 'negozio@accordo.local');
-  await signIn(buyerContext, 'utente@accordo.local');
+  // A new buyer each run: the IBAN below is a flagged message, and 5 of them in 24 h from the
+  // same account would rightly limit it (SPEC §13.4).
+  await rejectCookies(buyerContext);
+  await register(await buyerContext.newPage());
 
-  const me = await (await sellerContext.request.get(`${API}/api/v1/me`)).json();
-  const { items } = await (
-    await sellerContext.request.get(`${API}/api/v1/users/${me.username}/listings`)
-  ).json();
-  const listing = items[0];
+  // The oldest active listing: the same conversation across runs (5 flagged conversations in 24 h
+  // would rightly limit the buyer, SPEC §13.4).
+  const mine = (await (
+    await sellerContext.request.get(`${API}/api/v1/me/listings?status=ACTIVE`)
+  ).json()) as Array<{
+    slug: string;
+    shortId: string;
+    publishedAt: string;
+  }>;
+  const listing = mine.sort((a, b) =>
+    a.publishedAt.localeCompare(b.publishedAt),
+  )[0] as (typeof mine)[number];
 
   // The buyer contacts the seller from the listing page.
   const buyer = await buyerContext.newPage();

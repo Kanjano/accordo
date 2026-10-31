@@ -214,3 +214,27 @@ Provider scelto dall'utente: **Sendcloud**. Credenziali sandbox non disponibili:
 
 **Rimandato**
 - Notifiche allo staff in una casella del backoffice (oggi log + notifiche agli admin; Fase 11), timer per la decisione dello staff entro 5 giorni lavorativi (avviso, Fase 11).
+
+## Fase 9 — Feedback e reputazione
+
+**Piano**
+1. Dominio (già presente dalla Fase 1: regole §8.1–8.6, deduplicazione, calcoli, livelli, Venditore Top, revisioni): aggiunta della moderazione automatica dei testi (§8.8) e della metrica dei tempi di risposta (§8.7).
+2. `packages/orders`: `recomputeReputation` (aggregati, valutazioni dettagliate, Venditore Top, tempi e tasso di risposta, controversie perse e cancellazioni sugli ultimi 12 mesi, segnali di manipolazione, `countsTowardScore`), usato dal worker sugli eventi e ogni notte.
+3. API: lasciare feedback (finestra 60 giorni, contenuti §8.2, moderazione automatica → `HIDDEN`), risposta, richiesta di revisione con quote, accetta/rifiuta, segnalazione (anche estorsione), reputazione e elenco pubblico, feedback da lasciare/ricevuti/lasciati; admin: moderazione con `ModerationAction`.
+4. Worker: ricalcolo sugli eventi e notturno, reindicizzazione degli annunci del venditore quando cambiano percentuale o badge, promemoria a 3 e 30 giorni, scadenza delle richieste di revisione.
+5. Web: "Lascia un feedback" (stelle come gruppi radio accessibili, domanda "Hai provato a risolvere?"), `/account/feedback`, `/utente/[username]/feedback` (riepilogo 1/6/12 mesi, barre delle valutazioni, elenco filtrabile), icone dei livelli e badge su card e annunci, pagina informativa "Come funzionano i feedback", admin feedback.
+6. Test: integrazione (flusso completo, revisioni e quote, moderazione, ricalcolo), e2e "lascia un feedback e vedi la reputazione aggiornata".
+
+**Fatto**
+- Dominio: `moderateFeedbackText`, `responseMetrics`, `suspiciousPairs` (copertura 99,7%); il resto del §8 era già pronto dalla Fase 1.
+- `packages/orders`: `recomputeReputation` (aggregati 12 mesi, valutazioni dettagliate, livello, Venditore Top, tempi e tasso di risposta, controversie perse e cancellazioni, coppie sospette, `countsTowardScore`). Query senza concorrenza sulle transazioni.
+- API: `POST /orders/:id/feedback` (finestra di 60 giorni, regole §8.2, moderazione automatica), risposta, richiesta di revisione con quote, accetta/rifiuta (solo miglioramento), segnalazione (anche estorsione), `GET /users/:username/reputation` e `/feedback` (filtri ruolo, giudizio, periodo), feedback da lasciare/ricevuti/lasciati, richieste di revisione; admin: coda di moderazione, rimozione motivata, pubblicazione; azione "Lascia un feedback" nell'ordine; impostazione `feedbackInsults`.
+- Worker: coda `reputation` (ricalcolo su `feedback.*` e completamento dell'ordine, notturno con scadenza delle revisioni, promemoria a 3 e 30 giorni, reindicizzazione degli annunci del venditore quando cambiano percentuale o badge), notifiche di feedback ricevuti, rimossi e richieste di revisione.
+- Web: `/account/feedback` (da lasciare con stelle accessibili e invito a risolvere prima di un neutro/negativo, ricevuti con risposta e richiesta di revisione, lasciati, revisioni), `/utente/[username]/feedback` (riepilogo 1/6/12 mesi, barre delle valutazioni, elenco filtrabile con nomi mascherati e "Acquisto verificato"), icone dei livelli su profilo e annuncio, badge Venditore Top sulle card, `/come-funzionano-i-feedback`, `/admin/feedback`.
+- Criteri: test del §8.10 (dominio: deduplicazione per settimana, 12 mesi, neutri esclusi, soglia minima, feedback rivisto e rimosso, finestra 60 giorni, quote, livelli, Venditore Top, consegna a mano senza valutazioni di spedizione; integrazione: flussi API e ricalcolo); e2e "lascia un feedback e vedi la reputazione aggiornata"; il database rifiuta un feedback negativo del venditore (test di vincolo della Fase 1, più `SELLER_ONLY_POSITIVE` nell'API).
+- E2e resi indipendenti dai dati demo e tra loro (clonazione degli annunci, acquirenti registrati nel test): 12 e2e verdi in 3 esecuzioni consecutive.
+- Test: 3 unitari dominio, 7 integrazione API (feedback), 1 integrazione worker (ricalcolo con deduplicazione e coppie sospette), 1 e2e (12 in totale).
+- Decisioni: ADR-0044.
+
+**Rimandato**
+- Segnali su dispositivo/IP/impronta della carta (Fase 12), revisione staff degli account con coppie sospette (Fase 11).

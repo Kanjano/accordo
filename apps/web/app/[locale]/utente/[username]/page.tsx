@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import type { Locale } from 'next-intl';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { cache } from 'react';
+import { LevelIcon } from '@/components/feedback/level-icon';
 import { ListingCard } from '@/components/profile/listing-card';
 import { ProfileActions } from '@/components/profile/profile-actions';
 import { Link } from '@/i18n/navigation';
@@ -54,6 +55,7 @@ export default async function ProfilePage({ params }: PageProps<'/[locale]/utent
         <div className="grid gap-2">
           <h1 className="text-2xl font-bold">
             {p.displayName}{' '}
+            <LevelIcon levelKey={p.badges.levelKey} className="inline size-5 align-baseline" />{' '}
             <span className="text-base font-normal text-muted-foreground">@{p.username}</span>
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -130,6 +132,11 @@ export default async function ProfilePage({ params }: PageProps<'/[locale]/utent
             {t('purchases', { count: p.reputation.completedPurchases })}
           </dd>
           <dd>{t('followers', { count: p.followersCount })}</dd>
+          <dd>
+            <Link href={`/utente/${p.username}/feedback`} className="underline underline-offset-4">
+              {t('allFeedback')}
+            </Link>
+          </dd>
         </dl>
       </section>
 

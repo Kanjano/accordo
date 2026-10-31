@@ -1,5 +1,5 @@
 import type { ListingCardItem, SearchHit } from '@accordo/shared';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Trophy } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { formatPrice, mediaSrcSet } from '@/lib/format';
 
@@ -53,7 +53,10 @@ export function ListingCard({ item }: { item: CardItem }) {
             </time>
           ) : null}
           {item.sellerPositivePctBps != null ? (
-            <span>
+            <span className="inline-flex items-center gap-1">
+              {item.isTopSeller ? (
+                <Trophy aria-label={tc('topSeller')} className="size-3.5 text-amber-600" />
+              ) : null}
               {tc('positive', {
                 pct: format.number(item.sellerPositivePctBps / 10_000, {
                   style: 'percent',

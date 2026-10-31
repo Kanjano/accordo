@@ -389,10 +389,11 @@ export class OrdersService {
 
   async detail(userId: string, id: string, staff = false): Promise<OrderDetail> {
     const o = await this.party(userId, id, staff);
-    const [events, shipments, dispute] = await Promise.all([
+    const [events, shipments, dispute, myFeedback] = await Promise.all([
       this.db.orderEvent.findMany({ where: { orderId: id }, orderBy: { createdAt: 'asc' } }),
       this.db.shipment.findMany({ where: { orderId: id }, orderBy: { createdAt: 'asc' } }),
       this.db.dispute.findUnique({ where: { orderId: id }, select: { id: true, status: true } }),
+      this.db.feedback.count({ where: { orderId: id, authorId: userId } }),
     ]);
     const isBuyer = o.buyerId === userId;
     const cancelRequest = this.pendingCancelRequest(events);
@@ -409,6 +410,9 @@ export class OrdersService {
       if (s === 'PAID') actions.push('cancel');
       if (s === 'HANDOVER_PENDING') actions.push('verifyHandover');
     }
+    // Window and rules are checked on submit (SPEC §8.1).
+    if (s === 'COMPLETED' && !staff && !myFeedback && (isBuyer || o.sellerId === userId))
+      actions.push('leaveFeedback');
     if ((s === 'PAID' || s === 'HANDOVER_PENDING') && !staff) {
       if (!cancelRequest) actions.push('requestCancel');
       else if (cancelRequest.actorId !== userId) actions.push('acceptCancel');

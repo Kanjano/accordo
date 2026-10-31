@@ -10,6 +10,7 @@ export const QUEUES = {
   orders: 'order-sweeper',
   nightly: 'nightly-checks',
   shipping: 'shipping',
+  reputation: 'reputation',
 } as const;
 
 const NOTIFIED = new Set(['listing.price_dropped', 'listing.review_pending']);
@@ -22,6 +23,7 @@ export function routesFor(type: string): string[] {
     queues.push(QUEUES.notifications);
   if (type === 'webhook.received' || type === 'order.effects') queues.push(QUEUES.payments);
   if (type === 'shipping.updates') queues.push(QUEUES.shipping);
+  if (type.startsWith('feedback.')) queues.push(QUEUES.reputation);
   // Every listing change may add, update or remove the search document (SPEC §9.3).
   if (type.startsWith('listing.')) queues.push(QUEUES.searchIndex);
   return queues;

@@ -91,7 +91,8 @@ export type OrderAction =
   | 'confirmReceipt'
   | 'showHandoverCode'
   | 'verifyHandover'
-  | 'openDispute';
+  | 'openDispute'
+  | 'leaveFeedback';
 
 export interface OrderSummary {
   id: string;

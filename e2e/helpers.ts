@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { type BrowserContext, expect } from '@playwright/test';
+import { type BrowserContext, expect, type Page } from '@playwright/test';
 
 const MAILPIT = process.env.MAILPIT_URL ?? 'http://localhost:8025';
 export const API = process.env.API_URL ?? 'http://localhost:4000';
@@ -95,4 +95,26 @@ export async function stepUp(context: BrowserContext, email: string): Promise<vo
     data: { emailCode: code },
   });
   expect(ok.ok()).toBe(true);
+}
+
+/** A new buyer (so the pair has no history and the feedback counts, fresh history: feedback counts, anti-fraud limits don't carry over between runs). */
+export async function register(page: Page) {
+  const stamp = Date.now();
+  const email = `e2e.fb.${stamp}@example.test`;
+  await page.goto('/registrati');
+  await page.getByLabel('Nome e cognome').fill('Acquirente Feedback');
+  await page.getByLabel('Nome utente', { exact: true }).fill(`fb${stamp}`);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Password', { exact: true }).fill('una-password-molto-lunga');
+  await page.getByRole('checkbox', { name: /Accetto i Termini/ }).check();
+  const submit = page.getByRole('button', { name: 'Registrati' });
+  await expect(submit).toBeEnabled({ timeout: 30_000 });
+  await submit.click();
+  await expect(page.getByText('Controlla la tua email')).toBeVisible();
+  const link = /href="([^"]*verify-email[^"]*)"/
+    .exec(await latestEmailHtml(email))?.[1]
+    ?.replace(/&amp;/g, '&');
+  await page.goto(link as string);
+  await expect(page).toHaveURL(/verifica-email\?stato=ok/);
+  return email;
 }
