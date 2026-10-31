@@ -265,8 +265,9 @@ export default async function ListingPage({
                 listingId={l.id}
                 priceCents={l.priceCents}
                 selfShippingPriceCents={l.selfShippingPriceCents}
-                // Integrated shipping arrives with the shipping provider (Phase 7, ADR-0038).
+                integratedShippingPriceCents={l.integratedShippingPriceCents}
                 methods={[
+                  ...(l.integratedShippingPriceCents ? (['SHIPPING_INTEGRATED'] as const) : []),
                   ...(l.shippingSelf ? (['SHIPPING_SELF'] as const) : []),
                   ...(l.handDeliveryEnabled ? (['HAND_DELIVERY'] as const) : []),
                 ]}

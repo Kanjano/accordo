@@ -16,13 +16,17 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import type { z } from 'zod';
 import { CurrentAuth, RequireStepUp, Roles } from '../auth/auth.decorators.js';
 import type { AuthSession } from '../auth/auth.factory.js';
 import { IdempotencyService } from '../platform/idempotency.service.js';
 import { OrdersService } from './orders.service.js';
 import { PaymentsService } from './payments.service.js';
+import { ShippingWebhooksService } from './shipping-webhooks.service.js';
 
 type Auth = AuthSession;
 
@@ -32,6 +36,7 @@ export class OrdersController {
     private readonly orders: OrdersService,
     private readonly payments: PaymentsService,
     private readonly idempotency: IdempotencyService,
+    private readonly shippingWebhooks: ShippingWebhooksService,
   ) {}
 
   @Post('orders')
@@ -60,6 +65,28 @@ export class OrdersController {
   @Get('orders/:id/payment')
   payment(@CurrentAuth() auth: Auth, @Param('id', ParseUUIDPipe) id: string) {
     return this.orders.paymentSecret(auth.user.id, id);
+  }
+
+  /** Label PDF, streamed after the party check (ADR-0041: no public URL). */
+  @Get('orders/:id/label')
+  async label(
+    @CurrentAuth() auth: Auth,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { key, filename } = await this.orders.label(auth.user.id, id);
+    res.set({
+      'content-type': 'application/pdf',
+      'content-disposition': `attachment; filename="${filename}"`,
+      'cache-control': 'private, no-store',
+    });
+    return new StreamableFile(await this.shippingWebhooks.labelPdf(key));
+  }
+
+  @Get('shipping/service-points')
+  servicePoints(@Query('cap') cap = '') {
+    if (!/^\d{5}$/.test(cap)) throw new BadRequestException({ code: 'INVALID_CAP' });
+    return this.orders.servicePoints(cap);
   }
 
   @Post('orders/:id/ship')

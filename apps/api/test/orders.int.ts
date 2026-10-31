@@ -3,6 +3,7 @@ import type { OrderEvent } from '@accordo/domain';
 import { applyOrderEvent } from '@accordo/orders';
 import { fakeWebhookBody, signFakeWebhook } from '@accordo/payments';
 import type { CheckoutResponse, OrderDetail } from '@accordo/shared';
+import { MOCK_SIGNATURE_HEADER, mockWebhookBody, signMockWebhook } from '@accordo/shipping';
 import request from 'supertest';
 import { PRISMA } from '../src/modules/platform/infra.providers.js';
 import { startTestApp, type TestEnv, verifiedUserFactory, WEB } from './setup.js';
@@ -43,6 +44,15 @@ beforeAll(async () => {
         },
       },
       { key: 'orderTimings', value: {} },
+      {
+        key: 'parcelSizes',
+        value: {
+          S: { priceCents: 590, maxKg: 2, dimensionsCm: [40, 30, 10] },
+          M: { priceCents: 790, maxKg: 5, dimensionsCm: [60, 40, 20] },
+          L: { priceCents: 1290, maxKg: 15, dimensionsCm: [120, 50, 20] },
+          XL: { priceCents: 2490, maxKg: 30, dimensionsCm: [150, 60, 40] },
+        },
+      },
     ],
   });
 });
@@ -398,5 +408,116 @@ describe('order lifecycle', () => {
       (await db.userReputation.findUniqueOrThrow({ where: { userId: s.id } }))
         .sellerCancellations12m,
     ).toBe(1);
+  });
+});
+
+describe('integrated shipping', () => {
+  const addressFor = (userId: string, type: 'SHIPPING' | 'SENDER') =>
+    db.address.create({
+      data: {
+        userId,
+        type,
+        fullName: 'Persona Prova',
+        line1: 'Via Roma 1',
+        cap: '20121',
+        comuneId: '015146',
+        phone: '3331234567',
+      },
+    });
+
+  it('needs a parcel size and the seller sender address; pickup points must exist near the CAP', async () => {
+    const s = await seller();
+    const b = await user('acquirente');
+    const home = await addressFor(b.id, 'SHIPPING');
+    const l = await listing(s.id, { shippingIntegrated: true, parcelSize: 'L' });
+    const body = { listingId: l.id, deliveryMethod: 'SHIPPING_INTEGRATED', addressId: home.id };
+    expect((await checkout(b.agent, body)).body.code).toBe('DELIVERY_NOT_AVAILABLE'); // no sender address
+    await addressFor(s.id, 'SENDER');
+    const points = (await b.agent.get('/api/v1/shipping/service-points?cap=00184').expect(200))
+      .body;
+    expect(points).toHaveLength(3);
+    const wrong = await checkout(b.agent, {
+      ...body,
+      servicePointId: 'nope',
+      servicePointCap: '00184',
+    });
+    expect([wrong.status, wrong.body.code]).toEqual([422, 'SERVICE_POINT_NOT_FOUND']);
+    const ok = (
+      await checkout(b.agent, {
+        ...body,
+        servicePointId: points[1].id,
+        servicePointCap: '00184',
+      }).expect(201)
+    ).body as CheckoutResponse;
+    // 120 € + parcel L 12.90 € + fee 5.30 € (SPEC §6.3/§7.1).
+    expect(ok.amounts).toMatchObject({
+      shippingPriceCents: 1290,
+      totalCents: 12_000 + 1290 + 530,
+      sellerNetCents: 12_000,
+    });
+    const order = await db.order.findUniqueOrThrow({ where: { id: ok.orderId } });
+    expect(order.servicePoint).toMatchObject({ id: points[1].id, cap: '00184' });
+  });
+
+  it('tracking webhooks: HMAC verified, stored once, then queued; dev advance uses the same path', async () => {
+    const post = (path: string, body: string, signature: string) =>
+      request(env.app.getHttpServer())
+        .post(`/api/v1/webhooks/${path}`)
+        .set('content-type', 'application/json')
+        .set(MOCK_SIGNATURE_HEADER, signature)
+        .send(body);
+    const body = mockWebhookBody([
+      { shipmentId: 'mock_x', status: 'IN_TRANSIT', occurredAt: new Date() },
+    ]);
+    await post('shipping/mock', body, signMockWebhook(body, 'wrong')).expect(400);
+    await post('shipping/sendcloud', body, signMockWebhook(body, 'test-shipping-secret')).expect(
+      404,
+    );
+    expect(
+      (await post('shipping/mock', body, signMockWebhook(body, 'test-shipping-secret')).expect(200))
+        .body.duplicate,
+    ).toBe(false);
+    expect(
+      (await post('shipping/mock', body, signMockWebhook(body, 'test-shipping-secret')).expect(200))
+        .body.duplicate,
+    ).toBe(true);
+    expect(await db.webhookEvent.count({ where: { provider: 'shipping:mock' } })).toBe(1);
+
+    // Self shipping: the seller's tracking is registered with the tracking provider.
+    const s = await seller();
+    const b = await user('acquirente');
+    const home = await addressFor(b.id, 'SHIPPING');
+    const l = await listing(s.id);
+    const { orderId, amounts } = (
+      await checkout(b.agent, {
+        listingId: l.id,
+        deliveryMethod: 'SHIPPING_SELF',
+        addressId: home.id,
+      })
+    ).body as CheckoutResponse;
+    await pay(orderId, amounts.totalCents);
+    await s.agent
+      .post(`/api/v1/orders/${orderId}/ship`)
+      .set('origin', WEB)
+      .send({ carrier: 'GLS', trackingNumber: 'GLS123456789' })
+      .expect(201);
+    const shipment = await db.shipment.findFirstOrThrow({ where: { orderId } });
+    expect(shipment).toMatchObject({
+      provider: 'mock',
+      providerShipmentId: expect.stringMatching(/^track_/),
+    });
+    expect(
+      JSON.stringify(
+        (
+          await db.outboxEvent.findMany({ where: { aggregateId: orderId, type: 'order.effects' } })
+        ).map((e) => e.payload),
+      ),
+    ).toContain('REGISTER_TRACKING');
+    await b.agent
+      .post(`/api/v1/dev/shipments/${shipment.id}/advance`)
+      .set('origin', WEB)
+      .expect(200, { status: 'OUT_FOR_DELIVERY' });
+    expect(await db.webhookEvent.count({ where: { provider: 'tracking:mock' } })).toBe(1);
+    expect(await db.outboxEvent.count({ where: { type: 'shipping.updates' } })).toBe(2);
   });
 });

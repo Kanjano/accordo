@@ -1,6 +1,11 @@
 'use client';
-import type { Address, CheckoutResponse, DeliveryMethodCode } from '@accordo/shared';
-import { Alert, Button, buttonVariants, Label } from '@accordo/ui';
+import type {
+  Address,
+  CheckoutResponse,
+  DeliveryMethodCode,
+  ServicePointDto,
+} from '@accordo/shared';
+import { Alert, Button, buttonVariants, Input, Label } from '@accordo/ui';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -16,12 +21,14 @@ export function BuyBox({
   listingId,
   priceCents,
   selfShippingPriceCents,
+  integratedShippingPriceCents,
   methods,
   offerId,
 }: {
   listingId: string;
   priceCents: number;
   selfShippingPriceCents: number | null;
+  integratedShippingPriceCents: number | null;
   methods: DeliveryMethodCode[];
   /** Accepted offer being paid (price agreed in the chat). */
   offerId?: string;
@@ -34,15 +41,24 @@ export function BuyBox({
   const id = useId();
   const [method, setMethod] = useState<DeliveryMethodCode | null>(methods[0] ?? null);
   const [addressId, setAddressId] = useState<string>('');
+  const [pickup, setPickup] = useState(false);
+  const [pointCap, setPointCap] = useState('');
+  const [pointId, setPointId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { data: addresses = [] } = useQuery({
     queryKey: ['addresses'],
     queryFn: () => api.get<Address[]>('/api/v1/me/addresses'),
-    enabled: !!session && method === 'SHIPPING_SELF',
+    enabled: !!session && method !== 'HAND_DELIVERY',
   });
   const shipping = addresses.filter((a) => a.type === 'SHIPPING');
   const chosen = addressId || shipping.find((a) => a.isDefault)?.id || shipping[0]?.id || '';
+  const cap = pointCap || shipping.find((a) => a.id === chosen)?.cap || '';
+  const { data: points = [] } = useQuery({
+    queryKey: ['service-points', cap],
+    queryFn: () => api.get<ServicePointDto[]>(`/api/v1/shipping/service-points?cap=${cap}`),
+    enabled: pickup && /^\d{5}$/.test(cap),
+  });
 
   if (isPending || !methods.length) return null;
   if (!session)
@@ -64,7 +80,10 @@ export function BuyBox({
         json: {
           listingId,
           deliveryMethod: method,
-          ...(method === 'SHIPPING_SELF' ? { addressId: chosen } : {}),
+          ...(method !== 'HAND_DELIVERY' ? { addressId: chosen } : {}),
+          ...(method === 'SHIPPING_INTEGRATED' && pickup && pointId
+            ? { servicePointId: pointId, servicePointCap: cap }
+            : {}),
           ...(offerId ? { offerId } : {}),
         },
       });
@@ -100,10 +119,69 @@ export function BuyBox({
             {m === 'SHIPPING_SELF' && selfShippingPriceCents
               ? ` · ${formatPrice(selfShippingPriceCents)}`
               : ''}
+            {m === 'SHIPPING_INTEGRATED' && integratedShippingPriceCents
+              ? ` · ${formatPrice(integratedShippingPriceCents)}`
+              : ''}
           </label>
         ))}
       </fieldset>
-      {method === 'SHIPPING_SELF' ? (
+      {method === 'SHIPPING_INTEGRATED' ? (
+        <fieldset className="grid gap-2 text-sm">
+          <legend className="mb-1 font-medium">{t('where')}</legend>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name={`${id}-where`}
+              className="size-4 accent-primary"
+              checked={!pickup}
+              onChange={() => setPickup(false)}
+            />
+            {t('home')}
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name={`${id}-where`}
+              className="size-4 accent-primary"
+              checked={pickup}
+              onChange={() => setPickup(true)}
+            />
+            {t('pickup')}
+          </label>
+          {pickup ? (
+            <div className="grid gap-2 pl-6">
+              <Label htmlFor={`${id}-cap`}>{t('pickupCap')}</Label>
+              <Input
+                id={`${id}-cap`}
+                inputMode="numeric"
+                maxLength={5}
+                value={cap}
+                onChange={(e) => setPointCap(e.target.value.replace(/\D/g, ''))}
+                className="max-w-28"
+              />
+              {points.length ? (
+                <div className="grid gap-1">
+                  <Label htmlFor={`${id}-point`}>{t('pickupPoint')}</Label>
+                  <select
+                    id={`${id}-point`}
+                    value={pointId}
+                    onChange={(e) => setPointId(e.target.value)}
+                    className="h-10 rounded-md border bg-background px-3"
+                  >
+                    <option value="">{t('choosePoint')}</option>
+                    {points.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.address}, {p.city}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </fieldset>
+      ) : null}
+      {method !== 'HAND_DELIVERY' ? (
         shipping.length ? (
           <div className="grid gap-1 text-sm">
             <Label htmlFor={`${id}-address`}>{t('address')}</Label>
@@ -134,7 +212,15 @@ export function BuyBox({
         {t('price', { price: formatPrice(priceCents) })} {t('feeAtCheckout')}
       </p>
       {error ? <Alert tone="error">{error}</Alert> : null}
-      <Button onClick={buy} disabled={busy || !method || (method === 'SHIPPING_SELF' && !chosen)}>
+      <Button
+        onClick={buy}
+        disabled={
+          busy ||
+          !method ||
+          (method !== 'HAND_DELIVERY' && !chosen) ||
+          (method === 'SHIPPING_INTEGRATED' && pickup && !pointId)
+        }
+      >
         {t('buy')}
       </Button>
     </section>

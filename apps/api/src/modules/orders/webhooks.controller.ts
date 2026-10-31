@@ -20,13 +20,41 @@ import type { AuthSession } from '../auth/auth.factory.js';
 import { PAYMENTS } from '../platform/infra.providers.js';
 import { OrdersService } from './orders.service.js';
 import { PaymentsService } from './payments.service.js';
+import { ShippingWebhooksService } from './shipping-webhooks.service.js';
 
 @Controller('webhooks')
 export class WebhooksController {
   constructor(
     private readonly payments: PaymentsService,
+    private readonly shippingWebhooks: ShippingWebhooksService,
     @Inject(PAYMENTS) private readonly provider: PaymentProvider,
   ) {}
+
+  /** Carrier events of integrated shipments (SPEC §7.3), HMAC on the raw body. */
+  @Post('shipping/:provider')
+  @Public()
+  @HttpCode(200)
+  async shipping(@Param('provider') provider: string, @Req() req: Request) {
+    return this.shippingWebhooks.receive(
+      'shipping',
+      provider,
+      req.headers as Record<string, string | undefined>,
+      req.body as Buffer,
+    );
+  }
+
+  /** Tracking of self-shipped parcels. */
+  @Post('tracking/:provider')
+  @Public()
+  @HttpCode(200)
+  async tracking(@Param('provider') provider: string, @Req() req: Request) {
+    return this.shippingWebhooks.receive(
+      'tracking',
+      provider,
+      req.headers as Record<string, string | undefined>,
+      req.body as Buffer,
+    );
+  }
 
   /** Raw body (mounted before the JSON parser in app.setup.ts); 2xx as soon as it is stored. */
   @Post('stripe')
@@ -50,8 +78,17 @@ export class DevPaymentsController {
   constructor(
     private readonly payments: PaymentsService,
     private readonly orders: OrdersService,
+    private readonly shippingWebhooks: ShippingWebhooksService,
     @Inject(ENV) private readonly env: Env,
   ) {}
+
+  /** Next tracking event of a mock shipment (SPEC §7.3). */
+  @Post('shipments/:id/advance')
+  @HttpCode(200)
+  advance(@CurrentAuth() auth: AuthSession, @Param('id', ParseUUIDPipe) id: string) {
+    this.guard();
+    return this.shippingWebhooks.advance(id, auth.user.id);
+  }
 
   private guard() {
     if (this.env.NODE_ENV === 'production') throw new NotFoundException();

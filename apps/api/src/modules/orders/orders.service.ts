@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Prisma, PrismaClient } from '@accordo/db';
 import {
   computeOrderAmounts,
@@ -24,6 +25,7 @@ import type {
   OrderStatusCode,
   OrderSummary,
 } from '@accordo/shared';
+import type { ShippingProvider, TrackingProvider } from '@accordo/shipping';
 import {
   ConflictException,
   ForbiddenException,
@@ -35,7 +37,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ENV, type Env } from '../../config/env.js';
-import { PAYMENTS, PRISMA } from '../platform/infra.providers.js';
+import { PAYMENTS, PRISMA, SHIPPING, TRACKING } from '../platform/infra.providers.js';
+import { SettingsService } from '../platform/settings.service.js';
 
 const DAY = 86_400_000;
 const ACTIVE = [
@@ -71,17 +74,29 @@ export class OrdersService {
     @Inject(PRISMA) private readonly db: PrismaClient,
     @Inject(PAYMENTS) private readonly payments: PaymentProvider,
     @Inject(ENV) private readonly env: Env,
+    @Inject(SHIPPING) private readonly shipping: ShippingProvider,
+    @Inject(TRACKING) private readonly tracking: TrackingProvider,
+    private readonly settings: SettingsService,
   ) {}
 
   /** OrdersService.transition() of the SPEC: every status change of an existing order goes here. */
-  async transition(orderId: string, event: OrderEvent, actor: Actor, reason?: string) {
+  async transition(
+    orderId: string,
+    event: OrderEvent,
+    actor: Actor,
+    reason?: string,
+    /** Extra writes in the same transaction (e.g. the shipment the event refers to). */
+    alsoInTx?: (tx: Prisma.TransactionClient) => Promise<unknown>,
+  ) {
     try {
-      return await this.db.$transaction((tx) =>
-        applyOrderEvent(tx, orderId, event, actor, {
+      return await this.db.$transaction(async (tx) => {
+        const r = await applyOrderEvent(tx, orderId, event, actor, {
           handoverPepper: this.env.HANDOVER_CODE_PEPPER,
           reason,
-        }),
-      );
+        });
+        await alsoInTx?.(tx);
+        return r;
+      });
     } catch (e) {
       rethrow(e);
     }
@@ -132,13 +147,22 @@ export class OrdersService {
       throw new ConflictException({ code: 'LISTING_NOT_AVAILABLE' });
 
     const method = input.deliveryMethod;
-    // Integrated shipping needs the shipping provider (Phase 7, ADR-0038).
+    const integrated = method === 'SHIPPING_INTEGRATED';
+    // Integrated shipping needs a parcel size and the seller's sender address (SPEC §7.3).
+    const sender = integrated
+      ? await this.db.address.findFirst({
+          where: { userId: listing.sellerId, type: 'SENDER' },
+          select: { id: true },
+        })
+      : null;
     const allowed =
+      (integrated && listing.shippingIntegrated && !!listing.parcelSize && !!sender) ||
       (method === 'SHIPPING_SELF' && listing.shippingSelf && !!listing.selfShippingPriceCents) ||
       (method === 'HAND_DELIVERY' && listing.handDeliveryEnabled);
     if (!allowed) throw new ConflictException({ code: 'DELIVERY_NOT_AVAILABLE' });
     let shippingAddress: Prisma.InputJsonValue | undefined;
-    if (method === 'SHIPPING_SELF') {
+    let servicePoint: Prisma.InputJsonValue | undefined;
+    if (method !== 'HAND_DELIVERY') {
       const address = await this.db.address.findFirst({
         where: { id: input.addressId, userId, type: 'SHIPPING' },
         include: { comune: { include: { provincia: true } } },
@@ -156,13 +180,26 @@ export class OrdersService {
         country: 'IT',
       };
     }
+    if (integrated && input.servicePointId) {
+      // Snapshot of a point the provider really offers near the chosen CAP.
+      const points = await this.shipping.listServicePoints({
+        cap: input.servicePointCap ?? (shippingAddress as { cap: string }).cap,
+      });
+      const point = points.find((p) => p.id === input.servicePointId);
+      if (!point) throw new UnprocessableEntityException({ code: 'SERVICE_POINT_NOT_FOUND' });
+      servicePoint = { ...point };
+    }
 
     const { fees, timings, holidays } = await loadOrderSettings(this.db);
+    const parcelSizes = await this.settings.get('parcelSizes');
     const amounts = computeOrderAmounts(
       {
         itemPriceCents: priceCents,
         deliveryMethod: method,
         selfShippingPriceCents: listing.selfShippingPriceCents,
+        integratedShippingCents: listing.parcelSize
+          ? parcelSizes[listing.parcelSize].priceCents
+          : null,
       },
       fees,
     );
@@ -222,6 +259,7 @@ export class OrdersService {
             },
             ...amounts,
             shippingAddress,
+            servicePoint,
             reservedUntil: start.patch.reservedUntil ?? null,
             nextAction: start.timer?.action ?? null,
             nextActionAt: start.timer?.at ?? null,
@@ -385,7 +423,15 @@ export class OrdersService {
       },
       payoutStatus: o.payoutStatus,
       shippingAddress: showAddress ? (o.shippingAddress as OrderDetail['shippingAddress']) : null,
+      servicePoint: o.servicePoint as OrderDetail['servicePoint'],
       shipments: shipments.map((sh) => ({
+        id: sh.id,
+        direction: sh.direction,
+        labelAvailable: !!sh.labelKey,
+        providerMock: sh.provider === 'mock',
+        trackingUrl: sh.trackingUrl,
+        events:
+          (sh.events as Array<{ status: string; occurredAt: string; description?: string }>) ?? [],
         carrier: sh.carrier,
         trackingNumber: sh.trackingNumber,
         status: sh.status,
@@ -455,18 +501,42 @@ export class OrdersService {
       o.id,
       { type: 'SHIPMENT_CONFIRMED', carrier, trackingNumber },
       { role: 'SELLER', id: userId },
+      undefined,
+      // Same transaction: the worker's REGISTER_TRACKING finds it.
+      (tx) =>
+        tx.shipment.create({
+          data: {
+            orderId: o.id,
+            provider: this.tracking.name,
+            providerShipmentId: `track_${randomUUID()}`,
+            carrier,
+            trackingNumber,
+            status: 'IN_TRANSIT',
+            shippedAt: new Date(),
+          },
+        }),
     );
-    await this.db.shipment.create({
-      data: {
-        orderId: o.id,
-        provider: 'self',
-        carrier,
-        trackingNumber,
-        status: 'IN_TRANSIT',
-        shippedAt: new Date(),
-      },
-    });
     return this.detail(userId, id);
+  }
+
+  /** The label PDF (private bucket), for the seller (or the buyer for a return label). */
+  async label(userId: string, id: string, shipmentId?: string) {
+    const o = await this.party(userId, id);
+    const shipment = await this.db.shipment.findFirst({
+      where: {
+        orderId: o.id,
+        labelKey: { not: null },
+        ...(shipmentId ? { id: shipmentId } : {}),
+        direction: o.sellerId === userId ? 'OUTBOUND' : 'RETURN',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!shipment?.labelKey) throw new NotFoundException();
+    return { key: shipment.labelKey, filename: `etichetta-${o.number}.pdf` };
+  }
+
+  servicePoints(cap: string) {
+    return this.shipping.listServicePoints({ cap });
   }
 
   /** Step-up enforced by the controller (SPEC §6.11). */

@@ -68,6 +68,11 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - Pagamenti: `PAYMENT_PROVIDER=fake` in sviluppo e test (pagamento simulato dal checkout, endpoint `/api/v1/dev/*`); `stripe` richiede chiavi test reali. Effetti esterni nel worker, coda `payments`, con chiavi idempotenti e `writeLedger(…, externalRef)`.
 - Gli e2e degli ordini consumano gli annunci demo del negozio (`negozio@accordo.local`): dopo molte esecuzioni rilancia il seed demo.
 
+## Note di implementazione (Fase 7)
+
+- Spedizioni via `packages/shipping` (`SHIPPING_PROVIDER=mock` in sviluppo e test; `sendcloud` con chiavi reali). Etichette nel bucket privato, mai URL pubblici. Gli eventi di tracking arrivano solo via webhook firmato → coda `shipping`; in sviluppo `POST /api/v1/dev/shipments/:id/advance`.
+- Per vendere con spedizione integrata il venditore deve avere un indirizzo `SENDER`.
+
 ## Regole d'oro del dominio
 
 - Lo stato di un ordine cambia **solo** tramite `OrderStateMachine` (§6.4) e `OrdersService.transition()`; mai `update` diretti sulla colonna `status`.

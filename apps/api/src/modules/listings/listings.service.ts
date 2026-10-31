@@ -482,7 +482,10 @@ export class ListingsService {
     const defs = attributeDefs(l.category);
     const raw = (l.attributes ?? {}) as Record<string, unknown>;
     const rep = l.seller.reputation;
-    const { bumpEveryDays } = await this.settings.get('listings');
+    const [{ bumpEveryDays }, parcelSizes] = await Promise.all([
+      this.settings.get('listings'),
+      this.settings.get('parcelSizes'),
+    ]);
     const lastBump = l.bumpedAt ?? l.publishedAt;
     return {
       id: l.id,
@@ -520,6 +523,8 @@ export class ListingsService {
       protectedPaymentEnabled: l.protectedPaymentEnabled,
       shippingIntegrated: l.shippingIntegrated,
       parcelSize: l.parcelSize,
+      integratedShippingPriceCents:
+        l.shippingIntegrated && l.parcelSize ? parcelSizes[l.parcelSize].priceCents : null,
       shippingSelf: l.shippingSelf,
       selfShippingPriceCents: l.selfShippingPriceCents,
       handDeliveryEnabled: l.handDeliveryEnabled,

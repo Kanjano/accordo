@@ -121,7 +121,9 @@
     "DELIVERY_NOT_SELF": "L'ordine non prevede la spedizione del venditore.",
     "ORDER_NOT_CANCELLABLE": "L'ordine non si può più annullare.",
     "NO_CANCEL_REQUEST": "Non c'è una richiesta di annullamento da accettare.",
-    "TRACKING_INVALID": "Numero di tracking non valido."
+    "TRACKING_INVALID": "Numero di tracking non valido.",
+    "SERVICE_POINT_NOT_FOUND": "Il punto di ritiro scelto non è disponibile.",
+    "INVALID_CAP": "CAP non valido."
   },
   "Validation": {
     "EMAIL_INVALID": "Inserisci un indirizzo email valido.",
@@ -841,7 +843,18 @@
     "RETURN_IN_TRANSIT": "Reso in viaggio",
     "COMPLETED": "Completato",
     "REFUNDED": "Rimborsato",
-    "CANCELLED": "Annullato"
+    "CANCELLED": "Annullato",
+    "shipment": {
+      "PENDING": "In preparazione",
+      "LABEL_CREATED": "Etichetta pronta",
+      "IN_TRANSIT": "In transito",
+      "OUT_FOR_DELIVERY": "In consegna",
+      "AVAILABLE_FOR_PICKUP": "Disponibile al ritiro",
+      "DELIVERED": "Consegnato",
+      "EXCEPTION": "Problema di consegna",
+      "RETURNED_TO_SENDER": "Tornato al mittente",
+      "CANCELLED": "Annullata"
+    }
   },
   "OrderEvent": {
     "CHECKOUT_STARTED": "Checkout avviato",
@@ -893,7 +906,7 @@
         "CHECKOUT_PENDING": "L'acquirente sta pagando.",
         "PAYMENT_FAILED": "Il pagamento dell'acquirente non è andato a buon fine.",
         "EXPIRED": "L'acquirente non ha pagato in tempo: l'annuncio è di nuovo disponibile.",
-        "PAID": "Spedisci con un servizio tracciato e inserisci il numero di tracking.",
+        "PAID": "Spedisci entro la scadenza: con la spedizione integrata scarica l'etichetta qui sotto, altrimenti inserisci corriere e tracking.",
         "HANDOVER_PENDING": "Accordati per la consegna a mano. All'incontro inserisci il codice che ti darà l'acquirente.",
         "SHIPPED": "In attesa della conferma di ricezione dell'acquirente.",
         "DELIVERED": "In attesa della verifica dell'acquirente (72 ore).",
@@ -944,7 +957,13 @@
     },
     "shippingAddress": "Indirizzo di spedizione",
     "tracking": "Spedizione",
-    "timeline": "Cronologia"
+    "timeline": "Cronologia",
+    "servicePoint": "Ritiro presso: {name}, {address}",
+    "return": "Reso",
+    "downloadLabel": "Scarica l'etichetta (PDF)",
+    "trackingLink": "Segui la spedizione",
+    "devAdvance": "Simula avanzamento (sviluppo)",
+    "packingGuide": "Come imballare uno strumento"
   },
   "Checkout": {
     "title": "Compra con pagamento protetto",
@@ -972,7 +991,13 @@
     "fakeDecline": "Simula carta rifiutata",
     "declined": "Pagamento rifiutato.",
     "payNow": "Paga ora",
-    "number": "Ordine {number}"
+    "number": "Ordine {number}",
+    "where": "Dove ricevere il pacco",
+    "home": "A casa (indirizzo di spedizione)",
+    "pickup": "In un punto di ritiro",
+    "pickupCap": "CAP del punto di ritiro",
+    "pickupPoint": "Punto di ritiro",
+    "choosePoint": "Scegli un punto"
   },
   "Payouts": {
     "title": "Incassi",

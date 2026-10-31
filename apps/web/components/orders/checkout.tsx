@@ -67,9 +67,9 @@ export function Checkout({ orderId }: { orderId: string }) {
         {waiting ? <Alert>{t('confirming')}</Alert> : null}
         {payment?.provider === 'fake' ? (
           <FakePayment orderId={orderId} onPaid={() => setWaiting(true)} />
-        ) : payment && stripePromise ? (
+        ) : payment?.provider === 'stripe' ? (
           <Elements
-            stripe={stripePromise}
+            stripe={getStripe()}
             options={{ clientSecret: payment.clientSecret, locale: 'it' }}
           >
             <StripePayment orderId={orderId} onPaid={() => setWaiting(true)} />

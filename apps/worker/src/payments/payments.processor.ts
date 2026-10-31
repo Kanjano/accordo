@@ -14,6 +14,7 @@ import type { Job, Queue } from 'bullmq';
 import { ENV, type Env } from '../env.js';
 import { PAYMENTS, PRISMA } from '../infra.js';
 import { QUEUES } from '../queues.js';
+import { ShippingService } from '../shipping/shipping.service.js';
 import { ORDER_TEMPLATES } from './order-templates.js';
 
 interface EffectsJob {
@@ -36,6 +37,7 @@ export class PaymentsProcessor extends WorkerHost {
     @Inject(PAYMENTS) private readonly provider: PaymentProvider,
     @Inject(ENV) private readonly env: Env,
     @InjectQueue(QUEUES.notifications) private readonly notifications: Queue,
+    private readonly shipping: ShippingService,
   ) {
     super();
   }
@@ -192,6 +194,12 @@ export class PaymentsProcessor extends WorkerHost {
             effect.includesBuyerFee,
             job.eventId ?? 'manual',
           );
+          // Cancelled before shipping: the unused label goes back to the carrier (SPEC §6.7).
+          if (
+            (await this.db.order.findUniqueOrThrow({ where: { id: job.orderId } })).status ===
+            'CANCELLED'
+          )
+            await this.shipping.cancelLabel(job.orderId);
           break;
         case 'CANCEL_PAYMENT_INTENT': {
           const o = await this.db.order.findUniqueOrThrow({ where: { id: job.orderId } });
@@ -207,10 +215,18 @@ export class PaymentsProcessor extends WorkerHost {
         case 'NOTIFY':
           await this.notify(job.orderId, effect.template, effect.to, job.eventId);
           break;
-        default:
-          // CREATE_SHIPPING_LABEL, REGISTER_TRACKING, CREATE_RETURN_LABEL: Phase 7;
-          // OPEN_FEEDBACK: Phase 9 (feedback availability is derived from COMPLETED orders).
+        case 'CREATE_SHIPPING_LABEL':
+          if (await this.shipping.createLabel(job.orderId))
+            await this.notify(job.orderId, 'order.label_ready', ['SELLER'], job.eventId);
           break;
+        case 'REGISTER_TRACKING':
+          await this.shipping.registerTracking(job.orderId);
+          break;
+        case 'CREATE_RETURN_LABEL':
+          await this.shipping.createReturnLabel(job.orderId);
+          break;
+        default:
+          break; // OPEN_FEEDBACK: implicit (Phase 9, feedback on COMPLETED orders).
       }
     }
   }

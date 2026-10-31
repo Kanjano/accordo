@@ -15,6 +15,8 @@ import { PaymentsProcessor } from './payments/payments.processor.js';
 import { QUEUES } from './queues.js';
 import { SavedSearchAlertsProcessor, SavedSearchScheduler } from './search/saved-search-alerts.js';
 import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-index.processor.js';
+import { ShippingProcessor } from './shipping/shipping.processor.js';
+import { ShippingService } from './shipping/shipping.service.js';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-inde
       { name: QUEUES.payments },
       { name: QUEUES.orders },
       { name: QUEUES.nightly },
+      { name: QUEUES.shipping },
     ),
   ],
   providers: [
@@ -64,6 +67,8 @@ import { SearchIndexBootstrap, SearchIndexProcessor } from './search/search-inde
     OrdersScheduler,
     OrdersSweeper,
     NightlyChecks,
+    ShippingService,
+    ShippingProcessor,
   ],
 })
 export class WorkerModule {}

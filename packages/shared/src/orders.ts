@@ -21,6 +21,12 @@ export const orderCreateSchema = z.object({
   listingId: z.uuid(),
   deliveryMethod: z.enum(DELIVERY_METHODS),
   addressId: z.uuid().optional(),
+  /** Pickup point for integrated shipping (SPEC §7.3), as listed for `servicePointCap`. */
+  servicePointId: z.string().max(80).optional(),
+  servicePointCap: z
+    .string()
+    .regex(/^\d{5}$/)
+    .optional(),
   offerId: z.uuid().optional(),
 });
 export type OrderCreate = z.infer<typeof orderCreateSchema>;
@@ -104,7 +110,15 @@ export interface OrderDetail extends OrderSummary {
   amounts: OrderAmountsDto;
   payoutStatus: string;
   shippingAddress: Record<string, string | null> | null;
+  servicePoint: { id: string; name: string; address: string; cap: string; city: string } | null;
   shipments: Array<{
+    id: string;
+    direction: 'OUTBOUND' | 'RETURN';
+    labelAvailable: boolean;
+    /** Mock provider: development tools may simulate its tracking events. */
+    providerMock: boolean;
+    trackingUrl: string | null;
+    events: Array<{ status: string; occurredAt: string; description?: string }>;
     carrier: string | null;
     trackingNumber: string | null;
     status: string;
@@ -137,4 +151,13 @@ export interface BalanceDto {
   /** Completed, transfer requested but not executed (e.g. account on hold). */
   scheduledCents: number;
   transferredCents: number;
+}
+
+export interface ServicePointDto {
+  id: string;
+  name: string;
+  address: string;
+  cap: string;
+  city: string;
+  carrier: string;
 }

@@ -133,6 +133,8 @@ export interface ListingDetail {
   protectedPaymentEnabled: boolean;
   shippingIntegrated: boolean;
   parcelSize: ParcelSize | null;
+  /** Price paid by the buyer for integrated shipping (parcel size, §7.1). */
+  integratedShippingPriceCents: number | null;
   shippingSelf: boolean;
   selfShippingPriceCents: number | null;
   handDeliveryEnabled: boolean;

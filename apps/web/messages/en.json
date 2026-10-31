@@ -121,7 +121,9 @@
     "DELIVERY_NOT_SELF": "This order isn't shipped by the seller.",
     "ORDER_NOT_CANCELLABLE": "The order can no longer be cancelled.",
     "NO_CANCEL_REQUEST": "There's no cancellation request to accept.",
-    "TRACKING_INVALID": "Invalid tracking number."
+    "TRACKING_INVALID": "Invalid tracking number.",
+    "SERVICE_POINT_NOT_FOUND": "The chosen pickup point is not available.",
+    "INVALID_CAP": "Invalid postcode."
   },
   "Validation": {
     "EMAIL_INVALID": "Enter a valid email address.",
@@ -841,7 +843,18 @@
     "RETURN_IN_TRANSIT": "Return in transit",
     "COMPLETED": "Completed",
     "REFUNDED": "Refunded",
-    "CANCELLED": "Cancelled"
+    "CANCELLED": "Cancelled",
+    "shipment": {
+      "PENDING": "Being prepared",
+      "LABEL_CREATED": "Label ready",
+      "IN_TRANSIT": "In transit",
+      "OUT_FOR_DELIVERY": "Out for delivery",
+      "AVAILABLE_FOR_PICKUP": "Ready for pickup",
+      "DELIVERED": "Delivered",
+      "EXCEPTION": "Delivery problem",
+      "RETURNED_TO_SENDER": "Returned to sender",
+      "CANCELLED": "Cancelled"
+    }
   },
   "OrderEvent": {
     "CHECKOUT_STARTED": "Checkout started",
@@ -893,7 +906,7 @@
         "CHECKOUT_PENDING": "The buyer is paying.",
         "PAYMENT_FAILED": "The buyer's payment didn't go through.",
         "EXPIRED": "The buyer did not pay in time: the listing is available again.",
-        "PAID": "Ship with a tracked service and enter the tracking number.",
+        "PAID": "Ship before the deadline: with integrated shipping download the label below, otherwise enter carrier and tracking.",
         "HANDOVER_PENDING": "Arrange the hand delivery. At the meeting enter the code the buyer gives you.",
         "SHIPPED": "Waiting for the buyer's confirmation of receipt.",
         "DELIVERED": "Waiting for the buyer's inspection (72 hours).",
@@ -944,7 +957,13 @@
     },
     "shippingAddress": "Shipping address",
     "tracking": "Shipment",
-    "timeline": "Timeline"
+    "timeline": "Timeline",
+    "servicePoint": "Pickup at: {name}, {address}",
+    "return": "Return",
+    "downloadLabel": "Download the label (PDF)",
+    "trackingLink": "Track the parcel",
+    "devAdvance": "Simulate progress (development)",
+    "packingGuide": "How to pack an instrument"
   },
   "Checkout": {
     "title": "Buy with protected payment",
@@ -972,7 +991,13 @@
     "fakeDecline": "Simulate a declined card",
     "declined": "Payment declined.",
     "payNow": "Pay now",
-    "number": "Order {number}"
+    "number": "Order {number}",
+    "where": "Where to receive the parcel",
+    "home": "At home (shipping address)",
+    "pickup": "At a pickup point",
+    "pickupCap": "Pickup point postcode",
+    "pickupPoint": "Pickup point",
+    "choosePoint": "Choose a point"
   },
   "Payouts": {
     "title": "Payouts",

@@ -63,3 +63,15 @@ flowchart LR
   SW[Sweeper ogni minuto] -- applyOrderEvent --> PG
   N[Controlli notturni: ledger, fondi trattenuti] --> PG
 ```
+
+## Spedizioni (Fase 7)
+
+```mermaid
+flowchart LR
+  WK[Worker coda payments: CREATE_SHIPPING_LABEL] --> SP[ShippingProvider: mock | sendcloud]
+  WK -- PDF --> S3[(Bucket privato)]
+  SP -- webhook HMAC --> API[API /webhooks/shipping/:provider]
+  API -- WebhookEvent + outbox --> PG[(PostgreSQL)]
+  PG --> WS[Worker coda shipping]
+  WS -- SHIPMENT_CONFIRMED / DELIVERED via applyOrderEvent --> PG
+```

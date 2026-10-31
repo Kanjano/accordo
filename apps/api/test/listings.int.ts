@@ -53,6 +53,15 @@ beforeAll(async () => {
         },
       },
       { key: 'bannedTerms', value: ['avorio'] },
+      {
+        key: 'parcelSizes',
+        value: {
+          S: { priceCents: 590, maxKg: 2, dimensionsCm: [40, 30, 10] },
+          M: { priceCents: 790, maxKg: 5, dimensionsCm: [60, 40, 20] },
+          L: { priceCents: 1290, maxKg: 15, dimensionsCm: [120, 50, 20] },
+          XL: { priceCents: 2490, maxKg: 30, dimensionsCm: [150, 60, 40] },
+        },
+      },
     ],
   });
 });

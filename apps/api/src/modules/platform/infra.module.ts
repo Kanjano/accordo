@@ -2,7 +2,16 @@ import type { PrismaClient } from '@accordo/db';
 import type { S3Client } from '@aws-sdk/client-s3';
 import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
 import type { Redis } from 'ioredis';
-import { infraProviders, PAYMENTS, PRISMA, REDIS, S3, SEARCH } from './infra.providers.js';
+import {
+  infraProviders,
+  PAYMENTS,
+  PRISMA,
+  REDIS,
+  S3,
+  SEARCH,
+  SHIPPING,
+  TRACKING,
+} from './infra.providers.js';
 import { RateLimitService } from './rate-limit.service.js';
 import { SettingsService } from './settings.service.js';
 
@@ -10,7 +19,17 @@ import { SettingsService } from './settings.service.js';
 @Global()
 @Module({
   providers: [...infraProviders, RateLimitService, SettingsService],
-  exports: [PRISMA, REDIS, S3, SEARCH, PAYMENTS, RateLimitService, SettingsService],
+  exports: [
+    PRISMA,
+    REDIS,
+    S3,
+    SEARCH,
+    PAYMENTS,
+    SHIPPING,
+    TRACKING,
+    RateLimitService,
+    SettingsService,
+  ],
 })
 export class InfraModule implements OnApplicationShutdown {
   constructor(

@@ -19,6 +19,7 @@
     "@accordo/payments": "workspace:*",
     "@accordo/search": "workspace:*",
     "@accordo/shared": "workspace:*",
+    "@accordo/shipping": "workspace:*",
     "@aws-sdk/client-s3": "3.1160.0",
     "@nestjs/bullmq": "12.0.0",
     "@nestjs/common": "12.3.2",

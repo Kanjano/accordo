@@ -2,6 +2,7 @@ import { createPrismaClient, type PrismaClient } from '@accordo/db';
 import { createEmailProvider, type EmailProvider } from '@accordo/emails';
 import { createPaymentProvider } from '@accordo/payments';
 import { createSearchClient } from '@accordo/search';
+import { createShippingProvider, createTrackingProvider } from '@accordo/shipping';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
 import { Emitter } from '@socket.io/redis-emitter';
@@ -13,6 +14,8 @@ export const S3 = Symbol('S3');
 export const EMAIL = Symbol('EMAIL');
 export const SEARCH = Symbol('SEARCH');
 export const PAYMENTS = Symbol('PAYMENTS');
+export const SHIPPING = Symbol('SHIPPING');
+export const TRACKING = Symbol('TRACKING');
 /** Socket.IO emitter over Redis: reaches the browsers connected to any API instance. */
 export const REALTIME = Symbol('REALTIME');
 
@@ -46,13 +49,15 @@ export const REALTIME = Symbol('REALTIME');
       useFactory: (env: Env) => createSearchClient(env.MEILI_HOST, env.MEILI_MASTER_KEY, 10_000),
     },
     { provide: PAYMENTS, inject: [ENV], useFactory: (env: Env) => createPaymentProvider(env) },
+    { provide: SHIPPING, inject: [ENV], useFactory: (env: Env) => createShippingProvider(env) },
+    { provide: TRACKING, inject: [ENV], useFactory: (env: Env) => createTrackingProvider(env) },
     {
       provide: REALTIME,
       inject: [ENV],
       useFactory: (env: Env) => new Emitter(new Redis(env.REDIS_URL, { maxRetriesPerRequest: 1 })),
     },
   ],
-  exports: [ENV, PRISMA, S3, EMAIL, SEARCH, REALTIME, PAYMENTS],
+  exports: [ENV, PRISMA, S3, EMAIL, SEARCH, REALTIME, PAYMENTS, SHIPPING, TRACKING],
 })
 export class InfraModule implements OnApplicationShutdown {
   constructor(

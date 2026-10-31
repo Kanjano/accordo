@@ -7,7 +7,7 @@ export const ORDER_TEMPLATES: Record<string, Text> = {
     to === 'SELLER'
       ? [
           'Hai venduto!',
-          `«${t}» è stato pagato (ordine ${n}). Spediscilo con un servizio tracciato entro 5 giorni lavorativi e inserisci il numero di tracking.`,
+          `«${t}» è stato pagato (ordine ${n}). Spediscilo entro 5 giorni lavorativi: nella pagina dell'ordine trovi l'etichetta (o dove inserire il tracking) e la guida «Come imballare uno strumento».`,
         ]
       : [
           'Pagamento ricevuto',
@@ -23,6 +23,18 @@ export const ORDER_TEMPLATES: Record<string, Text> = {
           'Pagamento ricevuto',
           `Il pagamento per «${t}» (ordine ${n}) è protetto. Comunica il codice di consegna al venditore solo dopo aver visto e provato lo strumento.`,
         ],
+  'order.label_ready': (_to, t, n) => [
+    'Etichetta pronta',
+    `L'etichetta per «${t}» (ordine ${n}) è pronta: scaricala dalla pagina dell'ordine, imballa lo strumento seguendo la nostra guida e consegnalo al corriere o al punto di ritiro.`,
+  ],
+  'order.shipping_exception': (_to, t, n) => [
+    'Problema con la spedizione',
+    `Il corriere segnala un problema con la spedizione di «${t}» (ordine ${n}). Controlla il tracking nella pagina dell'ordine; se non si risolve in pochi giorni interverrà il supporto.`,
+  ],
+  'order.returned_to_sender': (_to, t, n) => [
+    'Pacco tornato al mittente',
+    `Il pacco di «${t}» (ordine ${n}) è tornato al mittente. Il supporto verificherà e ti contatterà.`,
+  ],
   'order.ship_reminder': (_to, t, n) => [
     'Ricordati di spedire',
     `Mancano 24 ore al termine per spedire «${t}» (ordine ${n}).`,

@@ -1,6 +1,7 @@
 import { createPrismaClient } from '@accordo/db';
 import { createPaymentProvider } from '@accordo/payments';
 import { createSearchClient } from '@accordo/search';
+import { createShippingProvider, createTrackingProvider } from '@accordo/shipping';
 import { S3Client } from '@aws-sdk/client-s3';
 import type { Provider } from '@nestjs/common';
 import { Redis } from 'ioredis';
@@ -11,6 +12,8 @@ export const REDIS = Symbol('REDIS');
 export const S3 = Symbol('S3');
 export const SEARCH = Symbol('SEARCH');
 export const PAYMENTS = Symbol('PAYMENTS');
+export const SHIPPING = Symbol('SHIPPING');
+export const TRACKING = Symbol('TRACKING');
 
 export const infraProviders: Provider[] = [
   {
@@ -49,4 +52,6 @@ export const infraProviders: Provider[] = [
     useFactory: (env: Env) => createSearchClient(env.MEILI_HOST, env.MEILI_MASTER_KEY, 1500),
   },
   { provide: PAYMENTS, inject: [ENV], useFactory: (env: Env) => createPaymentProvider(env) },
+  { provide: SHIPPING, inject: [ENV], useFactory: (env: Env) => createShippingProvider(env) },
+  { provide: TRACKING, inject: [ENV], useFactory: (env: Env) => createTrackingProvider(env) },
 ];

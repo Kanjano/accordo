@@ -94,6 +94,8 @@ export async function startTestApp(opts: { search?: boolean } = {}): Promise<Tes
     PAYMENT_PROVIDER: 'fake',
     STRIPE_WEBHOOK_SECRET: 'test-webhook-secret',
     HANDOVER_CODE_PEPPER: 'test-handover-pepper',
+    SHIPPING_PROVIDER: 'mock',
+    SHIPPING_WEBHOOK_SECRET: 'test-shipping-secret',
   });
 
   const emails = new FakeEmailProvider();

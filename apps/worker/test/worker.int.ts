@@ -5,6 +5,8 @@ import type { EmailProvider, OutgoingEmail } from '@accordo/emails';
 import { applyOrderEvent } from '@accordo/orders';
 import { FakePaymentProvider, type PaymentEvent } from '@accordo/payments';
 import { createSearchClient, ensureIndexes, syncListings } from '@accordo/search';
+import { MockShippingProvider } from '@accordo/shipping';
+import type { S3Client } from '@aws-sdk/client-s3';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { Queue } from 'bullmq';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
@@ -17,6 +19,8 @@ import { OutboxDispatcher } from '../src/outbox.dispatcher.js';
 import { NightlyChecks, OrdersSweeper } from '../src/payments/orders-sweeper.js';
 import { PaymentsProcessor } from '../src/payments/payments.processor.js';
 import { SavedSearchAlertsProcessor } from '../src/search/saved-search-alerts.js';
+import { ShippingProcessor } from '../src/shipping/shipping.processor.js';
+import { ShippingService } from '../src/shipping/shipping.service.js';
 
 let pg: StartedPostgreSqlContainer;
 let db: PrismaClient;
@@ -378,12 +382,21 @@ describe('payments', () => {
     },
   }) as FakePaymentProvider;
   const notifications = { add: vi.fn() } as unknown as Queue;
+  const mockShipping = new MockShippingProvider('s');
+  let labelCancellable = true;
+  const shippingProvider = Object.assign(Object.create(mockShipping), {
+    cancelShipment: async () => labelCancellable,
+  }) as MockShippingProvider;
+  const s3 = { send: vi.fn(async () => ({})) } as unknown as S3Client;
   let processor: PaymentsProcessor;
   let buyerId: string;
   let n = 0;
 
   beforeAll(async () => {
-    processor = new PaymentsProcessor(db, spy, penv, notifications);
+    const shippingService = new ShippingService(db, shippingProvider, shippingProvider, s3, {
+      S3_BUCKET_PRIVATE: 'private',
+    } as Env);
+    processor = new PaymentsProcessor(db, spy, penv, notifications, shippingService);
     await db.platformSetting.createMany({
       data: [
         { key: 'orderTimings', value: {} },
@@ -414,9 +427,20 @@ describe('payments', () => {
         data: { name: 'Gianni', email: 'gianni@example.test', emailVerified: true },
       })
     ).id;
+    await db.address.create({
+      data: {
+        userId: sellerId,
+        type: 'SENDER',
+        fullName: 'Mario Negozio',
+        line1: 'Via Dante 5',
+        cap: '20121',
+        comuneId: '015146',
+        phone: '0212345678',
+      },
+    });
   });
 
-  async function order(deliveryMethod: 'HAND_DELIVERY' | 'SHIPPING_SELF') {
+  async function order(deliveryMethod: 'HAND_DELIVERY' | 'SHIPPING_SELF' | 'SHIPPING_INTEGRATED') {
     const l = await db.listing.create({
       data: {
         shortId: `PAY${String(++n).padStart(5, '0')}`,
@@ -430,9 +454,10 @@ describe('payments', () => {
         priceCents: 12_000,
         comuneId: '015146',
         protectedPaymentEnabled: true,
+        parcelSize: 'L',
       },
     });
-    const shipping = deliveryMethod === 'SHIPPING_SELF' ? 1000 : 0;
+    const shipping = deliveryMethod === 'HAND_DELIVERY' ? 0 : 1000;
     return db.order.create({
       data: {
         number: `26-PAY${n}`,
@@ -442,12 +467,20 @@ describe('payments', () => {
         sellerId,
         deliveryMethod,
         listingSnapshot: { title: l.title },
+        shippingAddress: {
+          fullName: 'Gianni Verdi',
+          line1: 'Via Po 2',
+          cap: '20121',
+          comune: 'Milano',
+          provincia: 'MI',
+          phone: '3330000000',
+        },
         itemPriceCents: 12_000,
         shippingPriceCents: shipping,
         buyerFeeCents: 530,
         buyerFeeVatCents: 96,
         totalCents: 12_530 + shipping,
-        sellerNetCents: 12_000 + shipping,
+        sellerNetCents: 12_000 + (deliveryMethod === 'SHIPPING_SELF' ? shipping : 0),
         paymentIntentId: `fake_pi_${n}`,
       },
     });
@@ -550,6 +583,7 @@ describe('payments', () => {
       closedOrdersWithPayable: 0,
       heldOver60Days: 0,
       heldOver85Days: 0,
+      shippingExceptionsOver5Days: 0,
     });
   });
 
@@ -569,6 +603,106 @@ describe('payments', () => {
     await succeeded(o);
     expect(refunds).toContainEqual(
       expect.objectContaining({ idempotencyKey: `late-refund:${o.id}` }),
+    );
+  });
+
+  it('integrated shipping: label in the private bucket, tracking moves the order to SHIPPED and DELIVERED', async () => {
+    const o = await order('SHIPPING_INTEGRATED');
+    await succeeded(o);
+    await runEffects(o.id);
+    await runEffects(o.id); // retried: still one label
+    const shipments = await db.shipment.findMany({ where: { orderId: o.id } });
+    expect(shipments).toHaveLength(1);
+    const [s] = shipments;
+    expect(s).toMatchObject({
+      status: 'LABEL_CREATED',
+      carrier: 'MOCK',
+      labelKey: `labels/${o.id}/${s?.id}.pdf`,
+    });
+    expect(s?.trackingNumber).toMatch(/^MOCK-/);
+    const put = (s3.send as ReturnType<typeof vi.fn>).mock.calls.at(-1)?.[0] as {
+      input: { Bucket: string; ContentType: string };
+    };
+    expect(put.input).toMatchObject({ Bucket: 'private', ContentType: 'application/pdf' });
+    expect(
+      (notifications.add as ReturnType<typeof vi.fn>).mock.calls.some(
+        (c) => c[1].type === 'order.label_ready',
+      ),
+    ).toBe(true);
+
+    const tracker = new ShippingProcessor(db, penv);
+    const update = (status: string, at: string) =>
+      tracker.apply({
+        shipmentId: s?.providerShipmentId as string,
+        status: status as never,
+        occurredAt: at,
+      });
+    await update('IN_TRANSIT', '2026-11-02T09:00:00.000Z');
+    await update('IN_TRANSIT', '2026-11-02T09:00:00.000Z'); // duplicate event ignored
+    expect(await db.order.findUniqueOrThrow({ where: { id: o.id } })).toMatchObject({
+      status: 'SHIPPED',
+    });
+    await update('DELIVERED', '2026-11-03T15:00:00.000Z');
+    const delivered = await db.order.findUniqueOrThrow({ where: { id: o.id } });
+    expect(delivered).toMatchObject({ status: 'DELIVERED', nextAction: 'AUTO_COMPLETE' });
+    expect(delivered.autoCompleteAt?.toISOString()).toBe('2026-11-06T15:00:00.000Z'); // +72 h
+    const after = await db.shipment.findUniqueOrThrow({ where: { id: s?.id as string } });
+    expect(after.status).toBe('DELIVERED');
+    expect(after.events).toHaveLength(2);
+  });
+
+  it('cancels the unused label; if the carrier refuses and the seller is at fault, charges the seller', async () => {
+    const o = await order('SHIPPING_INTEGRATED');
+    await succeeded(o);
+    await runEffects(o.id);
+    labelCancellable = false;
+    await db.$transaction((tx) =>
+      applyOrderEvent(
+        tx,
+        o.id,
+        { type: 'SELLER_CANCELLED' },
+        { role: 'SELLER', id: sellerId },
+        { handoverPepper: pepper },
+      ),
+    );
+    await runEffects(o.id);
+    await runEffects(o.id);
+    const charge = await db.ledgerTransaction.findMany({
+      where: { externalRef: `label-charge:${o.id}` },
+      include: { entries: true },
+    });
+    expect(charge).toHaveLength(1);
+    expect(charge[0]?.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          account: 'SELLER_RECEIVABLE',
+          direction: 'DEBIT',
+          amountCents: 1000,
+          userId: sellerId,
+        }),
+        expect.objectContaining({
+          account: 'SHIPPING_PAYABLE',
+          direction: 'CREDIT',
+          amountCents: 1000,
+        }),
+      ]),
+    );
+    labelCancellable = true;
+    const other = await order('SHIPPING_INTEGRATED');
+    await succeeded(other);
+    await runEffects(other.id);
+    await db.$transaction((tx) =>
+      applyOrderEvent(
+        tx,
+        other.id,
+        { type: 'SELLER_CANCELLED' },
+        { role: 'SELLER', id: sellerId },
+        { handoverPepper: pepper },
+      ),
+    );
+    await runEffects(other.id);
+    expect((await db.shipment.findFirstOrThrow({ where: { orderId: other.id } })).status).toBe(
+      'CANCELLED',
     );
   });
 });

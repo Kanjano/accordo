@@ -114,6 +114,8 @@ export interface NightlyReport {
   closedOrdersWithPayable: number;
   heldOver60Days: number;
   heldOver85Days: number;
+  /** SPEC §7.3: a carrier exception lasting more than 5 days opens a support ticket. */
+  shippingExceptionsOver5Days: number;
 }
 
 /**
@@ -156,7 +158,7 @@ export class NightlyChecks extends WorkerHost {
     const open = {
       notIn: ['COMPLETED', 'REFUNDED', 'CANCELLED', 'PAYMENT_FAILED', 'EXPIRED'] as never[],
     };
-    const [over60, over85] = await Promise.all([
+    const [over60, over85, exceptions] = await Promise.all([
       this.db.order.findMany({
         where: { status: open, paidAt: { lte: new Date(now.getTime() - 60 * DAY) } },
         select: { number: true },
@@ -164,12 +166,16 @@ export class NightlyChecks extends WorkerHost {
       this.db.order.count({
         where: { status: open, paidAt: { lte: new Date(now.getTime() - 85 * DAY) } },
       }),
+      this.db.shipment.count({
+        where: { status: 'EXCEPTION', updatedAt: { lte: new Date(now.getTime() - 5 * DAY) } },
+      }),
     ]);
     const report: NightlyReport = {
       unbalancedTransactions: Number(unbalanced.n),
       closedOrdersWithPayable: Number(payable.n),
       heldOver60Days: over60.length,
       heldOver85Days: over85,
+      shippingExceptionsOver5Days: exceptions,
     };
     if (Object.values(report).some((v) => v > 0)) {
       this.logger.error(`ALERT nightly checks: ${JSON.stringify(report)}`);
@@ -187,7 +193,9 @@ export class NightlyChecks extends WorkerHost {
           body: `Transazioni sbilanciate: ${report.unbalancedTransactions}; ordini chiusi con saldo venditore: ${report.closedOrdersWithPayable}; fondi trattenuti oltre 60 giorni: ${report.heldOver60Days} (${over60
             .map((o) => o.number)
             .slice(0, 10)
-            .join(', ')}); oltre 85 giorni: ${report.heldOver85Days}.`,
+            .join(
+              ', ',
+            )}); oltre 85 giorni: ${report.heldOver85Days}; spedizioni in eccezione da oltre 5 giorni: ${report.shippingExceptionsOver5Days}.`,
           path: '/admin/ordini',
         });
     }

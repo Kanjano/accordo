@@ -291,17 +291,83 @@ export function OrderView({ id }: { id: string }) {
         ) : null}
       </div>
 
+      {o.servicePoint ? (
+        <p className="text-sm">
+          {t('servicePoint', {
+            name: o.servicePoint.name,
+            address: `${o.servicePoint.address}, ${o.servicePoint.cap} ${o.servicePoint.city}`,
+          })}
+        </p>
+      ) : null}
       {o.shipments.length ? (
-        <section aria-labelledby="tracking" className="grid gap-1 text-sm">
+        <section aria-labelledby="tracking" className="grid gap-3 text-sm">
           <h2 id="tracking" className="font-semibold">
             {t('tracking')}
           </h2>
           {o.shipments.map((s) => (
-            <p key={`${s.carrier}-${s.trackingNumber}`}>
-              {s.carrier} · <span className="font-mono">{s.trackingNumber}</span>
-            </p>
+            <div key={s.id} className="grid gap-2 rounded-lg border p-3">
+              <p>
+                {s.direction === 'RETURN' ? `${t('return')} · ` : ''}
+                {s.carrier} · <span className="font-mono">{s.trackingNumber}</span> ·{' '}
+                {ts.has(`shipment.${s.status}` as 'shipment.IN_TRANSIT')
+                  ? ts(`shipment.${s.status}` as 'shipment.IN_TRANSIT')
+                  : s.status}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {s.labelAvailable &&
+                ((o.role === 'SELLER' && s.direction === 'OUTBOUND') ||
+                  (o.role === 'BUYER' && s.direction === 'RETURN')) ? (
+                  <a
+                    href={`${process.env.NEXT_PUBLIC_API_URL}/api/v1/orders/${o.id}/label`}
+                    className={buttonVariants({ size: 'sm' })}
+                  >
+                    {t('downloadLabel')}
+                  </a>
+                ) : null}
+                {s.trackingUrl ? (
+                  <a
+                    href={s.trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-4"
+                  >
+                    {t('trackingLink')}
+                  </a>
+                ) : null}
+                {process.env.NODE_ENV !== 'production' && s.providerMock ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => run(() => api.post(`/api/v1/dev/shipments/${s.id}/advance`))}
+                  >
+                    {t('devAdvance')}
+                  </Button>
+                ) : null}
+              </div>
+              {s.events.length ? (
+                <ol className="grid gap-1 text-muted-foreground">
+                  {s.events.map((e) => (
+                    <li key={`${e.status}-${e.occurredAt}`}>
+                      {date(e.occurredAt)} ·{' '}
+                      {ts.has(`shipment.${e.status}` as 'shipment.IN_TRANSIT')
+                        ? ts(`shipment.${e.status}` as 'shipment.IN_TRANSIT')
+                        : e.status}
+                      {e.description ? ` (${e.description})` : ''}
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+            </div>
           ))}
         </section>
+      ) : null}
+      {o.role === 'SELLER' && o.deliveryMethod !== 'HAND_DELIVERY' && o.status === 'PAID' ? (
+        <p className="text-sm">
+          <Link href="/guide/imballaggio" className="underline underline-offset-4">
+            {t('packingGuide')}
+          </Link>
+        </p>
       ) : null}
 
       <section aria-labelledby="timeline" className="grid gap-2">

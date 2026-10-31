@@ -11,10 +11,12 @@ export async function GET(_req: Request, { params }: RouteContext<'/sitemaps/[fi
     const now = new Date().toISOString();
     return urlset(
       base,
-      ['/', '/annunci', ...Object.keys(LEGAL_PAGES).map((p) => `/${p}`)].map((path) => ({
-        path,
-        lastModified: now,
-      })),
+      ['/', '/annunci', '/guide/imballaggio', ...Object.keys(LEGAL_PAGES).map((p) => `/${p}`)].map(
+        (path) => ({
+          path,
+          lastModified: now,
+        }),
+      ),
     );
   }
   if (name === 'categories' || name === 'brands')

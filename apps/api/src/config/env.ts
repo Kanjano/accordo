@@ -39,6 +39,10 @@ export const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional().default(''),
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
   HANDOVER_CODE_PEPPER: z.string().min(8),
+  SHIPPING_PROVIDER: z.enum(['mock', 'sendcloud']).default('mock'),
+  SHIPPING_API_KEY: z.string().optional().default(''),
+  SHIPPING_API_SECRET: z.string().optional().default(''),
+  SHIPPING_WEBHOOK_SECRET: z.string().optional().default(''),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });
 

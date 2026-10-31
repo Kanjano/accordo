@@ -157,3 +157,32 @@ Scelta dell'utente: **adapter di pagamento finto** (niente chiavi Stripe per ora
 
 **Rimandato**
 - Spedizione integrata al checkout (Fase 7), controversie e prove dei chargeback (Fase 8), feedback (Fase 9), pannello log webhook e riconciliazione con le balance transaction (Fase 11 / chiavi Stripe), blocco anti-collusione (Fase 12).
+
+## Fase 7 — Spedizioni
+
+Provider scelto dall'utente: **Sendcloud**. Credenziali sandbox non disponibili: fase completata con l'adapter `mock`; l'adapter Sendcloud reale è attivabile con `SHIPPING_PROVIDER=sendcloud` (feature flag) ed è coperto da test di contratto su payload d'esempio.
+
+**Piano**
+1. `packages/shipping`: porte `ShippingProvider` e `TrackingProvider` (§7.2), adapter `mock` (PDF segnaposto, tracking `MOCK-…`, punti di ritiro finti, webhook firmati HMAC) e adapter `sendcloud` (parcels API v2, punti di ritiro, firma `Sendcloud-Signature`, mappatura degli stati).
+2. Checkout: spedizione integrata (taglia del pacco, prezzi da `parcelSizes`, indirizzo mittente del venditore obbligatorio), punto di ritiro opzionale.
+3. Worker (coda `shipping`): etichetta all'ordine pagato salvata nel bucket privato, annullamento dell'etichetta quando l'ordine è annullato (addebito al venditore se non annullabile e la colpa è sua), etichetta di reso, registrazione del tracking per la spedizione autonoma.
+4. Webhook `POST /webhooks/shipping/:provider` e `/webhooks/tracking/:provider` con verifica HMAC → `Shipment.status`/`events`; prima presa in carico → `SHIPMENT_CONFIRMED`, consegna → `DELIVERED`, eccezioni notificate e segnalate dopo 5 giorni.
+5. API: download dell'etichetta con URL firmato, punti di ritiro, `POST /dev/shipments/:id/advance` (solo sviluppo).
+6. Web: scelta spedizione integrata e punto di ritiro al checkout, etichetta e tracking nelle pagine ordine, guida "Come imballare uno strumento".
+7. Test: verifica HMAC (mock e Sendcloud), contratto Sendcloud, e2e J2 completo con l'adapter finto.
+
+**Fatto**
+- `packages/shipping`: porte §7.2, adapter `mock` (PDF segnaposto valido, tracking `MOCK-…`, 3 punti di ritiro per CAP, webhook HMAC) e adapter `sendcloud` dietro feature flag con test di contratto.
+- API: checkout con spedizione integrata (taglia, prezzo da `parcelSizes`, indirizzo mittente obbligatorio) e punto di ritiro verificato; `GET /shipping/service-points`; etichetta PDF dal bucket privato (`GET /orders/:id/label`); webhook di spedizione e tracking con verifica HMAC; registrazione del tracking della spedizione autonoma; `POST /dev/shipments/:id/advance`; prezzo della spedizione integrata nel dettaglio annuncio.
+- Worker: etichetta all'ordine pagato (coda `payments`, idempotente) con notifica "Etichetta pronta"; coda `shipping` per gli aggiornamenti di tracking (stato, eventi, `SHIPMENT_CONFIRMED`, `DELIVERED`, eccezioni, reso al mittente); annullamento dell'etichetta con addebito al venditore se dovuto; etichetta di reso; eccezioni oltre 5 giorni nel controllo notturno.
+- Web: spedizione integrata e punto di ritiro nel box "Compra", etichetta, tracking ed eventi nella pagina ordine, pulsante di simulazione in sviluppo, guida `/guide/imballaggio` (anche nella sitemap e nelle notifiche).
+- Criteri: e2e J2 completo con l'adapter finto (pagamento → etichetta PDF scaricabile solo dal venditore → presa in carico → in consegna → consegnato → conferma con step-up → trasferimento); test della verifica HMAC (mock, Sendcloud e endpoint); con la sandbox Sendcloud **non disponibile**, l'etichetta reale di test resta da generare.
+- Test: 6 unitari `packages/shipping` (contratto Sendcloud, mock), 2 integrazione API (checkout integrato e punti di ritiro, webhook HMAC e duplicati, tracking della spedizione autonoma), 2 integrazione worker (etichetta e tracking fino a `DELIVERED`; annullamento con addebito), e2e J2 (9 e2e in totale).
+- Correzione: Payment Element con `PAYMENT_PROVIDER=stripe` (bug della Fase 6).
+- Decisioni: ADR-0041.
+
+**Da fare con le credenziali Sendcloud**
+- `SHIPPING_PROVIDER=sendcloud`, chiavi in `.env`, webhook dell'integrazione verso `/api/v1/webhooks/shipping/sendcloud`; generare un'etichetta di test e verificare metodi, mittente e mappatura degli stati.
+
+**Rimandato**
+- Ticket di supporto per eccezioni e resi al mittente (Fase 11), tracking multi-corriere per la spedizione autonoma (dopo l'MVP), riconciliazione delle fatture del provider (Fase 11).
