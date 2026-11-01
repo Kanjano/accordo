@@ -35,6 +35,16 @@ export function SiteFooter() {
             </Link>
           </li>
           <li>
+            <Link href="/negozi" className="hover:text-foreground">
+              {t('shops')}
+            </Link>
+          </li>
+          <li>
+            <Link href="/parametri-di-classificazione" className="hover:text-foreground">
+              {t('ranking')}
+            </Link>
+          </li>
+          <li>
             <Link href="/cookie" className="hover:text-foreground">
               {t('cookies')}
             </Link>

@@ -2,7 +2,15 @@ import { parseListingPathSegment } from '@accordo/domain';
 import { ApiError } from '@accordo/sdk';
 import type { ListingCardItem, ListingDetail } from '@accordo/shared';
 import { buttonVariants } from '@accordo/ui';
-import { BadgeCheck, Handshake, MapPin, PackageCheck, ShieldCheck, Trophy } from 'lucide-react';
+import {
+  BadgeCheck,
+  Handshake,
+  MapPin,
+  PackageCheck,
+  ShieldCheck,
+  Store,
+  Trophy,
+} from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import type { Locale } from 'next-intl';
@@ -155,6 +163,12 @@ export default async function ListingPage({
     l.acceptsTrades && { label: t('badges.trades') },
   ].filter(Boolean) as Array<{ icon?: typeof ShieldCheck; label: string; tone?: string }>;
   const pct = l.seller.positivePctBps;
+  // Omnibus (SPEC §14.3): shops compare with the lowest price of the previous 30 days.
+  const drop = l.priceReduction;
+  const dropRef = drop ? (drop.lowest30dCents ?? drop.previousCents) : 0;
+  const dropPct =
+    drop && dropRef > l.priceCents ? Math.round((1 - l.priceCents / dropRef) * 100) : 0;
+  const shop = l.seller.shop;
 
   return (
     <div className="mx-auto grid max-w-6xl gap-8 px-4 py-6">
@@ -233,6 +247,26 @@ export default async function ListingPage({
               </p>
             ) : null}
             <p className="text-3xl font-bold">{formatPrice(l.priceCents)}</p>
+            {drop ? (
+              <p className="flex flex-wrap items-center gap-2 text-sm">
+                {dropPct > 0 ? (
+                  <>
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-900 dark:bg-red-950 dark:text-red-100">
+                      {t('priceDrop', { pct: dropPct })}
+                    </span>
+                    <span className="text-muted-foreground">
+                      <span className="sr-only">{t('referencePrice')}</span>
+                      <s>{formatPrice(dropRef)}</s>
+                    </span>
+                  </>
+                ) : null}
+                {drop.lowest30dCents !== null ? (
+                  <span className="text-muted-foreground">
+                    {t('lowest30d', { price: formatPrice(drop.lowest30dCents) })}
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
           </div>
           {badges.length ? (
             <ul aria-label={t('badges.label')} className="flex flex-wrap gap-2">
@@ -327,16 +361,57 @@ export default async function ListingPage({
                 }),
               })}
             </p>
-            {l.seller.shop ? (
-              <p className="text-xs text-muted-foreground">
-                <strong className="block text-foreground">{t('shopInfo')}</strong>
-                {t('shopLegal', {
-                  legalName: l.seller.shop.legalName,
-                  vat: l.seller.shop.vatNumber,
-                  address: l.seller.shop.address,
-                })}
+            {shop ? (
+              <div className="grid gap-1 text-xs text-muted-foreground">
+                <p className="flex flex-wrap items-center gap-2">
+                  <strong className="text-sm text-foreground">{t('shopInfo')}</strong>
+                  {shop.verified ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-foreground">
+                      <Store aria-hidden className="size-3" />
+                      {t('shopVerified')}
+                    </span>
+                  ) : null}
+                </p>
+                <p>
+                  {t('shopLegal', {
+                    legalName: shop.legalName,
+                    vat: shop.vatNumber,
+                    address: shop.address,
+                  })}
+                  {shop.reaNumber ? ` · REA ${shop.reaNumber}` : ''}
+                </p>
+                <p>{t('shopContacts', { email: shop.email, phone: shop.phone })}</p>
+                <details>
+                  <summary className="cursor-pointer text-foreground underline">
+                    {t('consumerRights')}
+                  </summary>
+                  <div className="mt-1 grid gap-1">
+                    <p>{t('consumerRightsText')}</p>
+                    {shop.returnPolicy ? (
+                      <p className="whitespace-pre-line">
+                        <strong className="text-foreground">{t('returnPolicy')}:</strong>{' '}
+                        {shop.returnPolicy}
+                      </p>
+                    ) : null}
+                    {shop.warrantyInfo ? (
+                      <p className="whitespace-pre-line">
+                        <strong className="text-foreground">{t('warrantyInfo')}:</strong>{' '}
+                        {shop.warrantyInfo}
+                      </p>
+                    ) : null}
+                  </div>
+                </details>
+                {shop.verified ? (
+                  <Link href={`/negozio/${shop.slug}`} className="text-foreground underline">
+                    {t('shopPage')}
+                  </Link>
+                ) : null}
+              </div>
+            ) : (
+              <p className="rounded-md bg-muted p-2 text-xs" role="note">
+                <strong>{t('privateSeller')}</strong> {t('privateNotice')}
               </p>
-            ) : null}
+            )}
             {l.seller.username ? (
               <Link
                 href={`/utente/${l.seller.username}`}

@@ -14,6 +14,8 @@ export async function GET(_req: Request, { params }: RouteContext<'/sitemaps/[fi
       [
         '/',
         '/annunci',
+        '/negozi',
+        '/parametri-di-classificazione',
         '/guide/imballaggio',
         '/come-funzionano-i-feedback',
         ...Object.keys(LEGAL_PAGES).map((p) => `/${p}`),
@@ -23,7 +25,7 @@ export async function GET(_req: Request, { params }: RouteContext<'/sitemaps/[fi
       })),
     );
   }
-  if (name === 'categories' || name === 'brands')
+  if (name === 'categories' || name === 'brands' || name === 'shops')
     return urlset(base, await sitemapData<SitemapEntry[]>(`/${name}`));
   const page = /^listings-(\d+)$/.exec(name)?.[1];
   if (page) return urlset(base, await sitemapData<SitemapEntry[]>(`/listings?page=${page}`));

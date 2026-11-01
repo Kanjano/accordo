@@ -10,6 +10,7 @@ export * from './money.js';
 export * from './offers.js';
 export * from './order-state-machine.js';
 export * from './perceptual-hash.js';
+export * from './price-history.js';
 export * from './reputation.js';
 export * from './scan-message.js';
 export * from './validators.js';

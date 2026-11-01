@@ -13,7 +13,8 @@
     "account": "My account",
     "signOut": "Sign out",
     "settings": "Settings",
-    "messages": "{count, plural, =0 {Messages} one {Messages, # unread conversation} other {Messages, # unread conversations}}"
+    "messages": "{count, plural, =0 {Messages} one {Messages, # unread conversation} other {Messages, # unread conversations}}",
+    "shops": "Shops"
   },
   "Home": {
     "title": "Buy and sell musical instruments safely",
@@ -41,7 +42,9 @@
     "cookies": "Cookies",
     "cookieSettings": "Cookie preferences",
     "termsProtected": "Protected payment terms",
-    "rules": "Listing rules"
+    "rules": "Listing rules",
+    "ranking": "Ranking parameters",
+    "shops": "Shops"
   },
   "Common": {
     "loading": "Loading…",
@@ -155,7 +158,13 @@
     "ALREADY_REQUESTED": "You already requested a revision for this order.",
     "QUOTA_EXCEEDED": "You have used all the revision requests available this year.",
     "REVISION_NOT_PENDING": "The revision request is no longer active.",
-    "REVISION_WORSE": "A revision can only improve the rating."
+    "REVISION_WORSE": "A revision can only improve the rating.",
+    "VAT_INVALID": "Invalid VAT number.",
+    "VAT_TAKEN": "A shop with this VAT number already exists.",
+    "SHOP_EXISTS": "You already have a shop.",
+    "USERNAME_REQUIRED": "Choose a username in your profile settings first.",
+    "SHOP_LEGAL_LOCKED": "Verified legal details cannot be changed: contact support.",
+    "SHOP_ALREADY_DECIDED": "The shop is already in this state."
   },
   "Validation": {
     "EMAIL_INVALID": "Enter a valid email address.",
@@ -175,7 +184,12 @@
     "DESCRIPTION_TOO_LONG": "At most 5,000 characters.",
     "PRICE_INVALID": "Enter a valid price, for example 650 or 649.90.",
     "CATEGORY_REQUIRED": "Choose a category.",
-    "DESCRIPTION_TOO_SHORT": "Describe the problem in at least 30 characters."
+    "DESCRIPTION_TOO_SHORT": "Describe the problem in at least 30 characters.",
+    "VAT_INVALID": "Invalid VAT number: 11 digits with the correct check digit.",
+    "URL_INVALID": "Enter an address starting with https://.",
+    "TEXT_TOO_SHORT": "At least 20 characters.",
+    "SELF_CERT_REQUIRED": "The declaration is required to continue.",
+    "NOTES_TOO_SHORT": "At least 20 characters."
   },
   "Auth": {
     "signIn": {
@@ -271,7 +285,8 @@
       "purchases": "Purchases",
       "sales": "Sales",
       "payouts": "Payouts",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "shop": "Shop"
     },
     "welcome": "Hi {name}!",
     "overviewText": "Manage your profile, addresses, security and preferences here. Listings, purchases and sales are coming soon.",
@@ -649,7 +664,19 @@
     "photoCount": "Photo {n} of {total}",
     "noPhotos": "No photos",
     "breadcrumb": "Breadcrumb",
-    "home": "Home"
+    "home": "Home",
+    "priceDrop": "Reduced −{pct}%",
+    "referencePrice": "Reference price:",
+    "lowest30d": "Lowest price in the last 30 days: {price}",
+    "shopVerified": "Verified shop",
+    "shopContacts": "Email {email} · Phone {phone}",
+    "consumerRights": "Consumer rights",
+    "consumerRightsText": "You are buying from a professional seller: you may withdraw within 14 days of delivery and you have the legal guarantee of conformity (24 months on new items, which may be reduced to 12 on used ones).",
+    "returnPolicy": "Returns policy",
+    "warrantyInfo": "Warranty",
+    "shopPage": "Visit the shop",
+    "privateSeller": "Private seller.",
+    "privateNotice": "EU consumer protections (such as the 14-day right of withdrawal and the legal guarantee of conformity) do not apply to purchases from private individuals. Accordo's protected payment and disputes still apply."
   },
   "MyListings": {
     "title": "My listings",
@@ -1285,5 +1312,78 @@
     "statement": "Statement of reasons (sent to both parties)",
     "remove": "Remove",
     "publishFeedback": "Publish"
+  },
+  "Shops": {
+    "become": "Become a shop",
+    "becomeIntro": "If you sell instruments as a business you must present yourself as a professional seller. Once submitted, your listings show the \"Professional seller\" label and the shop's legal details; our staff checks them and grants the \"Verified shop\" badge, which lists you in the shop directory.",
+    "myShop": "My shop",
+    "status": {
+      "PENDING": "Application under review: our staff is checking your details.",
+      "VERIFIED": "Verified shop.",
+      "REJECTED": "Application not approved. Fix the details and save to submit it again."
+    },
+    "statusTab": {
+      "PENDING": "To review",
+      "REJECTED": "Rejected",
+      "VERIFIED": "Verified"
+    },
+    "reason": "Reason",
+    "viewStorefront": "View storefront",
+    "saved": "Details saved.",
+    "submit": "Submit application",
+    "legalSection": "Legal details and contacts",
+    "legalLocked": "Legal name, VAT number and address are already verified: contact support to change them.",
+    "storefrontSection": "Storefront and customer information",
+    "openingHoursHelp": "For example: Mon–Sat 9:30–13:00, 15:30–19:30.",
+    "returnPolicyHelp": "How returns and the consumers' 14-day right of withdrawal work.",
+    "warrantyInfoHelp": "Legal guarantee of conformity (24 months on new, at least 12 on used) and any additional warranty.",
+    "selfCert": "I declare that I am a trader (professional) and that the details entered are true and complete. I commit to offering only products and services that comply with EU law.",
+    "mediaSection": "Logo and cover",
+    "mediaProcessing": "Image uploaded: it will be visible in a few seconds.",
+    "fields": {
+      "name": "Shop name",
+      "legalName": "Legal name",
+      "vatNumber": "VAT number",
+      "reaNumber": "REA number",
+      "addressLine": "Registered address",
+      "cap": "Postcode",
+      "comune": "Municipality",
+      "email": "Email",
+      "phone": "Phone",
+      "pec": "Certified email (PEC)",
+      "website": "Website",
+      "description": "Description",
+      "openingHours": "Opening hours",
+      "returnPolicy": "Returns policy",
+      "warrantyInfo": "Warranty",
+      "logo": "Logo",
+      "cover": "Cover"
+    },
+    "adminTitle": "Shops",
+    "queueEmpty": "No shops in this section.",
+    "rejectReason": "Reason (required to reject or revoke, at least 20 characters)",
+    "verify": "Verify",
+    "reject": "Reject",
+    "revoke": "Revoke verification",
+    "directoryTitle": "Musical instrument shops",
+    "directoryIntro": "Shops verified by our staff: legal name and VAT number checked, legal details always visible.",
+    "region": "Region",
+    "allRegions": "All regions",
+    "searchName": "Shop name",
+    "filter": "Filter",
+    "count": "{count, plural, =0 {No shops} one {# shop} other {# shops}}",
+    "activeListings": "{count, plural, =0 {No active listings} one {# active listing} other {# active listings}}",
+    "pagination": "Pages",
+    "prev": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pages}",
+    "verifiedBadge": "Verified shop",
+    "professional": "Professional seller",
+    "profileAndFeedback": "Profile and feedback",
+    "about": "About us",
+    "noListings": "No active listings at the moment.",
+    "legalInfo": "Legal information",
+    "consumerRights": "Consumer rights",
+    "consumerRightsText": "Buying from this shop you may withdraw within 14 days of delivery and you have the legal guarantee of conformity (24 months on new items, which may be reduced to 12 on used ones)."
   }
 }

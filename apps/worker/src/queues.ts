@@ -19,7 +19,12 @@ const NOTIFIED = new Set(['listing.price_dropped', 'listing.review_pending']);
 export function routesFor(type: string): string[] {
   const queues: string[] = [];
   if (type.startsWith('media.')) queues.push(QUEUES.media);
-  if (NOTIFIED.has(type) || type === 'message.created' || type.startsWith('offer.'))
+  if (
+    NOTIFIED.has(type) ||
+    type === 'message.created' ||
+    type.startsWith('offer.') ||
+    type.startsWith('shop.')
+  )
     queues.push(QUEUES.notifications);
   if (type === 'webhook.received' || type === 'order.effects') queues.push(QUEUES.payments);
   if (type === 'shipping.updates') queues.push(QUEUES.shipping);

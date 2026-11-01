@@ -128,6 +128,12 @@ export interface ListingDetail {
   rawAttributes: Record<string, unknown>;
   priceCents: number;
   currency: 'EUR';
+  /** Latest cut, shown for 30 days; `lowest30dCents` only for shops (Omnibus, SPEC §14.3). */
+  priceReduction: {
+    previousCents: number;
+    lowest30dCents: number | null;
+    reducedAt: string;
+  } | null;
   isNegotiable: boolean;
   acceptsTrades: boolean;
   protectedPaymentEnabled: boolean;
@@ -164,6 +170,11 @@ export interface ListingDetail {
       vatNumber: string;
       address: string;
       verified: boolean;
+      reaNumber: string | null;
+      email: string;
+      phone: string;
+      returnPolicy: string | null;
+      warrantyInfo: string | null;
     } | null;
   };
   publishedAt: string | null;

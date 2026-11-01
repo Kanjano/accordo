@@ -10,6 +10,7 @@ export async function GET() {
     'static',
     'categories',
     'brands',
+    'shops',
     ...Array.from({ length: listingPages }, (_, i) => `listings-${i + 1}`),
   ];
   return xml(

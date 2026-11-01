@@ -60,6 +60,7 @@ export class DevListingsController {
         images: {
           create: images.map(({ id: _i, listingId: _l, createdAt: _ic, ...img }) => img),
         },
+        priceHistory: { create: { priceCents: l.priceCents, changedAt: now } },
       },
     });
     await this.db.outboxEvent.create({

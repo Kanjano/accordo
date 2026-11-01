@@ -16,6 +16,11 @@ interface MessagePayload {
   recipientId: string;
   firstUnread: boolean;
 }
+interface ShopPayload {
+  shopId: string;
+  ownerId: string;
+  reason: string | null;
+}
 interface OfferPayload {
   offerId: string;
   conversationId: string;
@@ -78,6 +83,7 @@ export class NotificationsProcessor extends WorkerHost {
     }
     if (job.name === 'message.created') return this.message(job.data as MessagePayload);
     if (job.name.startsWith('offer.')) return this.offer(job.name, job.data as OfferPayload);
+    if (job.name.startsWith('shop.')) return this.shop(job.name, job.data as ShopPayload);
     const { listingId } = job.data as { listingId: string };
     const listing = await this.db.listing.findUnique({
       where: { id: listingId },
@@ -117,6 +123,24 @@ export class NotificationsProcessor extends WorkerHost {
         });
       }
     }
+  }
+
+  /** Verification outcome: account notice, never opted out. */
+  private async shop(type: string, p: ShopPayload) {
+    const verified = type === 'shop.verified';
+    await this.notifier.notify({
+      userId: p.ownerId,
+      preference: 'listing.moderation',
+      mandatory: true,
+      type,
+      title: verified ? 'Negozio verificato' : 'Richiesta negozio non approvata',
+      body: verified
+        ? 'Il tuo negozio è stato verificato: ora compare nell’elenco dei negozi con il badge «Negozio verificato».'
+        : `La richiesta per il tuo negozio non è stata approvata. Motivo: ${p.reason ?? ''} Puoi correggere i dati e inviarla di nuovo.`,
+      path: '/account/negozio',
+      cta: 'Vai al negozio',
+      data: { shopId: p.shopId },
+    });
   }
 
   /** One notification per burst: only when the conversation had no unread messages (no spam). */

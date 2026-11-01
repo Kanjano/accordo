@@ -17,6 +17,7 @@ import { InfraModule } from './modules/platform/infra.module.js';
 import { PlatformModule } from './modules/platform/platform.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { SearchModule } from './modules/search/search.module.js';
+import { ShopsModule } from './modules/shops/shops.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 
 @Module({
@@ -60,6 +61,7 @@ import { UsersModule } from './modules/users/users.module.js';
     EngagementModule,
     OrdersModule,
     FeedbackModule,
+    ShopsModule,
     ComplianceModule,
   ],
 })

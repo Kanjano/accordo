@@ -29,6 +29,11 @@ export function SiteHeader() {
                 {t('listings')}
               </Link>
             </li>
+            <li className="max-sm:hidden">
+              <Link href="/negozi" className="rounded-md px-3 py-2 hover:bg-accent">
+                {t('shops')}
+              </Link>
+            </li>
             <li>
               <Link href="/vendi" className="rounded-md px-3 py-2 hover:bg-accent">
                 {t('sell')}

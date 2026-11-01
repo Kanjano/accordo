@@ -84,6 +84,11 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - Niente `include` nelle scritture dentro una transazione Prisma (query parallele sulla stessa connessione): rileggere dopo il commit.
 - E2e d'acquisto: `findListing` (`e2e/shop.ts`) clona sempre un annuncio con `POST /api/v1/dev/listings/:id/clone`; i test con messaggi segnalati o feedback registrano un acquirente nuovo (`register` in `e2e/helpers.ts`).
 
+## Note di implementazione (Fase 10)
+
+- Negozi in `modules/shops`: l'etichetta professionale nasce dalla richiesta (autocertificazione), la verifica dello staff aggiunge badge, elenco e vetrina (ADR-0045). Gli annunci sono "del negozio" se `Listing.shopId` è valorizzato.
+- Ribassi: ogni cambio di prezzo scrive `ListingPriceHistory`; il calcolo è `priceReduction` nel dominio.
+
 ## Regole d'oro del dominio
 
 - Lo stato di un ordine cambia **solo** tramite `OrderStateMachine` (§6.4) e `OrdersService.transition()`; mai `update` diretti sulla colonna `status`.

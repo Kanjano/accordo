@@ -238,3 +238,26 @@ Provider scelto dall'utente: **Sendcloud**. Credenziali sandbox non disponibili:
 
 **Rimandato**
 - Segnali su dispositivo/IP/impronta della carta (Fase 12), revisione staff degli account con coppie sospette (Fase 11).
+
+## Fase 10 — Negozi e diritti dei consumatori
+
+**Piano**
+1. Database: motivo e data del rifiuto della richiesta di negozio.
+2. Dominio: `priceReduction` (ultimo ribasso, prezzo più basso dei 30 giorni precedenti).
+3. API `shops`: richiesta con autocertificazione e controllo della P.IVA, modifica (dati legali bloccati dopo la verifica), logo e copertina, elenco per regione, vetrina, coda staff con verifica/rifiuto motivato; dettaglio annuncio con dati legali completi e ribasso.
+4. Worker: notifiche di verifica/rifiuto, elaborazione di logo e copertina.
+5. Web: `/account/negozio`, `/admin/negozi`, `/negozi`, `/negozio/[slug]`, pagina annuncio (venditore professionale, diritti del consumatore, avviso privato, badge di ribasso), `/parametri-di-classificazione`, sitemap.
+6. Test: dominio, integrazione API, e2e dei tre criteri.
+
+**Fatto**
+- Dominio: `priceReduction` (copertura invariata ≥ 95%), 6 test.
+- Migrazione `20261101090000_shop_rejection`.
+- API: `POST /shops`, `GET/PATCH /me/shop`, `POST /me/shop/media`, `GET /shops?region=&q=&page=`, `GET /shops/:slug`, `GET /admin/shops?status=`, `POST /admin/shops/:id/{verify,reject}` (con `AuditLog` e outbox), sitemap dei negozi; dettaglio annuncio con `priceReduction` e dati legali (REA, contatti, resi, garanzia, indirizzo completo). L'endpoint di clonazione dello sviluppo copia anche lo storico prezzi.
+- Worker: `shop.verified`/`shop.rejected` → notifiche obbligatorie; `media.shop_uploaded` → varianti e sostituzione dell'immagine.
+- Web: pagine sopra, link "Negozi" nell'header, "Negozi" e "Parametri di classificazione" nel footer, voce "Negozio" nell'area account.
+- Criteri: e2e "annuncio di un negozio con dati legali, Venditore professionale e prezzo più basso degli ultimi 30 giorni", "annuncio di un privato con l'avviso sui diritti dei consumatori", più la richiesta "Diventa negozio" dall'interfaccia; integrazione: richiesta → rifiuto → correzione → verifica → elenco e vetrina, dati legali bloccati, riferimento Omnibus con prezzo più basso intermedio. 15 e2e verdi in 3 esecuzioni consecutive.
+- Test: 6 unitari dominio, 4 integrazione API (61 in totale), 3 e2e (15 in totale).
+- Decisioni: ADR-0045.
+
+**Rimandato**
+- Negozi in home page e badge di ribasso sulle card (richiede il dato nel documento di ricerca); modifica dei dati legali verificati tramite backoffice (Fase 11).

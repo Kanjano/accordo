@@ -1,5 +1,11 @@
 import type { Prisma, PrismaClient } from '@accordo/db';
-import { evaluateListingChecks, generateShortId, isSimilarImage, slugify } from '@accordo/domain';
+import {
+  evaluateListingChecks,
+  generateShortId,
+  isSimilarImage,
+  priceReduction,
+  slugify,
+} from '@accordo/domain';
 import {
   type AttributeDef,
   buildAttributesSchema,
@@ -47,12 +53,26 @@ const detailInclude = {
   brand: true,
   comune: { include: { provincia: { include: { regione: true } } } },
   images: { orderBy: { position: 'asc' } },
-  shop: true,
+  shop: { include: { comune: { include: { provincia: true } } } },
+  // ponytail: last 100 changes cover any 30-day window unless a seller edits the price daily.
+  priceHistory: { orderBy: { changedAt: 'desc' }, take: 100 },
   seller: { include: { reputation: true, paymentAccount: { select: { transfersEnabled: true } } } },
 } satisfies Prisma.ListingInclude;
 type ListingWithDetail = Prisma.ListingGetPayload<{ include: typeof detailInclude }>;
 
 const problem = (code: string, detail?: string) => ({ code, detail });
+
+/** Only shops must show the 30-day reference price (Omnibus); private sellers show the old one. */
+function reductionOf(l: ListingWithDetail): ListingDetail['priceReduction'] {
+  const r = priceReduction(l.priceHistory, new Date());
+  return r
+    ? {
+        previousCents: r.previousCents,
+        lowest30dCents: l.shop ? r.lowest30dCents : null,
+        reducedAt: r.reducedAt.toISOString(),
+      }
+    : null;
+}
 
 function attributeDefs(category: ListingWithDetail['category']): AttributeDef[] {
   return category.attributes.map(({ attribute: a, required }) => ({
@@ -518,6 +538,7 @@ export class ListingsService {
       rawAttributes: raw,
       priceCents: l.priceCents,
       currency: 'EUR',
+      priceReduction: reductionOf(l),
       isNegotiable: l.isNegotiable,
       acceptsTrades: l.acceptsTrades,
       protectedPaymentEnabled: l.protectedPaymentEnabled,
@@ -565,8 +586,13 @@ export class ListingsService {
               name: l.shop.name,
               legalName: l.shop.legalName,
               vatNumber: l.shop.vatNumber,
-              address: `${l.shop.addressLine}, ${l.shop.cap}`,
+              address: `${l.shop.addressLine}, ${l.shop.cap} ${l.shop.comune.name} (${l.shop.comune.provincia.sigla})`,
               verified: l.shop.isVerified,
+              reaNumber: l.shop.reaNumber,
+              email: l.shop.email,
+              phone: l.shop.phone,
+              returnPolicy: l.shop.returnPolicy,
+              warrantyInfo: l.shop.warrantyInfo,
             }
           : null,
       },

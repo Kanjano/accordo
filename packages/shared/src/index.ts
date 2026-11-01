@@ -13,3 +13,4 @@ export * from './feedback.js';
 export * from './messaging.js';
 export * from './orders.js';
 export * from './search.js';
+export * from './shops.js';

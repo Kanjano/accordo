@@ -13,7 +13,8 @@
     "account": "Il mio account",
     "signOut": "Esci",
     "settings": "Impostazioni",
-    "messages": "{count, plural, =0 {Messaggi} one {Messaggi, # conversazione non letta} other {Messaggi, # conversazioni non lette}}"
+    "messages": "{count, plural, =0 {Messaggi} one {Messaggi, # conversazione non letta} other {Messaggi, # conversazioni non lette}}",
+    "shops": "Negozi"
   },
   "Home": {
     "title": "Compra e vendi strumenti musicali in sicurezza",
@@ -41,7 +42,9 @@
     "cookies": "Cookie",
     "cookieSettings": "Preferenze cookie",
     "termsProtected": "Condizioni del pagamento protetto",
-    "rules": "Regole di pubblicazione"
+    "rules": "Regole di pubblicazione",
+    "ranking": "Parametri di classificazione",
+    "shops": "Negozi"
   },
   "Common": {
     "loading": "Caricamento…",
@@ -155,7 +158,13 @@
     "ALREADY_REQUESTED": "Hai già chiesto una revisione per questo ordine.",
     "QUOTA_EXCEEDED": "Hai esaurito le richieste di revisione disponibili quest'anno.",
     "REVISION_NOT_PENDING": "La richiesta di revisione non è più attiva.",
-    "REVISION_WORSE": "La revisione può solo migliorare il giudizio."
+    "REVISION_WORSE": "La revisione può solo migliorare il giudizio.",
+    "VAT_INVALID": "Partita IVA non valida.",
+    "VAT_TAKEN": "Esiste già un negozio con questa partita IVA.",
+    "SHOP_EXISTS": "Hai già un negozio.",
+    "USERNAME_REQUIRED": "Scegli prima un nome utente nelle impostazioni del profilo.",
+    "SHOP_LEGAL_LOCKED": "I dati legali verificati non si possono modificare: contatta l'assistenza.",
+    "SHOP_ALREADY_DECIDED": "Il negozio è già in questo stato."
   },
   "Validation": {
     "EMAIL_INVALID": "Inserisci un indirizzo email valido.",
@@ -175,7 +184,12 @@
     "DESCRIPTION_TOO_LONG": "Al massimo 5.000 caratteri.",
     "PRICE_INVALID": "Inserisci un prezzo valido, per esempio 650 o 649,90.",
     "CATEGORY_REQUIRED": "Scegli una categoria.",
-    "DESCRIPTION_TOO_SHORT": "Descrivi il problema con almeno 30 caratteri."
+    "DESCRIPTION_TOO_SHORT": "Descrivi il problema con almeno 30 caratteri.",
+    "VAT_INVALID": "Partita IVA non valida: 11 cifre con il codice di controllo corretto.",
+    "URL_INVALID": "Inserisci un indirizzo che inizia con https://.",
+    "TEXT_TOO_SHORT": "Almeno 20 caratteri.",
+    "SELF_CERT_REQUIRED": "Serve la dichiarazione per continuare.",
+    "NOTES_TOO_SHORT": "Almeno 20 caratteri."
   },
   "Auth": {
     "signIn": {
@@ -271,7 +285,8 @@
       "purchases": "Acquisti",
       "sales": "Vendite",
       "payouts": "Incassi",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "shop": "Negozio"
     },
     "welcome": "Ciao {name}!",
     "overviewText": "Da qui gestisci profilo, indirizzi, sicurezza e preferenze. Annunci, acquisti e vendite arriveranno presto.",
@@ -649,7 +664,19 @@
     "photoCount": "Foto {n} di {total}",
     "noPhotos": "Nessuna foto",
     "breadcrumb": "Percorso",
-    "home": "Home"
+    "home": "Home",
+    "priceDrop": "Ribasso −{pct}%",
+    "referencePrice": "Prezzo di riferimento:",
+    "lowest30d": "Prezzo più basso degli ultimi 30 giorni: {price}",
+    "shopVerified": "Negozio verificato",
+    "shopContacts": "Email {email} · Tel. {phone}",
+    "consumerRights": "Diritti del consumatore",
+    "consumerRightsText": "Acquisti da un venditore professionale: hai diritto di recesso entro 14 giorni dalla consegna e alla garanzia legale di conformità (24 mesi sul nuovo, riducibile a 12 sull'usato).",
+    "returnPolicy": "Politica resi",
+    "warrantyInfo": "Garanzia",
+    "shopPage": "Vai al negozio",
+    "privateSeller": "Venditore privato.",
+    "privateNotice": "Le tutele UE per i consumatori (come il diritto di recesso di 14 giorni e la garanzia legale di conformità) non si applicano agli acquisti da privati. Restano il pagamento protetto e le controversie di Accordo."
   },
   "MyListings": {
     "title": "I miei annunci",
@@ -1285,5 +1312,78 @@
     "statement": "Motivazione (inviata a entrambe le parti)",
     "remove": "Rimuovi",
     "publishFeedback": "Pubblica"
+  },
+  "Shops": {
+    "become": "Diventa negozio",
+    "becomeIntro": "Se vendi strumenti per lavoro devi presentarti come venditore professionale. Dopo l'invio i tuoi annunci mostreranno l'etichetta «Venditore professionale» e i dati legali del negozio; lo staff verifica i dati e assegna il badge «Negozio verificato», che ti fa comparire nell'elenco dei negozi.",
+    "myShop": "Il mio negozio",
+    "status": {
+      "PENDING": "Richiesta in verifica: lo staff controlla i dati che hai inviato.",
+      "VERIFIED": "Negozio verificato.",
+      "REJECTED": "Richiesta non approvata. Correggi i dati e salva per inviarla di nuovo."
+    },
+    "statusTab": {
+      "PENDING": "Da verificare",
+      "REJECTED": "Rifiutati",
+      "VERIFIED": "Verificati"
+    },
+    "reason": "Motivo",
+    "viewStorefront": "Vedi la vetrina",
+    "saved": "Dati salvati.",
+    "submit": "Invia la richiesta",
+    "legalSection": "Dati legali e contatti",
+    "legalLocked": "Ragione sociale, partita IVA e sede sono già verificati: per cambiarli contatta l'assistenza.",
+    "storefrontSection": "Vetrina e informazioni per i clienti",
+    "openingHoursHelp": "Per esempio: lun–sab 9:30–13:00, 15:30–19:30.",
+    "returnPolicyHelp": "Come funzionano i resi e il recesso di 14 giorni previsto per i consumatori.",
+    "warrantyInfoHelp": "Garanzia legale di conformità (24 mesi sul nuovo, almeno 12 sull'usato) ed eventuali garanzie aggiuntive.",
+    "selfCert": "Dichiaro di essere un operatore commerciale (professionista) e che i dati inseriti sono veri e completi. Mi impegno a offrire solo prodotti e servizi conformi alle norme dell'UE.",
+    "mediaSection": "Logo e copertina",
+    "mediaProcessing": "Immagine caricata: sarà visibile tra pochi secondi.",
+    "fields": {
+      "name": "Nome del negozio",
+      "legalName": "Ragione sociale",
+      "vatNumber": "Partita IVA",
+      "reaNumber": "Numero REA",
+      "addressLine": "Indirizzo della sede",
+      "cap": "CAP",
+      "comune": "Comune",
+      "email": "Email",
+      "phone": "Telefono",
+      "pec": "PEC",
+      "website": "Sito web",
+      "description": "Descrizione",
+      "openingHours": "Orari",
+      "returnPolicy": "Politica resi",
+      "warrantyInfo": "Garanzia",
+      "logo": "Logo",
+      "cover": "Copertina"
+    },
+    "adminTitle": "Negozi",
+    "queueEmpty": "Nessun negozio in questa sezione.",
+    "rejectReason": "Motivazione (obbligatoria per rifiutare o revocare, almeno 20 caratteri)",
+    "verify": "Verifica",
+    "reject": "Rifiuta",
+    "revoke": "Revoca la verifica",
+    "directoryTitle": "Negozi di strumenti musicali",
+    "directoryIntro": "Negozi verificati dal nostro staff: ragione sociale e partita IVA controllate e dati legali sempre visibili.",
+    "region": "Regione",
+    "allRegions": "Tutte le regioni",
+    "searchName": "Nome del negozio",
+    "filter": "Filtra",
+    "count": "{count, plural, =0 {Nessun negozio} one {# negozio} other {# negozi}}",
+    "activeListings": "{count, plural, =0 {Nessun annuncio attivo} one {# annuncio attivo} other {# annunci attivi}}",
+    "pagination": "Pagine",
+    "prev": "Precedente",
+    "next": "Successiva",
+    "pageOf": "Pagina {page} di {pages}",
+    "verifiedBadge": "Negozio verificato",
+    "professional": "Venditore professionale",
+    "profileAndFeedback": "Profilo e feedback",
+    "about": "Chi siamo",
+    "noListings": "Nessun annuncio attivo al momento.",
+    "legalInfo": "Informazioni legali",
+    "consumerRights": "Diritti del consumatore",
+    "consumerRightsText": "Acquistando da questo negozio hai diritto di recesso entro 14 giorni dalla consegna e alla garanzia legale di conformità (24 mesi sul nuovo, riducibile a 12 sull'usato)."
   }
 }

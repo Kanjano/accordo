@@ -41,6 +41,20 @@ export class SeoController {
     }));
   }
 
+  @Get('shops')
+  async shops(): Promise<SitemapEntry[]> {
+    const rows = await this.db.shop.findMany({
+      where: { isVerified: true, owner: { status: { not: 'DELETED' }, banned: false } },
+      select: { slug: true, updatedAt: true },
+      orderBy: { slug: 'asc' },
+      take: 50_000,
+    });
+    return rows.map((s) => ({
+      path: `/negozio/${s.slug}`,
+      lastModified: s.updatedAt.toISOString(),
+    }));
+  }
+
   @Get(':kind')
   async landing(@Param('kind') kind: string): Promise<SitemapEntry[]> {
     const [categories, brands, groups] = await Promise.all([
