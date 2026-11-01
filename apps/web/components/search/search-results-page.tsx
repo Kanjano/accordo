@@ -117,7 +117,7 @@ export async function SearchResultsPage({
     `${basePath}${queryString(n === 1 ? query : { ...query, page: String(n) })}`;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6">
+    <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5">
       {breadcrumbs?.length ? (
         <nav aria-label={t('breadcrumb')} className="text-sm text-muted-foreground">
           <ol className="flex flex-wrap gap-1">
@@ -146,7 +146,7 @@ export async function SearchResultsPage({
       </header>
       {result?.degraded ? <Alert>{t('degraded')}</Alert> : null}
 
-      <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[15rem_1fr]">
         <FilterPanel
           basePath={basePath}
           query={query}
@@ -156,7 +156,7 @@ export async function SearchResultsPage({
           attributes={attributes.filter((a) => ['ENUM', 'MULTI_ENUM', 'BOOLEAN'].includes(a.type))}
           comune={comune}
         />
-        <div className="grid content-start gap-4">
+        <div className="grid min-w-0 content-start gap-3">
           <SearchToolbar basePath={basePath} query={query} fullQuery={fullQuery} name={heading} />
           {!result ? (
             <Alert tone="error">{t('invalid')}</Alert>
@@ -171,17 +171,41 @@ export async function SearchResultsPage({
           {result && result.totalPages > 1 ? (
             <nav
               aria-label={t('pagination')}
-              className="hidden items-center justify-center gap-4 text-sm sm:flex"
+              className="hidden items-center justify-center gap-2 pt-2 text-sm sm:flex"
             >
               {page > 1 ? (
-                <Link href={pageHref(page - 1)} rel="prev" className="underline underline-offset-4">
-                  {t('previous')}
+                <Link href={pageHref(page - 1)} rel="prev" className="px-2 py-1 hover:underline">
+                  ‹ {t('previous')}
                 </Link>
               ) : null}
-              <span>{t('pageOf', { page, total: result.totalPages })}</span>
+              <ol className="flex items-center gap-1">
+                {pageWindow(page, result.totalPages).map((n, i) =>
+                  n === null ? (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: gaps have no identity
+                    <li key={`gap-${i}`} aria-hidden>
+                      …
+                    </li>
+                  ) : (
+                    <li key={n}>
+                      <Link
+                        href={pageHref(n)}
+                        aria-label={t('page', { page: n })}
+                        aria-current={n === page ? 'page' : undefined}
+                        className={
+                          n === page
+                            ? 'grid min-w-9 place-items-center rounded-md bg-primary px-2 py-1.5 font-semibold text-primary-foreground'
+                            : 'grid min-w-9 place-items-center rounded-md border px-2 py-1.5 hover:bg-accent'
+                        }
+                      >
+                        {n}
+                      </Link>
+                    </li>
+                  ),
+                )}
+              </ol>
               {page < result.totalPages ? (
-                <Link href={pageHref(page + 1)} rel="next" className="underline underline-offset-4">
-                  {t('next')}
+                <Link href={pageHref(page + 1)} rel="next" className="px-2 py-1 hover:underline">
+                  {t('next')} ›
                 </Link>
               ) : null}
             </nav>
@@ -190,4 +214,14 @@ export async function SearchResultsPage({
       </div>
     </div>
   );
+}
+
+/** 1 … p-2 p-1 p p+1 p+2 … last (null = gap). */
+function pageWindow(page: number, total: number): Array<number | null> {
+  const out: Array<number | null> = [];
+  for (let n = 1; n <= total; n++) {
+    if (n === 1 || n === total || Math.abs(n - page) <= 2) out.push(n);
+    else if (out.at(-1) !== null) out.push(null);
+  }
+  return out;
 }

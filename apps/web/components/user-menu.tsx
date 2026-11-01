@@ -16,7 +16,7 @@ export function UserMenu() {
     return <span className="inline-block h-9 w-20 animate-pulse rounded-md bg-muted" aria-hidden />;
   if (!data) {
     return (
-      <Link href="/accedi" className={buttonVariants({ size: 'sm' })}>
+      <Link href="/accedi" className={buttonVariants({ variant: 'outline' })}>
         {t('signIn')}
       </Link>
     );

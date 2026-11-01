@@ -101,7 +101,10 @@ export function FilterPanel({
         id={panelId}
         aria-label={t('filters')}
         aria-busy={pending}
-        className={cn('grid content-start gap-5 text-sm', !open && 'max-lg:hidden')}
+        className={cn(
+          'grid content-start gap-5 rounded-lg border bg-card p-4 text-sm',
+          !open && 'max-lg:hidden',
+        )}
       >
         {active ? (
           <Button
@@ -130,7 +133,9 @@ export function FilterPanel({
           />
         ) : null}
 
-        {!locked.includes('category') ? (
+        {/* Categories only within a department: the full list (90+) buries every other filter. */}
+        {!locked.includes('category') &&
+        (locked.includes('department') || query.department || query.category) ? (
           <FacetRadios
             legend={t('category')}
             name="category"
@@ -284,7 +289,7 @@ export function FilterPanel({
 function Group({ legend, children }: { legend: string; children: ReactNode }) {
   return (
     <fieldset className="grid gap-2">
-      <legend className="mb-1 font-semibold">{legend}</legend>
+      <legend className="mb-1 text-xs font-bold tracking-wide uppercase">{legend}</legend>
       {children}
     </fieldset>
   );

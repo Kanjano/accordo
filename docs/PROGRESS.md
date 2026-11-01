@@ -345,3 +345,7 @@ Provider scelto dall'utente: **Sendcloud**. Credenziali sandbox non disponibili:
 
 **Rimandato**
 - Copertura misurata dei service dell'API, documento OpenAPI, budget JS di home e ricerca (Zod nei filtri), supporto a più chiavi per `ENCRYPTION_KEY`, OpenTelemetry e Sentry (servono DSN ed endpoint), tracciato DAC7 ufficiale, test di ripristino reale e penetration test prima del lancio.
+
+## Dopo l'MVP: frontend in stile portale (2026-11-01)
+
+Header con ricerca grande e pulsante "Vendi", barra dei reparti; home con l'albero delle categorie a lato e annunci recenti fitti; ricerca con risultati a lista compatta (o griglia, scelta salvata nel browser), categorie nei filtri solo dentro un reparto, paginazione numerata; footer a colonne. Identità visiva propria (nessun elemento ripreso da siti esistenti). Axe e J1–J8 verdi.

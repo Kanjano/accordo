@@ -14,7 +14,8 @@
     "signOut": "Esci",
     "settings": "Impostazioni",
     "messages": "{count, plural, =0 {Messaggi} one {Messaggi, # conversazione non letta} other {Messaggi, # conversazioni non lette}}",
-    "shops": "Negozi"
+    "shops": "Negozi",
+    "categories": "Categorie"
   },
   "Home": {
     "title": "Compra e vendi strumenti musicali in sicurezza",
@@ -32,7 +33,11 @@
     "recentlyViewed": "Visti di recente",
     "sellTitle": "Hai uno strumento da vendere?",
     "sellText": "Pubblicare è gratis: bastano poche foto e una descrizione onesta.",
-    "sellCta": "Inizia a vendere"
+    "sellCta": "Inizia a vendere",
+    "browse": "Sfoglia per categoria",
+    "allCategories": "Tutte le categorie di {department}",
+    "trust": "Pagamento protetto, feedback verificati, chat sicura",
+    "listingsCount": "{count, plural, one {# annuncio online} other {# annunci online}}"
   },
   "Footer": {
     "rights": "© {year} Accordo. Tutti i diritti riservati.",
@@ -45,7 +50,14 @@
     "termsProtected": "Condizioni del pagamento protetto",
     "rules": "Regole di pubblicazione",
     "ranking": "Parametri di classificazione",
-    "shops": "Negozi"
+    "shops": "Negozi",
+    "tagline": "Il mercatino degli strumenti musicali usati, con pagamento protetto e feedback verificati.",
+    "market": "Compra e vendi",
+    "info": "Informazioni",
+    "listings": "Tutti gli annunci",
+    "sell": "Pubblica un annuncio",
+    "feedback": "Come funzionano i feedback",
+    "report": "Segnala un contenuto"
   },
   "Common": {
     "loading": "Caricamento…",
@@ -816,7 +828,15 @@
       "brand": "Marca",
       "category": "Categoria",
       "listing": "Annunci"
-    }
+    },
+    "submit": "Cerca",
+    "viewList": "Lista",
+    "viewGrid": "Griglia",
+    "view": "Visualizzazione",
+    "categories": "Categorie",
+    "allDepartments": "Tutte le categorie",
+    "page": "Pagina {page}",
+    "results": "Risultati"
   },
   "Favorites": {
     "add": "Aggiungi «{title}» ai preferiti",

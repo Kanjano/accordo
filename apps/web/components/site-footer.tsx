@@ -1,64 +1,76 @@
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
 import { CookieSettingsButton } from './consent/cookie-banner';
 
 export function SiteFooter() {
   const t = useTranslations('Footer');
+  const market = [
+    ['/annunci', t('listings')],
+    ['/vendi', t('sell')],
+    ['/negozi', t('shops')],
+    ['/come-funzionano-i-feedback', t('feedback')],
+    ['/segnala', t('report')],
+  ] as const;
+  const info = [
+    ['/termini', t('terms')],
+    ['/condizioni-pagamento-protetto', t('termsProtected')],
+    ['/regole-pubblicazione', t('rules')],
+    ['/parametri-di-classificazione', t('ranking')],
+    ['/privacy', t('privacy')],
+    ['/cookie', t('cookies')],
+    ['/note-legali', t('legal')],
+    ['/accessibilita', t('accessibility')],
+  ] as const;
   return (
-    <footer className="border-t">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <p>{t('rights', { year: new Date().getFullYear() })}</p>
-        <ul className="flex flex-wrap gap-x-4 gap-y-2">
+    <footer className="mt-8 border-t bg-muted text-sm">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]">
+        <div className="grid content-start gap-2">
+          <p className="text-lg font-extrabold text-primary">Accordo</p>
+          <p className="max-w-sm text-muted-foreground">{t('tagline')}</p>
+        </div>
+        <FooterColumn title={t('market')} links={market} />
+        <FooterColumn title={t('info')} links={info}>
           <li>
-            <Link href="/note-legali" className="hover:text-foreground">
-              {t('legal')}
-            </Link>
+            <CookieSettingsButton
+              label={t('cookieSettings')}
+              className="text-muted-foreground hover:text-foreground hover:underline"
+            />
           </li>
-          <li>
-            <Link href="/privacy" className="hover:text-foreground">
-              {t('privacy')}
-            </Link>
-          </li>
-          <li>
-            <Link href="/termini" className="hover:text-foreground">
-              {t('terms')}
-            </Link>
-          </li>
-          <li>
-            <Link href="/condizioni-pagamento-protetto" className="hover:text-foreground">
-              {t('termsProtected')}
-            </Link>
-          </li>
-          <li>
-            <Link href="/regole-pubblicazione" className="hover:text-foreground">
-              {t('rules')}
-            </Link>
-          </li>
-          <li>
-            <Link href="/negozi" className="hover:text-foreground">
-              {t('shops')}
-            </Link>
-          </li>
-          <li>
-            <Link href="/parametri-di-classificazione" className="hover:text-foreground">
-              {t('ranking')}
-            </Link>
-          </li>
-          <li>
-            <Link href="/cookie" className="hover:text-foreground">
-              {t('cookies')}
-            </Link>
-          </li>
-          <li>
-            <Link href="/accessibilita" className="hover:text-foreground">
-              {t('accessibility')}
-            </Link>
-          </li>
-          <li>
-            <CookieSettingsButton label={t('cookieSettings')} className="hover:text-foreground" />
-          </li>
-        </ul>
+        </FooterColumn>
       </div>
+      <p className="border-t py-4 text-center text-xs text-muted-foreground">
+        {t('rights', { year: new Date().getFullYear() })}
+      </p>
     </footer>
+  );
+}
+
+function FooterColumn({
+  title,
+  links,
+  children,
+}: {
+  title: string;
+  links: ReadonlyArray<readonly [string, string]>;
+  children?: ReactNode;
+}) {
+  return (
+    <nav aria-label={title}>
+      <h2 className="mb-2 text-xs font-bold tracking-wide uppercase">{title}</h2>
+      <ul className="grid gap-1.5">
+        {links.map(([href, label]) => (
+          <li key={href}>
+            <Link
+              href={href}
+              className="text-muted-foreground hover:text-foreground hover:underline"
+            >
+              {label}
+            </Link>
+          </li>
+        ))}
+        {children}
+      </ul>
+    </nav>
   );
 }

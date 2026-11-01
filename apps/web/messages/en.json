@@ -14,7 +14,8 @@
     "signOut": "Sign out",
     "settings": "Settings",
     "messages": "{count, plural, =0 {Messages} one {Messages, # unread conversation} other {Messages, # unread conversations}}",
-    "shops": "Shops"
+    "shops": "Shops",
+    "categories": "Categories"
   },
   "Home": {
     "title": "Buy and sell musical instruments safely",
@@ -32,7 +33,11 @@
     "recentlyViewed": "Recently viewed",
     "sellTitle": "Got an instrument to sell?",
     "sellText": "Listing is free: a few photos and an honest description are all it takes.",
-    "sellCta": "Start selling"
+    "sellCta": "Start selling",
+    "browse": "Browse by category",
+    "allCategories": "All {department} categories",
+    "trust": "Protected payment, verified feedback, safe chat",
+    "listingsCount": "{count, plural, one {# listing online} other {# listings online}}"
   },
   "Footer": {
     "rights": "© {year} Accordo. All rights reserved.",
@@ -45,7 +50,14 @@
     "termsProtected": "Protected payment terms",
     "rules": "Listing rules",
     "ranking": "Ranking parameters",
-    "shops": "Shops"
+    "shops": "Shops",
+    "tagline": "The marketplace for used musical instruments, with protected payment and verified feedback.",
+    "market": "Buy and sell",
+    "info": "Information",
+    "listings": "All listings",
+    "sell": "Post a listing",
+    "feedback": "How feedback works",
+    "report": "Report content"
   },
   "Common": {
     "loading": "Loading…",
@@ -816,7 +828,15 @@
       "brand": "Brand",
       "category": "Category",
       "listing": "Listings"
-    }
+    },
+    "submit": "Search",
+    "viewList": "List",
+    "viewGrid": "Grid",
+    "view": "View",
+    "categories": "Categories",
+    "allDepartments": "All categories",
+    "page": "Page {page}",
+    "results": "Results"
   },
   "Favorites": {
     "add": "Add “{title}” to favorites",
