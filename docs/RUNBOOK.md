@@ -18,7 +18,7 @@ Le chiavi live esistono solo nel `.env.prod` di produzione. I dati demo non vann
 
 ## Deploy
 
-1. La CI è verde su `main`, poi il workflow `Deploy staging` costruisce le immagini (`web`, `api`, `worker`, `migrate`) su GHCR.
+1. La CI è verde su `main`, poi il workflow `Deploy staging` costruisce le immagini (`web`, `api`, `worker`, `migrate`) su GHCR. Il workflow parte solo con la variabile di repository `STAGING_ENABLED=true` (environment `staging` con dominio, chiavi e segreti SSH già configurati).
 2. **Migrazioni prima del rollout:** `dc run --rm migrate` (`prisma migrate deploy` e seed di base, con l'utente delle migrazioni).
 3. Rollout: `dc up -d --no-build`. Caddy continua a servire mentre i container ripartono; il compose aspetta l'healthcheck dell'API prima di avviare il web.
 4. Verifica: `dc ps` (tutti `healthy`), `curl https://api.<dominio>/health/ready`, accesso e ricerca dal sito.
