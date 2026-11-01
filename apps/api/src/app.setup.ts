@@ -17,6 +17,17 @@ export function configureApp(app: INestApplication): void {
   const http = app.getHttpAdapter().getInstance() as express.Express;
   app.enableCors({ origin: [env.WEB_URL], credentials: true });
   http.set('trust proxy', env.NODE_ENV === 'production' ? 1 : false);
+  // JSON API: nothing may render or frame it (SPEC §13.6). Bull Board serves its own HTML UI.
+  http.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-Frame-Options', 'DENY');
+    if (!req.path.startsWith(QUEUES_PATH))
+      res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+    if (env.NODE_ENV === 'production')
+      res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+    next();
+  });
   http.all('/api/auth/{*path}', toNodeHandler(app.get<Auth>(AUTH)));
   const board = app.get(QueuesBoard);
   http.use(QUEUES_PATH, board.guard, board.router);

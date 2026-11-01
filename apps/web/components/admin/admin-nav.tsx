@@ -2,7 +2,7 @@
 import { cn } from '@accordo/ui';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/session';
 
 const NAV = [
   ['/admin', 'dashboard'],

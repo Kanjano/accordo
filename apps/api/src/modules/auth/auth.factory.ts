@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import type { PrismaClient } from '@accordo/db';
 import { slugify } from '@accordo/domain';
 import { passkey } from '@better-auth/passkey';
@@ -9,12 +9,14 @@ import { admin, captcha, twoFactor, username } from 'better-auth/plugins';
 import type { Redis } from 'ioredis';
 import type { Env } from '../../config/env.js';
 import type { Mailer } from '../notifications/email.provider.js';
+import { verifyTurnstile } from '../platform/turnstile.js';
 import {
   DEVICE_COOKIE,
   DEVICE_COOKIE_MAX_AGE,
   type DevicesService,
   readCookie,
 } from './devices.service.js';
+import { signNotMeToken } from './not-me.js';
 import type { StepUpService } from './step-up.service.js';
 
 export interface AuthDeps {
@@ -33,6 +35,10 @@ const STEP_UP_PATHS = [
   '/two-factor/disable',
   '/passkey/delete-passkey',
 ];
+
+const SIGN_IN_PATHS = ['/sign-in/email', '/sign-in/username'];
+/** SPEC §13.2: 10 sign-in attempts per account per hour, then Turnstile (or a wait without it). */
+const ACCOUNT_SIGN_IN_LIMIT = 10;
 
 const USERNAME_RE = /^[a-z0-9._]{3,30}$/;
 
@@ -175,6 +181,28 @@ export function createAuth({ env, db, redis, mailer, devices, stepUp }: AuthDeps
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        if (env.RATE_LIMIT_ENABLED && SIGN_IN_PATHS.includes(ctx.path)) {
+          const body = (ctx.body ?? {}) as { email?: unknown; username?: unknown };
+          const account = String(body.email ?? body.username ?? '')
+            .trim()
+            .toLowerCase();
+          const key = `login-account:${createHash('sha256').update(account).digest('hex')}`;
+          const count = await redis.incr(key);
+          if (count === 1) await redis.expire(key, 3600);
+          if (
+            count > ACCOUNT_SIGN_IN_LIMIT &&
+            (!env.TURNSTILE_SECRET_KEY ||
+              !(await verifyTurnstile(
+                env.TURNSTILE_SECRET_KEY,
+                ctx.headers?.get('x-captcha-response'),
+              )))
+          ) {
+            throw new APIError('TOO_MANY_REQUESTS', {
+              code: 'CAPTCHA_REQUIRED',
+              message: 'CAPTCHA_REQUIRED',
+            });
+          }
+        }
         if (STEP_UP_PATHS.includes(ctx.path)) {
           const current = await getSessionFromCtx(ctx);
           if (current) {
@@ -229,7 +257,7 @@ export function createAuth({ env, db, redis, mailer, devices, stepUp }: AuthDeps
               name: user.name,
               when,
               device: session.userAgent?.slice(0, 120) || 'dispositivo sconosciuto',
-              url: `${webUrl}/account/impostazioni/sicurezza?avviso=nuovo-accesso`,
+              url: `${webUrl}/non-sono-stato-io?token=${signNotMeToken(env.BETTER_AUTH_SECRET, user.id)}`,
             }),
           );
         }

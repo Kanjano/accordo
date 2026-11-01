@@ -2,7 +2,7 @@
 import { Alert, buttonVariants, Card, CardContent, CardHeader } from '@accordo/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/session';
 
 export default function AccountOverview() {
   const t = useTranslations('Account');

@@ -6,8 +6,9 @@ import { useFormatter, useTranslations } from 'next-intl';
 import QRCode from 'qrcode';
 import { type FormEvent, useState } from 'react';
 import { useStepUp } from '@/components/step-up';
-import { authClient, useSession } from '@/lib/auth-client';
+import { authClient } from '@/lib/auth-client';
 import { unwrap } from '@/lib/better-auth-result';
+import { useSession } from '@/lib/session';
 import { useErrorMessage } from '@/lib/use-error-message';
 import { SettingsSection } from './settings-section';
 

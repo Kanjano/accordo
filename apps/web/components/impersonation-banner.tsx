@@ -1,7 +1,7 @@
 'use client';
 import { Button } from '@accordo/ui';
 import { useTranslations } from 'next-intl';
-import { authClient, useSession } from '@/lib/auth-client';
+import { stopImpersonating, useSession } from '@/lib/session';
 
 /** Read-only impersonation (SPEC §3.10): always visible, one click back to the admin. */
 export function ImpersonationBanner() {
@@ -17,7 +17,7 @@ export function ImpersonationBanner() {
         variant="outline"
         className="ml-2 h-7"
         onClick={async () => {
-          await authClient.admin.stopImpersonating();
+          await stopImpersonating();
           window.location.assign('/admin/utenti');
         }}
       >

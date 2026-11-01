@@ -5,8 +5,8 @@ import { Bell, MessageCircle, UserRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { signOut, useSession } from '@/lib/auth-client';
 import { useRealtimeConnected } from '@/lib/realtime';
+import { signOut, useSession } from '@/lib/session';
 import { useUnreadNotifications } from './account/notifications-list';
 
 export function UserMenu() {
@@ -39,9 +39,10 @@ function SignedInMenu() {
     <span className="flex items-center gap-1">
       <Link
         href="/messaggi"
-        aria-label={t('messages', { count: unreadMessages })}
         className={buttonVariants({ variant: 'ghost', size: 'icon', className: 'relative' })}
       >
+        {/* Name in text, not aria-label: the "9+" badge must not contradict it (WCAG 2.5.3). */}
+        <span className="sr-only">{t('messages', { count: unreadMessages })}</span>
         <MessageCircle aria-hidden />
         {unreadMessages ? (
           <span
@@ -54,9 +55,9 @@ function SignedInMenu() {
       </Link>
       <Link
         href="/account/notifiche"
-        aria-label={unread.label}
         className={buttonVariants({ variant: 'ghost', size: 'icon', className: 'relative' })}
       >
+        <span className="sr-only">{unread.label}</span>
         <Bell aria-hidden />
         {unread.count ? (
           <span

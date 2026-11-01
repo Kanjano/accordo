@@ -1,0 +1,205 @@
+# Single-VM production example (SPEC §15.4): Caddy (TLS) → web, API; worker; PostgreSQL, Valkey,
+# Meilisearch, S3-compatible storage. Locally:
+#   cp infra/compose/prod.env.example infra/compose/.env.prod   # then fill the secrets
+#   docker compose -f infra/compose/docker-compose.prod.example.yml --env-file infra/compose/.env.prod up -d --build
+# and open https://accordo.localhost (Caddy's local CA). See docs/RUNBOOK.md.
+name: accordo-prod
+
+x-app-env: &app-env
+  NODE_ENV: production
+  WEB_URL: https://${DOMAIN}
+  API_URL: https://api.${DOMAIN}
+  BETTER_AUTH_URL: https://api.${DOMAIN}
+  COOKIE_DOMAIN: ${DOMAIN}
+  MEDIA_PUBLIC_URL: https://s3.${DOMAIN}/accordo-media
+  DATABASE_URL: postgresql://accordo_app:${APP_PASSWORD}@postgres:5432/accordo
+  REDIS_URL: redis://valkey:6379
+  MEILI_HOST: http://meilisearch:7700
+  MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+  S3_ENDPOINT: http://s3:9000
+  S3_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+  S3_BOOTSTRAP: "true"
+  S3_REGION: auto
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+  S3_BUCKET_PUBLIC: accordo-media
+  S3_BUCKET_PRIVATE: accordo-private
+  S3_FORCE_PATH_STYLE: "true"
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+  DEVICE_COOKIE_SECRET: ${DEVICE_COOKIE_SECRET}
+  HANDOVER_CODE_PEPPER: ${HANDOVER_CODE_PEPPER}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+  ENCRYPTION_KEY_ID: ${ENCRYPTION_KEY_ID}
+  EMAIL_FROM: ${EMAIL_FROM}
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT}
+  PAYMENT_PROVIDER: ${PAYMENT_PROVIDER}
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+  SHIPPING_PROVIDER: ${SHIPPING_PROVIDER}
+  SHIPPING_API_KEY: ${SHIPPING_API_KEY}
+  SHIPPING_API_SECRET: ${SHIPPING_API_SECRET}
+  SHIPPING_WEBHOOK_SECRET: ${SHIPPING_WEBHOOK_SECRET}
+  TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+
+x-build: &build
+  context: ../..
+  args:
+    API_URL: https://api.${DOMAIN}
+    WEB_URL: https://${DOMAIN}
+    MEDIA_PUBLIC_URL: https://s3.${DOMAIN}/accordo-media
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+    GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+
+services:
+  caddy:
+    image: caddy:2.11.6-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web, api]
+
+  web:
+    build: { <<: *build, target: web }
+    image: accordo-web
+    restart: unless-stopped
+    environment:
+      # Server-side calls go straight to the API container; the browser uses the public URL.
+      API_URL: http://api:4000
+      WEB_URL: https://${DOMAIN}
+    depends_on:
+      api: { condition: service_healthy }
+
+  api:
+    build: { <<: *build, target: api }
+    image: accordo-api
+    restart: unless-stopped
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      valkey: { condition: service_healthy }
+      meilisearch: { condition: service_healthy }
+
+  worker:
+    build: { <<: *build, target: worker }
+    image: accordo-worker
+    restart: unless-stopped
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      valkey: { condition: service_healthy }
+
+  # One-shot: `prisma migrate deploy` + base seed with the migration role, before every rollout.
+  migrate:
+    build: { <<: *build, target: migrate }
+    image: accordo-migrate
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      DATABASE_MIGRATION_URL: postgresql://accordo_migrator:${MIGRATOR_PASSWORD}@postgres:5432/accordo
+      DATABASE_URL: postgresql://accordo_migrator:${MIGRATOR_PASSWORD}@postgres:5432/accordo
+      # For `dc run --rm migrate pnpm search:reindex` (docs/RUNBOOK.md).
+      MEILI_HOST: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  postgres:
+    image: postgres:18.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MIGRATOR_PASSWORD: ${MIGRATOR_PASSWORD}
+      APP_PASSWORD: ${APP_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d accordo"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  valkey:
+    image: valkey/valkey:8.1.11-alpine
+    restart: unless-stopped
+    # BullMQ jobs must survive restarts.
+    command: ["valkey-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - valkeydata:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.56.0
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilidata:/meili_data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:7700/health || wget -qO- http://localhost:7700/health",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  s3:
+    image: rustfs/rustfs:1.0.4
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY_ID}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_ACCESS_KEY}
+    volumes:
+      - s3data:/data
+
+  # Development mail catcher: replace SMTP_HOST with the real provider.
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    restart: unless-stopped
+
+  # Daily logical dump to a separate volume (SPEC §15.4); PITR with WAL archiving: docs/RUNBOOK.md.
+  backup:
+    image: postgres:18.6
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - backups:/backups
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        while true; do
+          pg_dump -h postgres -U postgres -d accordo -Fc -f /backups/accordo-$$(date +%F).dump \
+            && find /backups -name '*.dump' -mtime +14 -delete
+          sleep 86400
+        done
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  valkeydata:
+  meilidata:
+  s3data:
+  backups:
+  caddy_data:
+  caddy_config:

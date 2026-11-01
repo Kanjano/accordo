@@ -50,6 +50,11 @@ export function SiteFooter() {
             </Link>
           </li>
           <li>
+            <Link href="/accessibilita" className="hover:text-foreground">
+              {t('accessibility')}
+            </Link>
+          </li>
+          <li>
             <CookieSettingsButton label={t('cookieSettings')} className="hover:text-foreground" />
           </li>
         </ul>

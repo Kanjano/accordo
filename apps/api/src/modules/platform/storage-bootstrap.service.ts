@@ -9,7 +9,7 @@ import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs
 import { ENV, type Env } from '../../config/env.js';
 import { S3 } from './infra.providers.js';
 
-/** Development only: creates the media buckets on startup (public one: anonymous read; private one: CORS for uploads). */
+/** Development (or S3_BOOTSTRAP=true): creates the media buckets on startup (public one: anonymous read; private one: CORS for uploads). */
 @Injectable()
 export class StorageBootstrapService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StorageBootstrapService.name);
@@ -20,7 +20,7 @@ export class StorageBootstrapService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    if (this.env.NODE_ENV !== 'development') return;
+    if (this.env.NODE_ENV !== 'development' && !this.env.S3_BOOTSTRAP) return;
     try {
       await this.ensureBucket(this.env.S3_BUCKET_PRIVATE);
       // Browsers upload photos straight to the private bucket with a presigned POST (SPEC §5.9).

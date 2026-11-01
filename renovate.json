@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":pinAllExceptPeerDependencies"],
+  "minimumReleaseAge": "14 days",
+  "timezone": "Europe/Rome",
+  "schedule": ["before 7am on monday"],
+  "packageRules": [
+    { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true },
+    { "matchPackageNames": ["prisma", "@prisma/**"], "groupName": "prisma" },
+    { "matchPackageNames": ["better-auth", "@better-auth/**"], "groupName": "better-auth" },
+    { "matchPackageNames": ["@nestjs/**"], "groupName": "nestjs" }
+  ]
+}

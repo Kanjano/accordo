@@ -3,7 +3,7 @@ import { Alert, cn } from '@accordo/ui';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useEffect } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/session';
 
 const NAV = [
   ['/account', 'overview'],

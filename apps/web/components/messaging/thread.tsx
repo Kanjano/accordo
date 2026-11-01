@@ -13,9 +13,9 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { useSession } from '@/lib/auth-client';
 import { formatPrice } from '@/lib/format';
 import { useRealtimeConnected } from '@/lib/realtime';
+import { useSession } from '@/lib/session';
 import { useErrorMessage } from '@/lib/use-error-message';
 import { OfferForm } from './offer-form';
 

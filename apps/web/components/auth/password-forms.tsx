@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { Link } from '@/i18n/navigation';
+import { api } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 import { unwrap } from '@/lib/better-auth-result';
 import { useErrorMessage, useValidationMessage } from '@/lib/use-error-message';
@@ -107,6 +108,41 @@ export function ResetPasswordForm() {
         <Input name="confirm" type="password" autoComplete="new-password" required />
       </Field>
       <Button type="submit">{t('submit')}</Button>
+    </form>
+  );
+}
+
+/** "Non sono stato io" from the new-device email: one explicit click locks the account down. */
+export function NotMeForm() {
+  const t = useTranslations('Auth.notMe');
+  const errorMessage = useErrorMessage();
+  const token = useSearchParams().get('token') ?? '';
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api.post('/api/v1/auth/not-me', { token });
+      setDone(true);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (done) return <Alert tone="success">{t('done')}</Alert>;
+  return (
+    <form onSubmit={onSubmit} className="grid gap-4">
+      <p className="text-sm text-muted-foreground">{t('text')}</p>
+      {error ? <Alert tone="error">{error}</Alert> : null}
+      <Button type="submit" variant="destructive" disabled={busy || !token}>
+        {t('submit')}
+      </Button>
     </form>
   );
 }

@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/session';
 
 export function ProfileActions({
   userId,

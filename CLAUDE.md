@@ -103,3 +103,11 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - Nessun modulo chiama Stripe o il provider di spedizioni direttamente: si passa dalle porte `PaymentProvider` / `ShippingProvider` (§5.4).
 - Ogni scrittura che deve generare effetti esterni (email, indicizzazione, trasferimenti) scrive un evento nella tabella outbox **nella stessa transazione** (§5.4).
 - Il feedback si può lasciare solo su ordini `COMPLETED` (§8).
+
+## Note di implementazione (Fase 12)
+
+- CSP con nonce in `apps/web/proxy.ts`: ogni pagina si genera per richiesta (`connection()` nel layout). Nuovi host esterni (script, iframe, fetch) vanno aggiunti in `contentSecurityPolicy()`.
+- Sessione nel web: `useSession`/`signOut` da `@/lib/session` (leggero); `authClient` da `@/lib/auth-client` solo nei moduli di accesso e sicurezza. Mai importare valori (non tipi) di `@accordo/shared` nell'SDK o in componenti del layout: porterebbero Zod in ogni pagina. Controllo: `pnpm perf:budget`.
+- Migrazioni: le tabelle nuove ricevono i permessi di `accordo_app` dai privilegi predefiniti; se una tabella deve essere append-only, aggiungere `REVOKE` condizionato come in `20261102090000_db_roles`.
+- E2E: annunci pubblicati da un account nuovo con `uniquePhotos()` (`e2e/helpers.ts`), altrimenti il controllo sulle foto riutilizzate li manda in revisione.
+- Deploy: `Dockerfile` (target `web`, `api`, `worker`, `migrate`), `infra/compose/docker-compose.prod.example.yml`, `docs/RUNBOOK.md`.

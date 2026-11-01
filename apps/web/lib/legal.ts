@@ -6,4 +6,5 @@ export const LEGAL_PAGES = {
   'note-legali': 'Note legali',
   'condizioni-pagamento-protetto': 'Condizioni del pagamento protetto',
   'regole-pubblicazione': 'Regole di pubblicazione',
+  accessibilita: 'Dichiarazione di accessibilità',
 } as const;

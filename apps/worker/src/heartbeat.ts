@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import type { Queue } from 'bullmq';
@@ -29,6 +30,8 @@ export class HeartbeatProcessor extends WorkerHost {
   async process(): Promise<{ at: string }> {
     const at = new Date().toISOString();
     this.logger.log(`heartbeat ${at}`);
+    // Read by the container HEALTHCHECK (Dockerfile): the worker is alive *and* processing jobs.
+    await writeFile('/tmp/worker-heartbeat', at).catch(() => undefined);
     return { at };
   }
 }

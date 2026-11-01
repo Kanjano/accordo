@@ -284,3 +284,64 @@ Provider scelto dall'utente: **Sendcloud**. Credenziali sandbox non disponibili:
 
 **Rimandato**
 - Segnala sui singoli messaggi dalla chat (l'API li accetta già), report di trasparenza DSA esportabile, tracciato ufficiale DAC7 dell'Agenzia delle Entrate, rotazione delle chiavi di cifratura, ruoli database separati (Fase 12), job di export GDPR asincrono.
+
+## Fase 12 — Hardening, prestazioni, accessibilità, deploy
+
+**Piano**
+1. Sicurezza (§13): CSP con nonce in `proxy.ts` e header di sicurezza su web e API; revisione dei rate limit (login 10/ora per account); "Non sono stato io" con revoca automatica; blocco anti-collusione degli ordini tra account che condividono un dispositivo; ruoli database separati (applicativo senza UPDATE/DELETE su `AuditLog`, pulizia via funzione dedicata); checklist §13 in `SECURITY.md`.
+2. PWA: manifest, icone, service worker minimale con pagina offline.
+3. Accessibilità: axe negli e2e (home, ricerca, annuncio, wizard, checkout, area personale), correzioni, dichiarazione di accessibilità.
+4. E2e: J1 completo (registrazione → annuncio con 5 foto → ricerca) e J4 (offerta → controproposta → accettazione → checkout).
+5. Prestazioni: script di budget (LCP, CLS, JS della pagina annuncio < 180 KB compressi) e test k6 (ricerca 200 r/s p95 < 300 ms, annuncio 100 r/s) sul seed da 100.000 annunci.
+6. Deploy: Dockerfile multi-stage (web, API, worker), `docker-compose.prod.example.yml` con Caddy, avvio locale dell'intero stack; CI con e2e, `pnpm audit`, CodeQL, gitleaks, Renovate; workflow di deploy verso staging.
+7. Documentazione: `RUNBOOK.md` (backup e ripristino, incidenti, rotazione delle chiavi, data breach), `PAYMENTS.md`, `FEEDBACK.md`, README finale, checklist §20 e lista "prima del lancio".
+
+**Fatto**
+- **Sicurezza:**
+  - CSP con nonce per richiesta e header su web e API (ADR-0050);
+  - login limitato a 10 tentativi all'ora per account, poi Turnstile;
+  - "Non sono stato io": revoca delle sessioni, password invalidata, email di reset;
+  - blocco degli ordini tra account con lo stesso dispositivo (ADR-0053);
+  - ruoli database separati, con `purge_audit_log()` e migrazione `20261102090000_db_roles` (ADR-0051);
+  - revisione completa di `SECURITY.md`.
+- **PWA:** manifest, icone (anche maskable), service worker con pagina `/offline`.
+- **Accessibilità:**
+  - axe su home, ricerca, annuncio, wizard, area personale e checkout: zero violazioni gravi o critiche;
+  - corretta l'etichetta delle icone messaggi e notifiche ("9+" non coerente con il nome accessibile);
+  - dichiarazione `/accessibilita` con link nel footer.
+- **E2E:** J1 da account nuovo fino alla ricerca, con foto uniche a ogni esecuzione; nuovo J4 (offerta → controproposta → accettazione → checkout al prezzo concordato). J1–J8 tutti coperti.
+- **Prestazioni** (ADR-0052):
+  - JS della pagina annuncio da 259 a 176 KB compressi: SDK senza Zod, Socket.IO caricato su richiesta, sessione senza client Better Auth, messaggi precompilati;
+  - pagina annuncio: LCP 0,64 s, CLS 0,013 su 4G simulato;
+  - k6 sul seed da circa 96.000 annunci attivi: ricerca a 200 req/s con p95 di 18 ms, pagina annuncio a 100 req/s, 0 errori e 0 iterazioni perse.
+- **Deploy** (ADR-0054):
+  - `Dockerfile` multi-stage (web, api, worker, migrate);
+  - `docker-compose.prod.example.yml` con Caddy, ruoli database, backup e Valkey persistente, avviato in locale: tutti i servizi `healthy`, registrazione ed email funzionanti, `accordo_app` con solo `INSERT,SELECT` su `AuditLog`;
+  - variabili `S3_PUBLIC_ENDPOINT` e `S3_BOOTSTRAP`.
+- **CI:**
+  - e2e, `pnpm audit` (soglia high) e gitleaks;
+  - CodeQL;
+  - deploy su staging (GHCR, poi SSH con `migrate` e `up -d`);
+  - Renovate.
+- **Documentazione:** `RUNBOOK.md` (deploy, rollback, backup e ripristino, incidenti, rotazione delle chiavi, data breach, carico), `PAYMENTS.md`, `FEEDBACK.md`, `COMPLIANCE.md`, `ARCHITECTURE.md` (diagramma di deploy), README finale con la lista "prima del lancio".
+- **Test:**
+  - unitari: 1 sul token "Non sono stato io";
+  - integrazione: 5 (header, limiti di login, "Non sono stato io", pulizia dell'audit, account collegati); in totale API 74, worker 20, db 6;
+  - e2e: 3 (axe ×2, J4), 19 in totale, verdi in 3 esecuzioni consecutive;
+  - gitleaks pulito su tutta la storia.
+
+**Checklist SPEC §20.1**
+- [x] Fasi 0–12 completate con i criteri verificati.
+- [x] Avvio da macchina pulita documentato nel README (`pnpm install && pnpm infra:up && pnpm db:reset && pnpm db:seed:demo && pnpm dev`).
+- [x] CI con lint, typecheck, unit, integrazione, e2e J1–J8 e controlli di sicurezza (workflow pronti; da vedere verdi su GitHub dopo il primo push).
+- [~] Copertura: `packages/domain` ≥ 95% imposta; per i service dell'API (obiettivo ≥ 80%) non c'è ancora una misura automatica: sono coperti dai test di integrazione.
+- [x] Nessun segreto nel repository (gitleaks).
+- [~] OpenAPI in sviluppo: non generato. Il contratto sono gli schemi Zod di `@accordo/shared`, usati dall'SDK tipizzato (ADR-0008).
+- [x] Documentazione: `ARCHITECTURE`, `DECISIONS`, `PAYMENTS`, `FEEDBACK`, `SECURITY`, `COMPLIANCE`, `RUNBOOK`, `DATA_SOURCES`, `PROGRESS`.
+- [x] Accessibilità: zero violazioni axe gravi o critiche; dichiarazione pubblicata (segnaposto).
+- [x] Budget di prestazioni rispettati (pagina annuncio; INP da misurare sul campo).
+- [x] Testi legali marcati come segnaposto.
+- [x] Elenco "prima del lancio" nel README.
+
+**Rimandato**
+- Copertura misurata dei service dell'API, documento OpenAPI, budget JS di home e ricerca (Zod nei filtri), supporto a più chiavi per `ENCRYPTION_KEY`, OpenTelemetry e Sentry (servono DSN ed endpoint), tracciato DAC7 ufficiale, test di ripristino reale e penetration test prima del lancio.

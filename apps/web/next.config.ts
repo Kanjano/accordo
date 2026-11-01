@@ -8,13 +8,43 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const rootEnv = resolve(import.meta.dirname, '../../.env');
 if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
-const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+// Messages are precompiled at build time: the ICU parser stays out of the client bundle (SPEC §12.4).
+const withNextIntl = createNextIntlPlugin({
+  requestConfig: './i18n/request.ts',
+  experimental: {
+    messages: { path: './messages', format: 'json', locales: 'infer', precompile: true },
+  },
+});
 const withMDX = createMDX({});
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   pageExtensions: ['ts', 'tsx', 'mdx'],
+  // Self-contained server for the Docker image (SPEC §15.4).
+  output: 'standalone',
+  outputFileTracingRoot: resolve(import.meta.dirname, '../..'),
+  // Security headers for every response; the CSP with nonce is set per page in proxy.ts (SPEC §13.6).
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          {
+            key: 'Permissions-Policy',
+            value:
+              'camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=(self "https://js.stripe.com")',
+          },
+          ...(process.env.NODE_ENV === 'production'
+            ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' }]
+            : []),
+        ],
+      },
+    ];
+  },
   // Public values derived from the shared server configuration.
   env: {
     NEXT_PUBLIC_API_URL: process.env.API_URL ?? 'http://localhost:4000',

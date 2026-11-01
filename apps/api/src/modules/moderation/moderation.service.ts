@@ -24,6 +24,7 @@ import { PRISMA } from '../platform/infra.providers.js';
 import { writeOutbox } from '../platform/outbox.js';
 import { RateLimitService } from '../platform/rate-limit.service.js';
 import { SettingsService } from '../platform/settings.service.js';
+import { verifyTurnstile } from '../platform/turnstile.js';
 
 const DAY = 86_400_000;
 const APPEAL_WINDOW_DAYS = 183;
@@ -118,17 +119,8 @@ export class ModerationService {
   // ───────────── Notices (public) ─────────────
 
   private async verifyCaptcha(token: string | undefined, ip: string | undefined) {
-    if (!this.env.TURNSTILE_SECRET_KEY) return;
-    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      body: new URLSearchParams({
-        secret: this.env.TURNSTILE_SECRET_KEY,
-        response: token ?? '',
-        ...(ip ? { remoteip: ip } : {}),
-      }),
-    }).catch(() => null);
-    const ok = res?.ok && ((await res.json()) as { success?: boolean }).success;
-    if (!ok) throw new BadRequestException({ code: 'CAPTCHA_FAILED' });
+    if (!(await verifyTurnstile(this.env.TURNSTILE_SECRET_KEY, token, ip)))
+      throw new BadRequestException({ code: 'CAPTCHA_FAILED' });
   }
 
   /** Anyone may report illegal content (DSA art. 16); anonymous reporters leave name and email. */

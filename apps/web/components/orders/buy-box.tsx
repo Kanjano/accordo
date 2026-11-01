@@ -12,8 +12,8 @@ import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { useSession } from '@/lib/auth-client';
 import { formatPrice } from '@/lib/format';
+import { useSession } from '@/lib/session';
 import { useErrorMessage } from '@/lib/use-error-message';
 
 /** "Compra con pagamento protetto" (SPEC §6.5): delivery choice, address, then the checkout page. */

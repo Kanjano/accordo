@@ -33,7 +33,7 @@ Formato: contesto → decisione → conseguenze.
 - Immagini Docker fissate: `postgres:18.6`, `valkey/valkey:8.1.11-alpine`, `getmeili/meilisearch:v1.56.0`, `rustfs/rustfs:1.0.4`, `axllent/mailpit:v1.32.0`, `stripe/stripe-cli:v1.55.3`.
 - TypeScript 6.0.3 (il tag `latest` npm è 7.x: non supportato dalla CLI Nest, vedi SPEC §4).
 
-## ADR-0007 — CSP e header di sicurezza in Fase 12
+## ADR-0007 — CSP e header di sicurezza in Fase 12 (superata da ADR-0050)
 
 - **Decisione:** `proxy.ts` gestisce per ora solo l'i18n; CSP con nonce e header di sicurezza arrivano con l'hardening (Fase 12, SPEC §13.6).
 
@@ -321,3 +321,52 @@ Formato: contesto → decisione → conseguenze.
 - Bull Board montato sull'API (`/admin/queues`, `@bull-board/express` 9.10.4, la 9.10.5 è più recente di 2 settimane) con un proprio guard (ruolo `admin`/`support`, 2FA, niente sessioni impersonificate, richieste di modifica solo dalla stessa origine). I nomi delle code sono in `@accordo/shared` (`QUEUES`), condivisi con il worker.
 - Impersonificazione: `POST /admin/users/:id/impersonate` (solo admin, step-up) usa il plugin admin di Better Auth; il banner nel sito permette di tornare indietro; le scritture sono già bloccate dal guard.
 - Sviluppo: lo staff demo ha la 2FA attiva con un segreto TOTP fisso (`seedDemoStaffTwoFactor`, idempotente, cifrato con `BETTER_AUTH_SECRET` come fa Better Auth), così backoffice ed e2e possono accedere. Mai in produzione (il seed demo è vietato in produzione).
+
+## ADR-0050 — CSP con nonce e rendering per richiesta (sostituisce ADR-0007)
+
+- `proxy.ts` genera un nonce per ogni pagina e lo passa a Next.js nell'header di richiesta `content-security-policy`. next-intl inoltra gli header che riceve, quindi gli si passa una `NextRequest` con gli header aggiornati.
+- `script-src 'self' 'nonce-…' 'strict-dynamic'`: gli script con nonce caricano Stripe.js, Turnstile e lo script di analytics. Le liste di host restano come fallback per i browser senza CSP3. `'unsafe-eval'` c'è solo in sviluppo; `upgrade-insecure-requests` solo quando `WEB_URL` è HTTPS (in HTTP romperebbe le chiamate a `localhost:4000`).
+- `style-src 'unsafe-inline'`: gli attributi `style` di React e gli stili iniettati da Stripe e Turnstile non possono avere un nonce. Il rischio residuo (iniezione di CSS) è accettato.
+- Il nonce richiede il rendering per richiesta: il layout chiama `connection()`, quindi niente pagine statiche né ISR. Il test di carico (pagina annuncio a 100 req/s) mostra che il costo è sostenibile. L'alternativa SRI con hash è sperimentale in Next 16.
+- Gli header fissi (HSTS solo in produzione, `nosniff`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`) stanno in `next.config.ts` per tutte le risposte. L'API ha un middleware con gli stessi header e `default-src 'none'`, tranne Bull Board, che serve una sua interfaccia HTML.
+
+## ADR-0051 — Ruoli database e pulizia dell'audit log
+
+- Produzione: `infra/compose/postgres/init-roles.sh` crea `accordo_migrator`, proprietario del database e dello schema (esegue migrazioni e seed), e `accordo_app`, con solo `SELECT/INSERT/UPDATE/DELETE` tramite i privilegi predefiniti e nessun superuser.
+- La migrazione `20261102090000_db_roles` toglie a `accordo_app` `UPDATE`, `DELETE` e `TRUNCATE` su `AuditLog`, se il ruolo esiste: in sviluppo c'è un solo ruolo e la migrazione non fa nulla. La pulizia oltre i 2 anni (job `retention`) passa da `purge_audit_log(older_than)`, una funzione `SECURITY DEFINER` di proprietà del migratore, eseguibile solo da `accordo_app`. Il trigger append-only resta la seconda barriera, qualunque sia il ruolo.
+- Il nome `accordo_app` è una convenzione fissa, scritta nella migrazione e nello script di inizializzazione.
+
+## ADR-0052 — Budget JavaScript della pagina annuncio
+
+- Misura (`pnpm perf:budget`): byte compressi del corpo di ogni script scaricato dalla pagina in Chromium con 4G lento e CPU rallentata 4 volte, chunk caricati dopo compresi. Il polyfill `noModule` non si scarica nei browser moderni. Risultato: 259 KB, poi 176 KB (budget 180).
+- Interventi:
+  - l'SDK importa solo tipi da `@accordo/shared`: prima importava uno schema e trascinava Zod (37 KB) in ogni pagina;
+  - `@accordo/shared` dichiara `"sideEffects": false`;
+  - Socket.IO si carica con `import()` solo per gli utenti autenticati;
+  - `lib/session.ts` legge la sessione con una `fetch` e React Query al posto del client Better Auth (18 KB). Il client completo resta nei moduli di accesso e sicurezza, e le sue chiamate riuscite invalidano la sessione con un evento;
+  - i messaggi di next-intl sono precompilati: il parser ICU non arriva più al client.
+- Fuori budget ma non vincolanti: home e ricerca (217 KB e 209 KB, per Zod nei filtri e nella barra di ordinamento). Il prossimo passo è separare le costanti dagli schemi in `@accordo/shared`.
+- INP non è misurabile senza interazioni reali: va osservato sul campo (analytics o RUM) dopo il lancio.
+
+## ADR-0053 — Protezione degli account e anti-collusione
+
+- **Login per account:** 10 tentativi all'ora per email o nome utente (chiave con hash su Valkey, contati nell'hook `before` di Better Auth). Oltre il limite serve un token Turnstile valido. Senza Turnstile configurato si aspetta la fine della finestra: è la scelta più sicura, e chi attacca non può bloccare un account per più di un'ora. Il modulo di accesso mostra Turnstile solo dopo l'errore `CAPTCHA_REQUIRED`.
+- **"Non sono stato io":** il link dell'email di nuovo accesso porta un token HMAC (id utente e scadenza a 7 giorni, chiave derivata da `BETTER_AUTH_SECRET`) a `/non-sono-stato-io`. Serve un clic su "Blocca l'accesso", perché gli scanner delle email seguono i link. Il clic cancella tutte le sessioni, sostituisce l'hash della password con quello di un valore casuale, manda il link di reset e scrive `user.not_me` nell'audit. È idempotente.
+- **Collusione:** il checkout rifiuta (`ORDER_LINKED_ACCOUNTS`, 403) gli ordini tra account che condividono un `KnownDevice.deviceIdHash`, cioè lo stesso browser. Gli IP condivisi non bloccano, per via del CGNAT; l'impronta della carta arriva con Stripe live. Gli account collegati non possono quindi nemmeno scambiarsi feedback (§8.8).
+
+## ADR-0054 — Immagini, compose di produzione, CI e PWA
+
+- **Immagini:**
+  - un solo `Dockerfile` con i target `web`, `api`, `worker` e `migrate`, sull'immagine `node:26.13.0-slim`, utente `node` e `HEALTHCHECK`;
+  - API e worker condividono un runtime con le sole dipendenze di produzione (`pnpm install --prod` filtrato) e le `dist/` dei pacchetti; il web usa l'output `standalone` di Next;
+  - `migrate` è lo stage di build (con Prisma CLI e tsx) ed esegue `migrate deploy` e il seed di base;
+  - la configurazione pubblica del web entra come `ARG` al momento della build.
+- **Healthcheck del worker:** il job heartbeat scrive `/tmp/worker-heartbeat`; il container non è sano se il file ha più di 3 minuti (processo vivo _e_ code elaborate).
+- **Compose di produzione** (`infra/compose/docker-compose.prod.example.yml`): Caddy (TLS automatico, CA locale per `*.localhost`), servizio `migrate` da completare prima di API e worker, Valkey con `appendonly` e `noeviction`, dump giornaliero di `pg_dump`. Nuove variabili:
+  - `S3_PUBLIC_ENDPOINT`: l'origine pubblica per gli URL di upload firmati quando l'API raggiunge S3 su un host interno (la firma della policy POST non include l'host);
+  - `S3_BOOTSTRAP`: crea bucket, CORS e policy all'avvio anche fuori dallo sviluppo.
+
+  Verificato in locale: tutti i servizi `healthy`, header di sicurezza, registrazione con email, privilegi `INSERT,SELECT` di `accordo_app` su `AuditLog`.
+- **CI:** job `check`, `e2e` (infrastruttura Docker, seed, reindicizzazione, Playwright con `pnpm dev`) e `security` (`pnpm audit` con soglia high, gitleaks su tutta la storia); workflow CodeQL separato. Il deploy su staging parte dopo una CI verde su `main`: immagini su GHCR, poi via SSH `migrate` e `up -d`. Renovate con età minima di 14 giorni.
+- **PWA:** manifest, icone (anche maskable), service worker minimale che non mette in cache le pagine: rete prima, poi la pagina `/offline` salvata all'installazione. È registrato solo nelle build di produzione.
+- **E2E:** J1 ora parte da un account nuovo e cerca l'annuncio. Le foto sono PNG generati a ogni esecuzione (`uniquePhotos`), perché con le stesse foto di un altro venditore il controllo sulle foto riutilizzate manderebbe l'annuncio in revisione. J4 copre offerta, controproposta, accettazione e checkout al prezzo concordato. axe controlla home, ricerca, annuncio, wizard, area personale e checkout.

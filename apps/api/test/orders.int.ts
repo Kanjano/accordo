@@ -190,6 +190,17 @@ describe('checkout', () => {
         .body.code,
     ).toBe('DELIVERY_NOT_AVAILABLE');
   });
+
+  it('refuses orders between accounts that signed in from the same browser (SPEC §13.7)', async () => {
+    const s = await seller();
+    const b = await user('collegato');
+    const l = await listing(s.id);
+    await db.knownDevice.createMany({
+      data: [s.id, b.id].map((userId) => ({ userId, deviceIdHash: 'shared-browser' })),
+    });
+    const res = await checkout(b.agent, { listingId: l.id, deliveryMethod: 'HAND_DELIVERY' });
+    expect([res.status, res.body.code]).toEqual([403, 'ORDER_LINKED_ACCOUNTS']);
+  });
 });
 
 describe('webhooks', () => {

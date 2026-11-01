@@ -6,9 +6,9 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { useSession } from '@/lib/auth-client';
 import { mediaSrcSet } from '@/lib/format';
 import { useRealtimeConnected } from '@/lib/realtime';
+import { useSession } from '@/lib/session';
 import { useMessagePreview } from './message-text';
 
 export function ConversationList() {

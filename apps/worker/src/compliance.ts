@@ -254,10 +254,11 @@ export class ComplianceProcessor extends WorkerHost {
     const notifications = await this.db.notification.deleteMany({
       where: { createdAt: { lt: monthsAgo(now, r.notificationsMonths) } },
     });
-    // The database refuses to delete audit rows younger than 2 years (append-only trigger).
-    const audit = await this.db.auditLog.deleteMany({
-      where: { createdAt: { lt: monthsAgo(now, Math.max(r.auditLogMonths, 25)) } },
-    });
+    // The application role cannot DELETE audit rows: a SECURITY DEFINER function purges them, and
+    // the append-only trigger refuses rows younger than 2 years (ADR-0051).
+    const [{ n }] = await this.db.$queryRaw<[{ n: number }]>`
+      SELECT purge_audit_log(${monthsAgo(now, Math.max(r.auditLogMonths, 25))}) AS n`;
+    const audit = { count: n };
     const idempotency = await this.db.idempotencyKey.deleteMany({
       where: { expiresAt: { lt: now } },
     });

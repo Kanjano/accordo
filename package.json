@@ -27,12 +27,15 @@
     "geo:import": "tsx scripts/import-geo.ts",
     "search:reindex": "tsx scripts/reindex.ts",
     "stripe:listen": "stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe",
-    "search:bench": "tsx scripts/bench-search.ts"
+    "search:bench": "tsx scripts/bench-search.ts",
+    "perf:budget": "tsx scripts/perf-budget.ts",
+    "load:test": "docker run --rm -i --add-host=host.docker.internal:host-gateway -e API=http://host.docker.internal:4000 -e WEB=http://host.docker.internal:3000 grafana/k6:2.2.0 run - < infra/k6/load.js"
   },
   "devDependencies": {
     "@accordo/db": "workspace:*",
     "@accordo/domain": "workspace:*",
     "@accordo/search": "workspace:*",
+    "@axe-core/playwright": "4.14.0",
     "@biomejs/biome": "2.6.4",
     "@playwright/test": "1.64.1",
     "@types/node": "26.6.6",

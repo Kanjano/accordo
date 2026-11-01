@@ -46,7 +46,13 @@ export class MediaService {
       Fields: { 'Content-Type': contentType },
       Expires: 600,
     });
-    return { url, fields, key };
+    const publicUrl = this.env.S3_PUBLIC_ENDPOINT
+      ? url.replace(
+          new URL(this.env.S3_ENDPOINT).origin,
+          new URL(this.env.S3_PUBLIC_ENDPOINT).origin,
+        )
+      : url;
+    return { url: publicUrl, fields, key };
   }
 
   async attach(

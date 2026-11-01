@@ -1,0 +1,21 @@
+# Reverse proxy with automatic TLS (SPEC §15.4). *.localhost names get certificates from Caddy's
+# local CA; real domains get Let's Encrypt certificates.
+{
+	email {$ACME_EMAIL:admin@example.com}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+api.{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy api:4000
+}
+
+# Public media and browser uploads (presigned POST). Replace with the CDN of the object storage in
+# a real deployment.
+s3.{$DOMAIN} {
+	reverse_proxy s3:9000
+}

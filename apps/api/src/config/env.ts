@@ -22,6 +22,10 @@ export const envSchema = z.object({
   S3_BUCKET_PUBLIC: z.string().min(3),
   S3_BUCKET_PRIVATE: z.string().min(3),
   S3_FORCE_PATH_STYLE: z.stringbool().default(false),
+  /** Browser-facing S3 origin for presigned uploads, when the API reaches S3 on an internal host. */
+  S3_PUBLIC_ENDPOINT: z.url().or(z.literal('')).optional(),
+  /** Create the buckets, CORS and public-read policy on startup (always on in development). */
+  S3_BOOTSTRAP: z.stringbool().default(false),
   COOKIE_DOMAIN: z.string().min(1).default('localhost'),
   BETTER_AUTH_SECRET: secret,
   BETTER_AUTH_URL: z.url(),

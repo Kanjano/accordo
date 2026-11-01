@@ -40,6 +40,7 @@
     "privacy": "Privacy",
     "terms": "Termini di servizio",
     "cookies": "Cookie",
+    "accessibility": "Accessibilità",
     "cookieSettings": "Preferenze cookie",
     "termsProtected": "Condizioni del pagamento protetto",
     "rules": "Regole di pubblicazione",
@@ -167,6 +168,9 @@
     "SHOP_ALREADY_DECIDED": "Il negozio è già in questo stato.",
     "REPORTER_REQUIRED": "Inserisci nome ed email.",
     "CAPTCHA_FAILED": "Verifica anti-bot non riuscita: riprova.",
+    "ORDER_LINKED_ACCOUNTS": "Non è possibile acquistare da un account collegato al tuo (stesso dispositivo). Se pensi sia un errore, contatta l'assistenza.",
+    "INVALID_LINK": "Il link non è valido o è scaduto.",
+    "CAPTCHA_REQUIRED": "Troppi tentativi di accesso a questo account: completa la verifica anti-bot o riprova tra un'ora.",
     "DECISION_NOT_APPLICABLE": "Questa decisione non si applica al contenuto segnalato.",
     "REPORT_ALREADY_DECIDED": "La segnalazione è già stata decisa.",
     "CANNOT_SANCTION_STAFF": "Non si possono sanzionare membri dello staff.",
@@ -275,6 +279,12 @@
       "done": "Password aggiornata. Ora puoi accedere.",
       "invalid": "Il link non è valido o è scaduto.",
       "signIn": "Accedi"
+    },
+    "notMe": {
+      "title": "Non sono stato io",
+      "text": "Se non hai effettuato tu l'accesso, blocca subito l'account: disconnetteremo tutti i dispositivi, la password attuale smetterà di funzionare e ti invieremo un'email per sceglierne una nuova.",
+      "submit": "Blocca l'accesso al mio account",
+      "done": "Fatto: abbiamo disconnesso tutti i dispositivi. Controlla la tua email per scegliere una nuova password."
     }
   },
   "StepUp": {
@@ -1670,5 +1680,9 @@
     "nearThreshold": "Vicino alla soglia",
     "profileOk": "dati ricevuti",
     "profileMissing": "dati mancanti"
+  },
+  "Offline": {
+    "title": "Sei offline",
+    "text": "Non riusciamo a raggiungere Accordo. Controlla la connessione e riprova: le pagine che stavi guardando torneranno disponibili appena sei di nuovo online."
   }
 }

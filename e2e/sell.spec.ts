@@ -1,20 +1,18 @@
-import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { rejectCookies, waitForApi } from './helpers';
+import { register, rejectCookies, uniquePhotos, waitForApi } from './helpers';
 
 test.beforeAll(waitForApi);
 
-test('a seller publishes a listing with 5 photos and it is visible on its page', async ({
+test('J1: registration → email verification → listing with 5 photos → found by search (SPEC §15.1)', async ({
   page,
   context,
 }) => {
   await rejectCookies(context);
   const title = `Chitarra elettrica Fender e2e ${Date.now()}`;
 
-  await page.goto('/accedi?next=/vendi');
-  await page.getByLabel('Email', { exact: true }).fill('utente@accordo.local');
-  await page.getByLabel('Password', { exact: true }).fill('accordo-demo-2026');
-  await page.getByRole('button', { name: 'Accedi', exact: true }).click();
+  // A brand-new account: verification link read from Mailpit, then straight to the wizard.
+  await register(page);
+  await page.goto('/vendi');
   await expect(page.getByRole('heading', { name: 'Vendi', exact: true })).toBeVisible();
 
   // 1. Category, suggested from the title.
@@ -27,14 +25,16 @@ test('a seller publishes a listing with 5 photos and it is visible on its page',
   await page
     .getByLabel('Descrizione')
     .fill('Chitarra tenuta benissimo, regolata di recente. Custodia inclusa.');
+  // A new account has no default location yet.
+  await page.getByRole('combobox', { name: "Dove si trova l'oggetto" }).fill('Milano');
+  await page
+    .getByRole('option', { name: /^Milano/ })
+    .first()
+    .click();
   await page.getByRole('button', { name: 'Continua' }).click();
 
   // 3. Five photos: resized in the browser, uploaded to storage, processed by the worker.
-  await page
-    .getByTestId('photo-input')
-    .setInputFiles(
-      [1, 2, 3, 4, 5].map((n) => resolve(import.meta.dirname, `fixtures/photo-${n}.jpg`)),
-    );
+  await page.getByTestId('photo-input').setInputFiles(uniquePhotos(5));
   const photos = page.getByTestId('photo-list').getByRole('listitem');
   await expect(photos).toHaveCount(5, { timeout: 60_000 });
   await expect(page.getByTestId('photo-list').getByRole('img')).toHaveCount(5, { timeout: 60_000 });
@@ -64,4 +64,16 @@ test('a seller publishes a listing with 5 photos and it is visible on its page',
     offers: { price: '1500.00', priceCurrency: 'EUR' },
   });
   expect(jsonLd[0].image).toHaveLength(5);
+
+  // The worker indexes the listing: it shows up in the search results.
+  const stamp = /e2e (\d+)$/.exec(title)?.[1] as string;
+  await expect
+    .poll(
+      async () => {
+        await page.goto(`/annunci?q=${stamp}`);
+        return page.getByRole('heading', { name: title }).count();
+      },
+      { timeout: 30_000 },
+    )
+    .toBeGreaterThan(0);
 });

@@ -6,7 +6,7 @@ import { CookieSettingsButton } from '@/components/consent/cookie-banner';
 import { useStepUp } from '@/components/step-up';
 import { useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { signOut } from '@/lib/auth-client';
+import { signOut } from '@/lib/session';
 import { useErrorMessage } from '@/lib/use-error-message';
 import { SettingsSection } from './settings-section';
 

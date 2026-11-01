@@ -5,9 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
+import { problemCode } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 import { unwrap } from '@/lib/better-auth-result';
 import { useErrorMessage } from '@/lib/use-error-message';
+import { captchaHeaders, Turnstile, turnstileEnabled } from './turnstile';
 
 /** Only same-site relative paths are accepted as post-login destinations (open-redirect guard). */
 export function safeNext(next: string | null): string {
@@ -23,6 +25,9 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [trustDevice, setTrustDevice] = useState(false);
+  // After too many attempts on one account the API asks for Turnstile (SPEC §13.2).
+  const [captchaNeeded, setCaptchaNeeded] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
 
   const done = () => {
     router.push(next);
@@ -35,6 +40,7 @@ export function SignInForm() {
     try {
       await action();
     } catch (e) {
+      if (problemCode(e) === 'CAPTCHA_REQUIRED' && turnstileEnabled) setCaptchaNeeded(true);
       setError(errorMessage(e));
     } finally {
       setBusy(false);
@@ -46,10 +52,10 @@ export function SignInForm() {
     const form = new FormData(e.currentTarget);
     void run(async () => {
       const data = await unwrap(
-        authClient.signIn.email({
-          email: String(form.get('email')),
-          password: String(form.get('password')),
-        }),
+        authClient.signIn.email(
+          { email: String(form.get('email')), password: String(form.get('password')) },
+          { headers: captchaHeaders(captcha) },
+        ),
       );
       if (data && 'twoFactorRedirect' in data && data.twoFactorRedirect) setStep('totp');
       else done();
@@ -118,7 +124,8 @@ export function SignInForm() {
         >
           {t('forgot')}
         </Link>
-        <Button type="submit" disabled={busy}>
+        {captchaNeeded ? <Turnstile onToken={setCaptcha} /> : null}
+        <Button type="submit" disabled={busy || (captchaNeeded && !captcha)}>
           {t('submit')}
         </Button>
       </form>

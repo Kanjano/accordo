@@ -9,12 +9,13 @@ import { createAuth } from './auth.factory.js';
 import { AuthGuard } from './auth.guard.js';
 import { AUTH } from './auth.tokens.js';
 import { DevicesService } from './devices.service.js';
+import { NotMeController } from './not-me.controller.js';
 import { StepUpController } from './step-up.controller.js';
 import { StepUpService } from './step-up.service.js';
 
 @Global()
 @Module({
-  controllers: [StepUpController],
+  controllers: [StepUpController, NotMeController],
   providers: [
     DevicesService,
     StepUpService,

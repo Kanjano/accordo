@@ -40,6 +40,7 @@
     "privacy": "Privacy",
     "terms": "Terms of service",
     "cookies": "Cookies",
+    "accessibility": "Accessibility",
     "cookieSettings": "Cookie preferences",
     "termsProtected": "Protected payment terms",
     "rules": "Listing rules",
@@ -167,6 +168,9 @@
     "SHOP_ALREADY_DECIDED": "The shop is already in this state.",
     "REPORTER_REQUIRED": "Enter your name and email.",
     "CAPTCHA_FAILED": "Anti-bot check failed: try again.",
+    "ORDER_LINKED_ACCOUNTS": "You cannot buy from an account linked to yours (same device). If you think this is a mistake, contact support.",
+    "INVALID_LINK": "The link is invalid or has expired.",
+    "CAPTCHA_REQUIRED": "Too many sign-in attempts on this account: complete the anti-bot check or try again in an hour.",
     "DECISION_NOT_APPLICABLE": "This decision does not apply to the reported content.",
     "REPORT_ALREADY_DECIDED": "The report has already been decided.",
     "CANNOT_SANCTION_STAFF": "Staff members cannot be sanctioned.",
@@ -275,6 +279,12 @@
       "done": "Password updated. You can now sign in.",
       "invalid": "The link is invalid or has expired.",
       "signIn": "Sign in"
+    },
+    "notMe": {
+      "title": "It wasn't me",
+      "text": "If you didn't sign in, lock your account now: we will sign out every device, your current password will stop working and we will email you a link to choose a new one.",
+      "submit": "Lock access to my account",
+      "done": "Done: every device has been signed out. Check your email to choose a new password."
     }
   },
   "StepUp": {
@@ -1670,5 +1680,9 @@
     "nearThreshold": "Near threshold",
     "profileOk": "details received",
     "profileMissing": "details missing"
+  },
+  "Offline": {
+    "title": "You're offline",
+    "text": "We can't reach Accordo. Check your connection and try again: the pages you were browsing will be back as soon as you're online."
   }
 }

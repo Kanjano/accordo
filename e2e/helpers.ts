@@ -1,4 +1,5 @@
-import { createHmac } from 'node:crypto';
+import { createHmac, randomInt } from 'node:crypto';
+import { crc32, deflateSync } from 'node:zlib';
 import { type BrowserContext, expect, type Page } from '@playwright/test';
 
 const MAILPIT = process.env.MAILPIT_URL ?? 'http://localhost:8025';
@@ -170,4 +171,39 @@ export async function emailContaining(to: string, text: string): Promise<string>
     )
     .toBe(true);
   return html;
+}
+
+/**
+ * Unique PNG photos (random 8×6 block patterns): the reused-photo check (SPEC §13.5) would rightly
+ * send a listing with the same fixture photos as another seller to review.
+ */
+export function uniquePhotos(count: number) {
+  const [w, h] = [1200, 900];
+  const chunk = (type: string, data: Buffer) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(Buffer.concat([Buffer.from(type), data])));
+    return Buffer.concat([len, Buffer.from(type), data, crc]);
+  };
+  return Array.from({ length: count }, (_, i) => {
+    const blocks = Array.from({ length: 48 }, () => [0, 0, 0].map(() => randomInt(256)));
+    const raw = Buffer.alloc((w * 3 + 1) * h);
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        const c = blocks[Math.floor(y / 150) * 8 + Math.floor(x / 150)] as number[];
+        raw.set(c, y * (w * 3 + 1) + 1 + x * 3);
+      }
+    const ihdr = Buffer.alloc(13);
+    ihdr.writeUInt32BE(w, 0);
+    ihdr.writeUInt32BE(h, 4);
+    ihdr.set([8, 2, 0, 0, 0], 8);
+    const buffer = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      chunk('IHDR', ihdr),
+      chunk('IDAT', deflateSync(raw)),
+      chunk('IEND', Buffer.alloc(0)),
+    ]);
+    return { name: `foto-${i + 1}.png`, mimeType: 'image/png', buffer };
+  });
 }

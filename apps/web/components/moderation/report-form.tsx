@@ -6,7 +6,7 @@ import { type FormEvent, useState } from 'react';
 import { captchaHeaders, Turnstile, turnstileEnabled } from '@/components/auth/turnstile';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/session';
 import { useErrorMessage, useValidationMessage } from '@/lib/use-error-message';
 
 /** DSA notice & action form (SPEC §14.2): open to everyone, Turnstile-protected. */

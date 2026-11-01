@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { hasLocale, type Locale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Analytics } from '@/components/consent/analytics';
 import { CookieBanner } from '@/components/consent/cookie-banner';
 import { Providers } from '@/components/providers';
+import { ServiceWorker } from '@/components/service-worker';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { routing } from '@/i18n/routing';
@@ -29,6 +31,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
+  // Every page renders per request: the CSP nonce must reach the framework scripts (ADR-0050).
+  await connection();
 
   return (
     <html lang={locale}>
@@ -42,6 +46,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
             <SiteFooter />
             <CookieBanner />
             <Analytics />
+            <ServiceWorker />
           </Providers>
         </NextIntlClientProvider>
       </body>

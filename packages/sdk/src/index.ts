@@ -1,4 +1,5 @@
-import { type HealthReport, healthReportSchema, type ProblemDetails } from '@accordo/shared';
+// Types only: a value import would pull @accordo/shared (and Zod) into every page bundle.
+import type { HealthReport, ProblemDetails } from '@accordo/shared';
 
 export class ApiError extends Error {
   constructor(
@@ -46,7 +47,7 @@ export function createApiClient({ baseUrl, cookie, fetch: f = fetch }: ApiClient
     // /health/ready answers 503 with a valid report when a dependency is down: don't throw.
     async health(): Promise<HealthReport> {
       const res = await f(new URL('/health/ready', baseUrl));
-      return healthReportSchema.parse(await res.json());
+      return (await res.json()) as HealthReport;
     },
     request,
     get: <T>(path: string, init?: RequestOptions) => request<T>(path, { ...init, method: 'GET' }),

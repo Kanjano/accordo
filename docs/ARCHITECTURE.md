@@ -75,3 +75,31 @@ flowchart LR
   PG --> WS[Worker coda shipping]
   WS -- SHIPMENT_CONFIRMED / DELIVERED via applyOrderEvent --> PG
 ```
+
+## Deploy (Fase 12)
+
+```mermaid
+flowchart LR
+  U[Browser / PWA] -->|HTTPS| C[Caddy: TLS automatico]
+  C -->|dominio| W[web: Next.js standalone, CSP con nonce]
+  C -->|api.dominio| A[api: NestJS + Better Auth + Socket.IO]
+  C -->|s3.dominio| S3[(storage S3: media e upload firmati)]
+  W -->|SSR, rete interna| A
+  A --> PG[(PostgreSQL: accordo_app)]
+  A --> V[(Valkey: sessioni, limiti, BullMQ)]
+  A --> M[(Meilisearch)]
+  K[worker: BullMQ, outbox, sweeper] --> PG
+  K --> V
+  K --> M
+  K --> S3
+  MG[migrate: prisma migrate deploy + seed base, accordo_migrator] --> PG
+  B[backup: pg_dump giornaliero] --> PG
+```
+
+- Immagini da un solo `Dockerfile` multi-stage (target `web`, `api`, `worker`, `migrate`), con utente non root e `HEALTHCHECK`. Per il worker l'healthcheck controlla il file dell'heartbeat.
+- Rilascio: CI verde, poi immagini su GHCR, `migrate` e infine `up -d` (`.github/workflows/deploy-staging.yml`, `docs/RUNBOOK.md`).
+- Prestazioni misurate:
+  - pagina annuncio: 176 KB di JavaScript compresso, LCP 0,6 s su 4G simulato;
+  - ricerca: p95 di 18 ms a 200 richieste al secondo;
+  - pagina annuncio: 100 richieste al secondo senza errori;
+  - seed da circa 100.000 annunci.

@@ -129,6 +129,23 @@ export class OrdersService {
       },
     });
     if (!listing) throw new NotFoundException();
+    // SPEC §13.7 (collusion, laundering): no orders between accounts that used the same browser.
+    // ponytail: device only; shared IPs are too noisy (CGNAT), card fingerprints come with Stripe live.
+    const buyerDevices = await this.db.knownDevice.findMany({
+      where: { userId },
+      select: { deviceIdHash: true },
+    });
+    if (
+      listing.sellerId !== userId &&
+      buyerDevices.length &&
+      (await this.db.knownDevice.count({
+        where: {
+          userId: listing.sellerId,
+          deviceIdHash: { in: buyerDevices.map((d) => d.deviceIdHash) },
+        },
+      }))
+    )
+      throw new ForbiddenException({ code: 'ORDER_LINKED_ACCOUNTS' });
 
     let priceCents = listing.priceCents;
     let offerOk = false;

@@ -53,8 +53,8 @@ export function NewDeviceLogin({
         ({device}).
       </Text>
       <Text style={text}>
-        Se sei stato tu, non devi fare nulla. Altrimenti esci da tutti i dispositivi e cambia la
-        password:
+        Se sei stato tu, non devi fare nulla. Altrimenti blocca l'accesso: disconnetteremo tutti i
+        dispositivi e ti chiederemo di scegliere una nuova password.
       </Text>
       <Button href={url} style={button}>
         Non sono stato io

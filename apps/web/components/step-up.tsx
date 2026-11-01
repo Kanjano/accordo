@@ -13,7 +13,7 @@ import {
   useState,
 } from 'react';
 import { ApiError, api, problemCode } from '@/lib/api';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/session';
 import { useErrorMessage } from '@/lib/use-error-message';
 
 type WithStepUp = <T>(action: () => Promise<T>) => Promise<T>;

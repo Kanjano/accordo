@@ -6,8 +6,8 @@ import { useTranslations } from 'next-intl';
 import { useId, useState, useTransition } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
-import { useSession } from '@/lib/auth-client';
 import { queryString, withParam } from '@/lib/search';
+import { useSession } from '@/lib/session';
 import { useErrorMessage } from '@/lib/use-error-message';
 
 export function SearchToolbar({

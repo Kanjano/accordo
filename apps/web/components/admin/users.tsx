@@ -7,7 +7,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { type FormEvent, useId, useState } from 'react';
 import { useStepUp } from '@/components/step-up';
 import { api } from '@/lib/api';
-import { useSession } from '@/lib/auth-client';
+import { useSession } from '@/lib/session';
 import { useErrorMessage } from '@/lib/use-error-message';
 import { ReasonFields } from './moderation';
 

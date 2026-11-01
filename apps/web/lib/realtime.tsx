@@ -2,8 +2,8 @@
 import type { ServerToClientEvents } from '@accordo/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { io, type Socket } from 'socket.io-client';
-import { useSession } from '@/lib/auth-client';
+import type { Socket } from 'socket.io-client';
+import { useSession } from '@/lib/session';
 
 const Connected = createContext(false);
 
@@ -19,25 +19,36 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!userId) return;
-    const socket: Socket<ServerToClientEvents> = io(
-      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
-      { path: '/ws', withCredentials: true, transports: ['websocket', 'polling'] },
-    );
+    // Loaded on demand: anonymous visitors never download the Socket.IO client.
+    let socket: Socket<ServerToClientEvents> | undefined;
+    let closed = false;
+    void import('socket.io-client').then(({ io }) => {
+      if (closed) return;
+      socket = io(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000', {
+        path: '/ws',
+        withCredentials: true,
+        transports: ['websocket', 'polling'],
+      });
+      listen(socket);
+    });
     const refresh = (...keys: unknown[][]) => {
       for (const queryKey of keys) void qc.invalidateQueries({ queryKey });
     };
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
-    socket.on('message:new', ({ conversationId }) =>
-      refresh(['messages', conversationId], ['conversations'], ['conversations-unread']),
-    );
-    socket.on('conversation:read', ({ conversationId }) => refresh(['messages', conversationId]));
-    socket.on('offer:updated', ({ conversationId }) =>
-      refresh(['conversation', conversationId], ['messages', conversationId], ['my-offers']),
-    );
-    socket.on('notification:new', () => refresh(['notifications-unread'], ['notifications']));
+    const listen = (s: Socket<ServerToClientEvents>) => {
+      s.on('connect', () => setConnected(true));
+      s.on('disconnect', () => setConnected(false));
+      s.on('message:new', ({ conversationId }) =>
+        refresh(['messages', conversationId], ['conversations'], ['conversations-unread']),
+      );
+      s.on('conversation:read', ({ conversationId }) => refresh(['messages', conversationId]));
+      s.on('offer:updated', ({ conversationId }) =>
+        refresh(['conversation', conversationId], ['messages', conversationId], ['my-offers']),
+      );
+      s.on('notification:new', () => refresh(['notifications-unread'], ['notifications']));
+    };
     return () => {
-      socket.disconnect();
+      closed = true;
+      socket?.disconnect();
       setConnected(false);
     };
   }, [userId, qc]);

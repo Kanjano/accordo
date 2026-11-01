@@ -40,7 +40,9 @@ export const MEILI_KEY = 'test_master_key_123456';
  * Real PostgreSQL 18 + Valkey (+ Meilisearch on request) containers, migrated schema, full Nest
  * app with the production wiring. Without Meilisearch the API runs in degraded search mode.
  */
-export async function startTestApp(opts: { search?: boolean } = {}): Promise<TestEnv> {
+export async function startTestApp(
+  opts: { search?: boolean; env?: Record<string, string> } = {},
+): Promise<TestEnv> {
   const [pg, valkey, meili]: [
     StartedPostgreSqlContainer,
     StartedTestContainer,
@@ -97,6 +99,7 @@ export async function startTestApp(opts: { search?: boolean } = {}): Promise<Tes
     ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
     SHIPPING_PROVIDER: 'mock',
     SHIPPING_WEBHOOK_SECRET: 'test-shipping-secret',
+    ...opts.env,
   });
 
   const emails = new FakeEmailProvider();
