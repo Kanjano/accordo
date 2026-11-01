@@ -1173,7 +1173,12 @@ model ModerationAction {
   contractualGround  String?
   appealable         Boolean              @default(true)
   appealedAt         DateTime?
+  appealText         String?              @db.Text
   appealOutcome      String?
+  appealStatement    String?              @db.Text
+  appealDecidedAt    DateTime?
+  appealReviewerId   String?
+  reversedAt         DateTime?
   createdAt          DateTime             @default(now())
 
   @@index([targetType, targetId])

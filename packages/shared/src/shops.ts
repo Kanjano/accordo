@@ -82,6 +82,7 @@ export interface ShopDirectoryItem {
 }
 
 export interface ShopPublic extends ShopDirectoryItem {
+  id: string;
   ownerUsername: string | null;
   description: string | null;
   openingHours: string | null;

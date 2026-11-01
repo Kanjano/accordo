@@ -261,3 +261,26 @@ Provider scelto dall'utente: **Sendcloud**. Credenziali sandbox non disponibili:
 
 **Rimandato**
 - Negozi in home page e badge di ribasso sulle card (richiede il dato nel documento di ricerca); modifica dei dati legali verificati tramite backoffice (Fase 11).
+
+## Fase 11 — Moderazione, backoffice, DSA, DAC7, GDPR
+
+**Piano**
+1. Database: campi del ricorso su `ModerationAction`; trigger append-only su `AuditLog`; impostazioni `dac7` e `retention`; 2FA dello staff demo.
+2. Dominio: `sameShape` (editor delle impostazioni), `dac7Assessment`, `yearQuarter`, `isIban` esportato.
+3. API: segnalazioni pubbliche con Turnstile, coda e decisioni motivate, coda annunci, ricorsi, utenti e sanzioni, impersonificazione in sola lettura; dashboard KPI, editor di impostazioni e catalogo, audit log, webhook con rielaborazione, Bull Board; `TaxProfile` cifrato, DAC7 admin con export CSV; export GDPR.
+4. Worker: notifiche (ricezione ed esito delle segnalazioni, motivazioni, ricorsi, annuncio approvato), coda `compliance` (DAC7 notturno con solleciti, conservazione dei dati, scadenza delle sospensioni), trasferimenti trattenuti per DAC7 (opzionale).
+5. Web: `/segnala`, link "Segnala" su annuncio, profilo e negozio, `/account/moderazione`, `/account/dati-fiscali`, export in Privacy, backoffice completo con navigazione, banner di impersonificazione.
+6. Test: integrazione (2FA admin, J7 a livello API, sanzioni, campi fiscali cifrati letti dal database, export, cancellazione, audit append-only, impostazioni, webhook), worker (DAC7, conservazione), e2e J7.
+
+**Fatto**
+- Migrazione `20261101120000_moderation_appeals` (campi del ricorso, trigger `audit_log_append_only`).
+- Dominio: `compliance.ts` (6 test), `isIban` esportato. Copertura invariata ≥ 95%.
+- API: moduli `moderation` (segnalazioni, decisioni, coda annunci, ricorsi, utenti, sanzioni, impersonificazione), `admin` (dashboard con KPI e statistiche DSA, impostazioni, catalogo, audit, webhook, Bull Board su `/admin/queues`), `compliance` (`FieldCrypto`, dati fiscali, DAC7 admin con CSV, export GDPR). Variabili `ENCRYPTION_KEY`/`ENCRYPTION_KEY_ID` obbligatorie.
+- Worker: coda `compliance` (DAC7 alle 2:30, conservazione alle 3:30, sospensioni ogni ora), notifiche di moderazione e segnalazioni (email diretta per chi segnala senza account), rilascio dei trasferimenti trattenuti al salvataggio dei dati fiscali, `catalog.sync` dopo le modifiche al catalogo. Nomi delle code spostati in `@accordo/shared`.
+- Web: pagine e componenti sopra; 14 sezioni di backoffice; avviso se lo staff non ha la 2FA.
+- Criteri: e2e J7 (segnalazione anonima → rimozione del moderatore con 2FA → email con motivazione al venditore e a chi ha segnalato → ricorso → accolto da un altro membro dello staff → annuncio di nuovo online); le route admin richiedono la 2FA (`TWO_FACTOR_REQUIRED`, test di integrazione, anche per Bull Board); un test legge `TaxProfile` direttamente dal database e verifica che codice fiscale, data di nascita e IBAN siano cifrati; l'export contiene i dati dell'utente (indirizzi, dati fiscali, sessioni); la cancellazione anonimizza.
+- Test: 6 dominio + 3 `FieldCrypto`, 8 integrazione API (69 in totale), 2 integrazione worker (20 in totale), 1 e2e (16 in totale, verdi in 3 esecuzioni consecutive).
+- Decisioni: ADR-0046…0049.
+
+**Rimandato**
+- Segnala sui singoli messaggi dalla chat (l'API li accetta già), report di trasparenza DSA esportabile, tracciato ufficiale DAC7 dell'Agenzia delle Entrate, rotazione delle chiavi di cifratura, ruoli database separati (Fase 12), job di export GDPR asincrono.

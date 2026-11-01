@@ -8,6 +8,7 @@ const valid = {
   MEILI_HOST: 'http://localhost:7700',
   MEILI_MASTER_KEY: 'dev_master_key_change_me_please',
   HANDOVER_CODE_PEPPER: 'test-pepper',
+  ENCRYPTION_KEY: Buffer.alloc(32, 1).toString('base64'),
   S3_ENDPOINT: 'http://localhost:9000',
   S3_REGION: 'auto',
   S3_ACCESS_KEY_ID: 'key',

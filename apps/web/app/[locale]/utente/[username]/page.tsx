@@ -87,6 +87,14 @@ export default async function ProfilePage({ params }: PageProps<'/[locale]/utent
               ))}
             </ul>
           ) : null}
+          {p.viewer?.isSelf ? null : (
+            <Link
+              href={`/segnala?tipo=USER&id=${p.username}`}
+              className="text-sm text-muted-foreground underline underline-offset-4"
+            >
+              {t('report')}
+            </Link>
+          )}
           <ProfileActions
             userId={p.id}
             username={p.username}

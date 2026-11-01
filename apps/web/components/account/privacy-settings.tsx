@@ -19,6 +19,25 @@ export function PrivacySettings() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [exportError, setExportError] = useState<string | null>(null);
+  async function onExport() {
+    setExportError(null);
+    try {
+      const data = await withStepUp(() => api.get<object>('/api/v1/me/data-export'));
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+      );
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `accordo-dati-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      if ((err as { problem?: { code?: string } } | null)?.problem?.code !== 'STEP_UP_REQUIRED')
+        setExportError(errorMessage(err));
+    }
+  }
+
   async function onDelete(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -46,7 +65,12 @@ export function PrivacySettings() {
         />
       </SettingsSection>
       <SettingsSection title={t('export.title')} description={t('export.text')}>
-        {null}
+        <div className="grid gap-2">
+          {exportError ? <Alert tone="error">{exportError}</Alert> : null}
+          <Button variant="outline" className="justify-self-start" onClick={onExport}>
+            {t('export.button')}
+          </Button>
+        </div>
       </SettingsSection>
       <SettingsSection title={t('delete.title')} description={t('delete.text')}>
         <form onSubmit={onDelete} className="grid gap-4">

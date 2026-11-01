@@ -32,6 +32,17 @@ export class Notifier {
     @Optional() @Inject(REALTIME) private readonly realtime?: Emitter,
   ) {}
 
+  /** People without an account (anonymous DSA reporters): email only. */
+  async emailTo(to: string, n: { name: string; title: string; body: string; path?: string }) {
+    const rendered = await renderEmail('notification', {
+      name: n.name,
+      title: n.title,
+      body: n.body,
+      url: n.path ? `${this.env.WEB_URL}${n.path}` : undefined,
+    });
+    await this.email.send({ to, ...rendered });
+  }
+
   async notify(n: NotificationRequest): Promise<void> {
     const user = await this.db.user.findUnique({
       where: { id: n.userId },

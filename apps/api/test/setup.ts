@@ -94,6 +94,7 @@ export async function startTestApp(opts: { search?: boolean } = {}): Promise<Tes
     PAYMENT_PROVIDER: 'fake',
     STRIPE_WEBHOOK_SECRET: 'test-webhook-secret',
     HANDOVER_CODE_PEPPER: 'test-handover-pepper',
+    ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
     SHIPPING_PROVIDER: 'mock',
     SHIPPING_WEBHOOK_SECRET: 'test-shipping-secret',
   });

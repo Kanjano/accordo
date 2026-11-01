@@ -13,6 +13,8 @@ const NAV = [
   ['/account/incassi', 'payouts'],
   ['/account/feedback', 'feedback'],
   ['/account/negozio', 'shop'],
+  ['/account/dati-fiscali', 'tax'],
+  ['/account/moderazione', 'moderation'],
   ['/account/preferiti', 'favorites'],
   ['/account/ricerche-salvate', 'savedSearches'],
   ['/account/visti-di-recente', 'recentlyViewed'],

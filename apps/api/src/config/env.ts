@@ -39,6 +39,14 @@ export const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional().default(''),
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
   HANDOVER_CODE_PEPPER: z.string().min(8),
+  /** AES-256-GCM key for tax data (SPEC §10.3): 32 random bytes, base64. */
+  ENCRYPTION_KEY: z
+    .base64('ENCRYPTION_KEY must be base64')
+    .refine((v) => Buffer.from(v, 'base64').length === 32, 'ENCRYPTION_KEY must be 32 bytes'),
+  ENCRYPTION_KEY_ID: z
+    .string()
+    .regex(/^[a-z0-9]{1,8}$/)
+    .default('k1'),
   SHIPPING_PROVIDER: z.enum(['mock', 'sendcloud']).default('mock'),
   SHIPPING_API_KEY: z.string().optional().default(''),
   SHIPPING_API_SECRET: z.string().optional().default(''),

@@ -2,6 +2,7 @@ import { type INestApplication, StandardSchemaValidationPipe } from '@nestjs/com
 import { toNodeHandler } from 'better-auth/node';
 import express from 'express';
 import { ENV, type Env } from './config/env.js';
+import { QUEUES_PATH, QueuesBoard } from './modules/admin/queues-board.js';
 import type { Auth } from './modules/auth/auth.factory.js';
 import { AUTH } from './modules/auth/auth.tokens.js';
 import { ValidationException } from './modules/platform/problem-details.filter.js';
@@ -17,6 +18,8 @@ export function configureApp(app: INestApplication): void {
   app.enableCors({ origin: [env.WEB_URL], credentials: true });
   http.set('trust proxy', env.NODE_ENV === 'production' ? 1 : false);
   http.all('/api/auth/{*path}', toNodeHandler(app.get<Auth>(AUTH)));
+  const board = app.get(QueuesBoard);
+  http.use(QUEUES_PATH, board.guard, board.router);
   // Webhook signatures are computed on the raw body (SPEC §6.10).
   http.use('/api/v1/webhooks', express.raw({ type: '*/*', limit: '1mb' }));
   http.use(express.json({ limit: '1mb' }));

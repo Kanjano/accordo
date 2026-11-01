@@ -87,11 +87,19 @@ export default async function ShopPage({ params }: PageProps<'/[locale]/negozio/
               <span className="rounded-full bg-secondary px-2 py-0.5">{t('professional')}</span>
             </p>
           </div>
-          {s.ownerUsername ? (
-            <Link href={`/utente/${s.ownerUsername}`} className="ml-auto text-sm underline">
-              {t('profileAndFeedback')}
+          <div className="ml-auto grid justify-items-end gap-1 text-sm">
+            {s.ownerUsername ? (
+              <Link href={`/utente/${s.ownerUsername}`} className="underline">
+                {t('profileAndFeedback')}
+              </Link>
+            ) : null}
+            <Link
+              href={`/segnala?tipo=SHOP&id=${s.slug}`}
+              className="text-muted-foreground underline"
+            >
+              {t('report')}
             </Link>
-          ) : null}
+          </div>
         </div>
       </section>
 

@@ -8,9 +8,13 @@ export * from './users.js';
 
 export const CURRENCY = 'EUR' as const;
 export type Currency = typeof CURRENCY;
+export * from './admin.js';
+export * from './compliance.js';
 export * from './disputes.js';
 export * from './feedback.js';
 export * from './messaging.js';
+export * from './moderation.js';
 export * from './orders.js';
+export * from './queues.js';
 export * from './search.js';
 export * from './shops.js';

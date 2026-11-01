@@ -164,7 +164,22 @@
     "SHOP_EXISTS": "You already have a shop.",
     "USERNAME_REQUIRED": "Choose a username in your profile settings first.",
     "SHOP_LEGAL_LOCKED": "Verified legal details cannot be changed: contact support.",
-    "SHOP_ALREADY_DECIDED": "The shop is already in this state."
+    "SHOP_ALREADY_DECIDED": "The shop is already in this state.",
+    "REPORTER_REQUIRED": "Enter your name and email.",
+    "CAPTCHA_FAILED": "Anti-bot check failed: try again.",
+    "DECISION_NOT_APPLICABLE": "This decision does not apply to the reported content.",
+    "REPORT_ALREADY_DECIDED": "The report has already been decided.",
+    "CANNOT_SANCTION_STAFF": "Staff members cannot be sanctioned.",
+    "APPEAL_NOT_ALLOWED": "This decision cannot be appealed.",
+    "APPEAL_ALREADY_DECIDED": "The appeal has already been decided.",
+    "USER_NOT_SANCTIONED": "The account is already active.",
+    "TWO_FACTOR_REQUIRED": "The back office requires two-factor authentication: enable it under Security.",
+    "SETTING_SHAPE": "The new value must have the same structure as the old one.",
+    "CATALOG_DUPLICATE": "An entry with this name or slug already exists.",
+    "WEBHOOK_ALREADY_PROCESSED": "The event has already been processed.",
+    "TAX_ID_INVALID": "Invalid tax code.",
+    "IBAN_INVALID": "Invalid IBAN.",
+    "IMPERSONATION_READ_ONLY": "You are viewing the site as another user: read-only."
   },
   "Validation": {
     "EMAIL_INVALID": "Enter a valid email address.",
@@ -189,7 +204,13 @@
     "URL_INVALID": "Enter an address starting with https://.",
     "TEXT_TOO_SHORT": "At least 20 characters.",
     "SELF_CERT_REQUIRED": "The declaration is required to continue.",
-    "NOTES_TOO_SHORT": "At least 20 characters."
+    "NOTES_TOO_SHORT": "At least 20 characters.",
+    "DETAILS_TOO_SHORT": "At least 20 characters.",
+    "GOOD_FAITH_REQUIRED": "The good-faith declaration is required.",
+    "TAX_ID_INVALID": "Invalid tax code.",
+    "IBAN_INVALID": "Invalid IBAN.",
+    "SLUG_INVALID": "Lowercase letters, digits and hyphens only.",
+    "KEY_INVALID": "Invalid key."
   },
   "Auth": {
     "signIn": {
@@ -286,7 +307,9 @@
       "sales": "Sales",
       "payouts": "Payouts",
       "feedback": "Feedback",
-      "shop": "Shop"
+      "shop": "Shop",
+      "tax": "Tax details",
+      "moderation": "Moderation"
     },
     "welcome": "Hi {name}!",
     "overviewText": "Manage your profile, addresses, security and preferences here. Listings, purchases and sales are coming soon.",
@@ -414,7 +437,8 @@
       },
       "export": {
         "title": "Export your data",
-        "text": "Full data export is coming soon. Meanwhile you can request it from support."
+        "text": "Download a file with all the data we hold about you: profile, listings, messages, orders, feedback, notifications and tax details. We'll ask you to confirm your identity.",
+        "button": "Download my data"
       },
       "delete": {
         "title": "Delete account",
@@ -472,7 +496,8 @@
     "business": "Professional seller",
     "notFound": "User not found.",
     "signInToFollow": "Sign in to follow this user.",
-    "allFeedback": "See all feedback"
+    "allFeedback": "See all feedback",
+    "report": "Report user"
   },
   "Condition": {
     "NEW": "New",
@@ -676,7 +701,8 @@
     "warrantyInfo": "Warranty",
     "shopPage": "Visit the shop",
     "privateSeller": "Private seller.",
-    "privateNotice": "EU consumer protections (such as the 14-day right of withdrawal and the legal guarantee of conformity) do not apply to purchases from private individuals. Accordo's protected payment and disputes still apply."
+    "privateNotice": "EU consumer protections (such as the 14-day right of withdrawal and the legal guarantee of conformity) do not apply to purchases from private individuals. Accordo's protected payment and disputes still apply.",
+    "report": "Report listing"
   },
   "MyListings": {
     "title": "My listings",
@@ -1384,6 +1410,265 @@
     "noListings": "No active listings at the moment.",
     "legalInfo": "Legal information",
     "consumerRights": "Consumer rights",
-    "consumerRightsText": "Buying from this shop you may withdraw within 14 days of delivery and you have the legal guarantee of conformity (24 months on new items, which may be reduced to 12 on used ones)."
+    "consumerRightsText": "Buying from this shop you may withdraw within 14 days of delivery and you have the legal guarantee of conformity (24 months on new items, which may be reduced to 12 on used ones).",
+    "report": "Report shop"
+  },
+  "Report": {
+    "title": "Report content",
+    "intro": "Use this form to tell us about illegal content or content that breaks our rules. Our staff reviews every report and tells you the decision.",
+    "target": {
+      "LISTING": "Listing",
+      "USER": "User",
+      "SHOP": "Shop",
+      "MESSAGE": "Message"
+    },
+    "aMessage": "Chat message",
+    "reason": "Reason",
+    "reasons": {
+      "SCAM": "Scam or fraud attempt",
+      "PROHIBITED_ITEM": "Prohibited item",
+      "COUNTERFEIT": "Counterfeit",
+      "STOLEN": "Stolen goods",
+      "IP_INFRINGEMENT": "Copyright or trademark infringement",
+      "OFFENSIVE": "Offensive content",
+      "SPAM": "Spam",
+      "MISLEADING": "Misleading information",
+      "OTHER": "Other"
+    },
+    "details": "Description",
+    "detailsHelp": "Explain why the content is illegal or breaks the rules (at least 20 characters). Say where the violation is.",
+    "illegal": "I believe this content is illegal",
+    "name": "Full name",
+    "email": "Email",
+    "goodFaith": "I declare in good faith that the information provided is accurate and complete.",
+    "submit": "Send report",
+    "sent": "Report sent: we emailed you an acknowledgment and will tell you the decision.",
+    "follow": "Track it",
+    "policy": "To see what is not allowed read the",
+    "rules": "Listing rules"
+  },
+  "Moderation": {
+    "title": "Moderation",
+    "intro": "Staff decisions concerning you, with their reasons, and the status of your reports. You may appeal any decision within 6 months.",
+    "noActions": "No decisions concern you.",
+    "myReports": "My reports",
+    "noReports": "You haven't sent any reports.",
+    "reportStatus": {
+      "OPEN": "Waiting",
+      "IN_REVIEW": "Under review",
+      "ACTION_TAKEN": "Action taken",
+      "DISMISSED": "Dismissed"
+    },
+    "decision": "Decision",
+    "actions": {
+      "LISTING_REJECTED": "Listing not approved",
+      "LISTING_REMOVED": "Listing removed",
+      "LISTING_RESTORED": "Listing restored",
+      "USER_WARNED": "Warning",
+      "USER_LIMITED": "Account limited",
+      "USER_SUSPENDED": "Account suspended",
+      "USER_BANNED": "Account closed",
+      "USER_REINSTATED": "Account reinstated",
+      "FEEDBACK_REMOVED": "Feedback removed",
+      "MESSAGE_HIDDEN": "Message hidden"
+    },
+    "reasons": "Reasons",
+    "legalGround": "Legal ground",
+    "appealPending": "Appeal submitted: a staff member other than the one who decided will review it.",
+    "appealOutcome": {
+      "UPHELD": "Appeal rejected",
+      "REVERSED": "Appeal upheld"
+    },
+    "appeal": "Appeal",
+    "appealText": "Why is the decision wrong? (at least 20 characters)",
+    "sendAppeal": "Send appeal",
+    "cancel": "Cancel"
+  },
+  "Tax": {
+    "title": "Tax details (DAC7)",
+    "intro": "The EU DAC7 rules require platforms to report every year to the Italian Revenue Agency the sellers with at least 30 sales or more than 2,000 € in sales. We ask for your details when you get close to a threshold.",
+    "year": "This year: {activities, plural, one {# sale} other {# sales}}, {amount} received.",
+    "required": "You are getting close to the DAC7 thresholds: please enter your tax details.",
+    "onFile": "Details received on {date}: tax code {taxId}, IBAN {iban}. Enter them again to update them.",
+    "saved": "Tax details saved.",
+    "legalName": "Full name or company name",
+    "taxId": "Tax code",
+    "taxIdHelp": "16 characters, or 11 digits for companies.",
+    "birthDate": "Date of birth",
+    "vatNumber": "VAT number",
+    "iban": "IBAN",
+    "address": "Residence or registered address",
+    "cap": "Postcode",
+    "city": "Municipality",
+    "privacy": "Tax code, date of birth and IBAN are encrypted and used only for tax obligations."
+  },
+  "Admin": {
+    "nav": "Back-office sections",
+    "needs2fa": "The back office requires two-factor authentication.",
+    "enable2fa": "Enable it now",
+    "sections": {
+      "dashboard": "Dashboard",
+      "reports": "Reports",
+      "listings": "Listings",
+      "appeals": "Appeals",
+      "users": "Users",
+      "orders": "Orders",
+      "disputes": "Disputes",
+      "feedback": "Feedback",
+      "shops": "Shops",
+      "dac7": "DAC7",
+      "catalog": "Catalog",
+      "settings": "Settings",
+      "audit": "Audit log",
+      "webhooks": "Webhooks",
+      "queues": "Queues (Bull Board)"
+    },
+    "reason": "Reason",
+    "reasons": {
+      "SCAM": "Scam or fraud attempt",
+      "PROHIBITED_ITEM": "Prohibited item",
+      "COUNTERFEIT": "Counterfeit",
+      "STOLEN": "Stolen goods",
+      "IP_INFRINGEMENT": "Copyright or trademark infringement",
+      "OFFENSIVE": "Offensive content",
+      "SPAM": "Spam",
+      "MISLEADING": "Misleading information",
+      "OTHER": "Other",
+      "TERMS_VIOLATION": "Terms of service violation",
+      "FRAUD": "Fraud",
+      "ABUSE": "Abusive behaviour"
+    },
+    "statement": "Statement of reasons for the user (at least 20 characters)",
+    "legalGround": "Legal ground (optional)",
+    "open": "To review",
+    "closed": "Closed",
+    "empty": "Nothing to show.",
+    "illegal": "Illegal content",
+    "sameTarget": "{count, plural, one {# other report} other {# other reports}} on the same content",
+    "decision": "Decision",
+    "openUser": "Open user",
+    "decisionType": "Decision",
+    "decisions": {
+      "DISMISS": "Dismiss (no violation)",
+      "REMOVE_LISTING": "Remove listing",
+      "HIDE_MESSAGE": "Hide message",
+      "WARN_USER": "Warn user",
+      "LIMIT_USER": "Limit account",
+      "SUSPEND_USER": "Suspend account",
+      "BAN_USER": "Ban account"
+    },
+    "days": "Suspension days",
+    "decide": "Confirm decision",
+    "listingTabs": {
+      "PENDING_REVIEW": "To approve",
+      "REPORTED": "Reported",
+      "REMOVED": "Removed",
+      "REJECTED": "Rejected"
+    },
+    "reportsCount": "{count, plural, =0 {no reports} one {# report} other {# reports}}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "remove": "Remove",
+    "restore": "Restore",
+    "appealsIntro": "Each appeal must be reviewed by a staff member other than the one who decided.",
+    "appealText": "Appeal",
+    "reverse": "Uphold (reverse the decision)",
+    "uphold": "Reject",
+    "searchUsers": "Email, username, name or id",
+    "search": "Search",
+    "status": {
+      "ACTIVE": "Active",
+      "LIMITED": "Limited",
+      "SUSPENDED": "Suspended",
+      "BANNED": "Banned",
+      "DELETED": "Deleted"
+    },
+    "statusLabel": "Status",
+    "memberSince": "Member since",
+    "activity": "Activity",
+    "counts": "{listings} listings · {purchases} purchases · {sales} sales · {reports} reports received · {flagged} flagged messages",
+    "sanction": "Sanction",
+    "sanctions": {
+      "WARN": "Warning",
+      "LIMIT": "Limitation",
+      "SUSPEND": "Suspension",
+      "BAN": "Account closure"
+    },
+    "applySanction": "Apply sanction",
+    "reinstate": "Reinstate account",
+    "impersonate": "View as this user (read-only)",
+    "history": "Decision history",
+    "impersonating": "You are viewing the site as {email}, read-only.",
+    "stopImpersonating": "Stop",
+    "kpi": {
+      "gmv": "GMV (30 days)",
+      "orders": "Paid orders (30 days)",
+      "disputeRate": "Dispute rate",
+      "shipTime": "Average time to ship"
+    },
+    "hours": "{count, plural, one {# hour} other {# hours}}",
+    "backlog": "Backlogs",
+    "backlogItems": {
+      "reports": "Reports",
+      "listings": "Listings to approve",
+      "appeals": "Appeals",
+      "shops": "Shops to verify",
+      "disputes": "Disputes to decide",
+      "feedback": "Hidden feedback",
+      "webhooksFailed": "Failed webhooks"
+    },
+    "ordersByStatus": "Orders by status",
+    "dsaTitle": "DSA transparency (last 12 months)",
+    "dsaStats": "{reports} reports, {actions} actions ({automated} automated), {appeals} appeals, {reversed} decisions reversed, median decision time {hours} hours.",
+    "settingsIntro": "Each value must keep the same structure (keys and types): changes are recorded in the audit log.",
+    "invalidJson": "Invalid JSON.",
+    "saved": "Saved.",
+    "save": "Save",
+    "catalogIntro": "Edit the fields as JSON. Entries are never deleted (listings use them): deactivate a category with isActive=false.",
+    "catalog": {
+      "departments": "Departments",
+      "categories": "Categories",
+      "attributes": "Attributes",
+      "brands": "Brands"
+    },
+    "new": "+ New entry",
+    "fieldsJson": "Fields (JSON)",
+    "categoryAttributes": "Category attributes (JSON: attributeId, required)",
+    "auditFilter": {
+      "actorId": "Actor id",
+      "entityType": "Type",
+      "entityId": "Entity id"
+    },
+    "auditCols": {
+      "when": "When",
+      "action": "Action",
+      "entity": "Entity",
+      "actor": "Who",
+      "details": "Details"
+    },
+    "webhookTabs": {
+      "failed": "Failed",
+      "pending": "Pending",
+      "processed": "Processed"
+    },
+    "attempts": "{count, plural, one {# attempt} other {# attempts}}",
+    "replay": "Replay",
+    "replayed": "Event queued again.",
+    "dac7Intro": "Sellers close to or above the thresholds (30 sales or 2,000 €). The export contains tax data in clear: download it only on secure devices.",
+    "year": "Year",
+    "exportCsv": "Export CSV",
+    "reminderSent": "Reminder sent.",
+    "remind": "Remind",
+    "dac7Cols": {
+      "seller": "Seller",
+      "activities": "Sales",
+      "consideration": "Received",
+      "state": "State",
+      "reminders": "Reminders"
+    },
+    "reportable": "Reportable",
+    "nearThreshold": "Near threshold",
+    "profileOk": "details received",
+    "profileMissing": "details missing"
   }
 }

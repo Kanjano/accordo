@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@accordo/db';
-import type { FeeSettings, ListingCheckSettings } from '@accordo/domain';
+import type { Dac7Settings, FeeSettings, ListingCheckSettings } from '@accordo/domain';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { PRISMA, REDIS } from './infra.providers.js';
@@ -20,6 +20,13 @@ export interface PlatformSettings {
     minPercent: number;
     acceptedCheckoutHours: number;
     maxActivePerBuyerAndListing: number;
+  };
+  dac7: Dac7Settings;
+  retention: {
+    messagesMonths: number;
+    auditLogMonths: number;
+    notificationsMonths: number;
+    tmpUploadsHours: number;
   };
 }
 
@@ -42,8 +49,8 @@ export class SettingsService {
     return row.value as unknown as PlatformSettings[K];
   }
 
-  /** Called by the admin editor (Phase 11) after an update. */
-  async invalidate(key: keyof PlatformSettings): Promise<void> {
+  /** Called by the admin settings editor after an update. */
+  async invalidate(key: string): Promise<void> {
     await this.redis.del(`settings:${key}`);
   }
 }

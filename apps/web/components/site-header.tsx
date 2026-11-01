@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { ImpersonationBanner } from './impersonation-banner';
 import { SearchBox } from './search/search-box';
 import { UserMenu } from './user-menu';
 
@@ -7,6 +8,7 @@ export function SiteHeader() {
   const t = useTranslations('Header');
   return (
     <header className="border-b">
+      <ImpersonationBanner />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:ring-2 focus:ring-ring"

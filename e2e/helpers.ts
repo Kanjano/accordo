@@ -118,3 +118,56 @@ export async function register(page: Page) {
   await expect(page).toHaveURL(/verifica-email\?stato=ok/);
   return email;
 }
+
+/** Demo staff 2FA secret (seed, development only): Better Auth keys TOTP with its UTF-8 bytes. */
+const DEMO_TOTP_SECRET = 'accordo-demo-totp-secret-2026-xx';
+function base32(bytes: Buffer): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const bits = [...bytes].map((b) => b.toString(2).padStart(8, '0')).join('');
+  return (bits.match(/.{1,5}/g) ?? [])
+    .map((c) => alphabet[Number.parseInt(c.padEnd(5, '0'), 2)])
+    .join('');
+}
+
+/** Staff sign-in: password, then the TOTP code (the back office requires 2FA). */
+export async function signInStaff(context: BrowserContext, email: string): Promise<void> {
+  await rejectCookies(context);
+  const headers = { origin: 'http://localhost:3000' };
+  const first = await context.request.post(`${API}/api/auth/sign-in/email`, {
+    headers,
+    data: { email, password: 'accordo-demo-2026' },
+  });
+  expect(first.ok()).toBe(true);
+  expect((await first.json()).twoFactorRedirect).toBe(true);
+  const res = await context.request.post(`${API}/api/auth/two-factor/verify-totp`, {
+    headers,
+    data: { code: totp(base32(Buffer.from(DEMO_TOTP_SECRET))) },
+  });
+  expect(res.ok()).toBe(true);
+}
+
+/** Polls Mailpit for an email to `to` whose HTML contains `text`. */
+export async function emailContaining(to: string, text: string): Promise<string> {
+  let html = '';
+  await expect
+    .poll(
+      async () => {
+        const res = await fetch(
+          `${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}&limit=20`,
+        );
+        for (const m of ((await res.json()) as { messages: Array<{ ID: string }> }).messages) {
+          const msg = (await (await fetch(`${MAILPIT}/api/v1/message/${m.ID}`)).json()) as {
+            HTML: string;
+          };
+          if (msg.HTML.includes(text)) {
+            html = msg.HTML;
+            return true;
+          }
+        }
+        return false;
+      },
+      { timeout: 30_000 },
+    )
+    .toBe(true);
+  return html;
+}

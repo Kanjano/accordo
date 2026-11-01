@@ -84,6 +84,10 @@ export class NotificationsProcessor extends WorkerHost {
     if (job.name === 'message.created') return this.message(job.data as MessagePayload);
     if (job.name.startsWith('offer.')) return this.offer(job.name, job.data as OfferPayload);
     if (job.name.startsWith('shop.')) return this.shop(job.name, job.data as ShopPayload);
+    if (job.name.startsWith('report.'))
+      return this.report(job.name, (job.data as { reportId: string }).reportId);
+    if (job.name.startsWith('moderation.'))
+      return this.moderation(job.name, (job.data as { actionId: string }).actionId);
     const { listingId } = job.data as { listingId: string };
     const listing = await this.db.listing.findUnique({
       where: { id: listingId },
@@ -100,6 +104,20 @@ export class NotificationsProcessor extends WorkerHost {
         title: 'Annuncio in revisione',
         body: `Il tuo annuncio «${listing.title}» verrà controllato dal nostro staff prima della pubblicazione. Ti avviseremo appena possibile.`,
         path: '/account/annunci',
+        data: { listingId },
+      });
+    }
+
+    if (job.name === 'listing.approved') {
+      await this.notifier.notify({
+        userId: listing.sellerId,
+        preference: 'listing.moderation',
+        mandatory: true,
+        type: 'listing.approved',
+        title: 'Annuncio approvato',
+        body: `Il tuo annuncio «${listing.title}» è stato approvato ed è ora pubblicato.`,
+        path: listingPath(listing),
+        cta: "Vedi l'annuncio",
         data: { listingId },
       });
     }
@@ -123,6 +141,71 @@ export class NotificationsProcessor extends WorkerHost {
         });
       }
     }
+  }
+
+  /** DSA art. 16: acknowledgment of receipt, then the decision, to the person who reported. */
+  private async report(type: string, reportId: string) {
+    const r = await this.db.report.findUnique({ where: { id: reportId } });
+    if (!r) return;
+    const decided = type === 'report.decided';
+    const title = decided ? 'Esito della tua segnalazione' : 'Abbiamo ricevuto la tua segnalazione';
+    const body = decided
+      ? r.status === 'DISMISSED'
+        ? `Abbiamo esaminato la tua segnalazione e non abbiamo riscontrato violazioni. Motivazione: ${r.decision ?? ''}`
+        : `Abbiamo esaminato la tua segnalazione e preso provvedimenti sul contenuto. Motivazione: ${r.decision ?? ''}`
+      : 'Grazie: la tua segnalazione è stata registrata e verrà esaminata dal nostro staff. Ti comunicheremo la decisione.';
+    if (r.reporterId)
+      return this.notifier.notify({
+        userId: r.reporterId,
+        preference: 'listing.moderation',
+        mandatory: true,
+        type,
+        title,
+        body,
+        path: '/account/moderazione',
+        data: { reportId },
+      });
+    if (r.reporterEmail)
+      await this.notifier.emailTo(r.reporterEmail, { name: r.reporterName ?? '', title, body });
+  }
+
+  /** Statement of reasons (DSA art. 17) to the affected user, with the way to appeal. */
+  private async moderation(type: string, actionId: string) {
+    const a = await this.db.moderationAction.findUnique({ where: { id: actionId } });
+    if (!a?.targetUserId) return;
+    const what: Record<string, string> = {
+      LISTING_REJECTED: 'Il tuo annuncio non è stato approvato',
+      LISTING_REMOVED: 'Il tuo annuncio è stato rimosso',
+      LISTING_RESTORED: 'Il tuo annuncio è stato ripristinato',
+      MESSAGE_HIDDEN: 'Un tuo messaggio è stato nascosto',
+      FEEDBACK_REMOVED: 'Un feedback è stato rimosso',
+      USER_WARNED: 'Hai ricevuto un avviso',
+      USER_LIMITED: 'Il tuo account è stato limitato',
+      USER_SUSPENDED: 'Il tuo account è stato sospeso',
+      USER_BANNED: 'Il tuo account è stato chiuso',
+      USER_REINSTATED: 'Il tuo account è di nuovo attivo',
+    };
+    const appealed = type === 'moderation.appeal_decided';
+    const title = appealed
+      ? a.appealOutcome === 'REVERSED'
+        ? 'Ricorso accolto'
+        : 'Ricorso respinto'
+      : (what[a.actionType] ?? 'Decisione dello staff');
+    const body = appealed
+      ? `Abbiamo riesaminato la decisione. Motivazione: ${a.appealStatement ?? ''}`
+      : `Motivazione: ${a.statementOfReasons}${a.legalGround ? ` Base giuridica: ${a.legalGround}.` : ''}${a.appealable ? ' Se non sei d’accordo puoi presentare ricorso entro 6 mesi dalla pagina «Moderazione» del tuo account.' : ''}`;
+    // Banned or suspended users can't sign in: the email is what reaches them.
+    await this.notifier.notify({
+      userId: a.targetUserId,
+      preference: 'listing.moderation',
+      mandatory: true,
+      type,
+      title,
+      body,
+      path: '/account/moderazione',
+      cta: 'Vedi la decisione',
+      data: { actionId },
+    });
   }
 
   /** Verification outcome: account notice, never opted out. */

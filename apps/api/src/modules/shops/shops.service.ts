@@ -282,6 +282,7 @@ export class ShopsService {
     const counts = await this.counts([s.id]);
     return {
       ...this.toItem(s, counts),
+      id: s.id,
       ownerUsername: s.owner.username,
       description: s.description,
       openingHours: hoursText(s.openingHours),

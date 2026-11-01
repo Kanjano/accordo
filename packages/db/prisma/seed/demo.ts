@@ -30,7 +30,7 @@ import {
 } from '@accordo/domain';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { fakerIT as faker } from '@faker-js/faker';
-import { hashPassword } from 'better-auth/crypto';
+import { hashPassword, symmetricEncrypt } from 'better-auth/crypto';
 import sharp from 'sharp';
 import type { ItemCondition, Prisma, PrismaClient } from '../../src/generated/prisma/client.js';
 
@@ -59,6 +59,36 @@ export async function seedDemoCredentials(db: PrismaClient): Promise<void> {
   });
   console.log(`  credenziali demo: ${users.length} utenti (password ${DEMO_PASSWORD})`);
 }
+/**
+ * Development only: the staff must use 2FA for the back office (SPEC §3.10). The demo staff get a
+ * fixed TOTP secret (README) so the back office and the e2e tests can sign in. Idempotent.
+ */
+export const DEMO_TOTP_SECRET = 'accordo-demo-totp-secret-2026-xx';
+export async function seedDemoStaffTwoFactor(db: PrismaClient): Promise<void> {
+  const key = process.env.BETTER_AUTH_SECRET;
+  if (!key) return console.log('  2FA staff demo: BETTER_AUTH_SECRET mancante, salto');
+  const staff = await db.user.findMany({
+    where: {
+      email: { endsWith: '@accordo.local' },
+      role: { not: 'user' },
+      twoFactors: { none: {} },
+    },
+    select: { id: true },
+  });
+  for (const u of staff) {
+    await db.twoFactor.create({
+      data: {
+        userId: u.id,
+        secret: await symmetricEncrypt({ key, data: DEMO_TOTP_SECRET }),
+        backupCodes: await symmetricEncrypt({ key, data: JSON.stringify([]) }),
+        verified: true,
+      },
+    });
+    await db.user.update({ where: { id: u.id }, data: { twoFactorEnabled: true } });
+  }
+  if (staff.length) console.log(`  2FA staff demo: ${staff.length} utenti`);
+}
+
 const BIG_CITIES = [
   '015146',
   '058091',
@@ -1304,7 +1334,7 @@ export async function seedDemo(db: PrismaClient, now = new Date()): Promise<void
         reporterId: pick(buyers).id,
         targetType: 'LISTING',
         targetId: pick(active).id as string,
-        reasonCode: 'SUSPECTED_SCAM',
+        reasonCode: 'SCAM',
         details: 'Prezzo troppo basso e il venditore chiede il bonifico.',
         goodFaithConfirmed: true,
       },
@@ -1312,7 +1342,7 @@ export async function seedDemo(db: PrismaClient, now = new Date()): Promise<void
         reporterId: pick(buyers).id,
         targetType: 'USER',
         targetId: pick(users).id,
-        reasonCode: 'HARASSMENT',
+        reasonCode: 'OFFENSIVE',
         details: 'Messaggi insistenti e offensivi.',
         goodFaithConfirmed: true,
       },

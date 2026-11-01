@@ -89,6 +89,14 @@ Marketplace di strumenti musicali (codename `accordo`). La specifica è `SPEC.md
 - Negozi in `modules/shops`: l'etichetta professionale nasce dalla richiesta (autocertificazione), la verifica dello staff aggiunge badge, elenco e vetrina (ADR-0045). Gli annunci sono "del negozio" se `Listing.shopId` è valorizzato.
 - Ribassi: ogni cambio di prezzo scrive `ListingPriceHistory`; il calcolo è `priceReduction` nel dominio.
 
+## Note di implementazione (Fase 11)
+
+- Restrizioni di moderazione solo tramite `ModerationService.act()` (motivazione, `ModerationAction`, audit, notifica); i ricorsi le annullano con `reverse()`.
+- `AuditLog` è append-only nel database (trigger): mai `update`/`delete` dal codice, la pulizia oltre 2 anni la fa il job `retention`.
+- Dati fiscali solo tramite `FieldCrypto` (`modules/compliance`); mai valori in chiaro nei log o nell'audit.
+- Lo staff demo ha la 2FA con segreto TOTP fisso (README); e2e: `signInStaff` in `e2e/helpers.ts`.
+- Nomi delle code BullMQ in `@accordo/shared` (`QUEUES`), usati da worker e Bull Board.
+
 ## Regole d'oro del dominio
 
 - Lo stato di un ordine cambia **solo** tramite `OrderStateMachine` (§6.4) e `OrdersService.transition()`; mai `update` diretti sulla colonna `status`.

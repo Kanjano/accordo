@@ -164,7 +164,22 @@
     "SHOP_EXISTS": "Hai già un negozio.",
     "USERNAME_REQUIRED": "Scegli prima un nome utente nelle impostazioni del profilo.",
     "SHOP_LEGAL_LOCKED": "I dati legali verificati non si possono modificare: contatta l'assistenza.",
-    "SHOP_ALREADY_DECIDED": "Il negozio è già in questo stato."
+    "SHOP_ALREADY_DECIDED": "Il negozio è già in questo stato.",
+    "REPORTER_REQUIRED": "Inserisci nome ed email.",
+    "CAPTCHA_FAILED": "Verifica anti-bot non riuscita: riprova.",
+    "DECISION_NOT_APPLICABLE": "Questa decisione non si applica al contenuto segnalato.",
+    "REPORT_ALREADY_DECIDED": "La segnalazione è già stata decisa.",
+    "CANNOT_SANCTION_STAFF": "Non si possono sanzionare membri dello staff.",
+    "APPEAL_NOT_ALLOWED": "Per questa decisione non è possibile presentare ricorso.",
+    "APPEAL_ALREADY_DECIDED": "Il ricorso è già stato deciso.",
+    "USER_NOT_SANCTIONED": "L'account è già attivo.",
+    "TWO_FACTOR_REQUIRED": "Per il backoffice serve l'autenticazione a due fattori: attivala in Sicurezza.",
+    "SETTING_SHAPE": "Il nuovo valore deve avere la stessa struttura del precedente.",
+    "CATALOG_DUPLICATE": "Esiste già una voce con questo nome o slug.",
+    "WEBHOOK_ALREADY_PROCESSED": "L'evento è già stato elaborato.",
+    "TAX_ID_INVALID": "Codice fiscale non valido.",
+    "IBAN_INVALID": "IBAN non valido.",
+    "IMPERSONATION_READ_ONLY": "Stai vedendo il sito come un altro utente: solo lettura."
   },
   "Validation": {
     "EMAIL_INVALID": "Inserisci un indirizzo email valido.",
@@ -189,7 +204,13 @@
     "URL_INVALID": "Inserisci un indirizzo che inizia con https://.",
     "TEXT_TOO_SHORT": "Almeno 20 caratteri.",
     "SELF_CERT_REQUIRED": "Serve la dichiarazione per continuare.",
-    "NOTES_TOO_SHORT": "Almeno 20 caratteri."
+    "NOTES_TOO_SHORT": "Almeno 20 caratteri.",
+    "DETAILS_TOO_SHORT": "Almeno 20 caratteri.",
+    "GOOD_FAITH_REQUIRED": "Serve la dichiarazione di buona fede.",
+    "TAX_ID_INVALID": "Codice fiscale non valido.",
+    "IBAN_INVALID": "IBAN non valido.",
+    "SLUG_INVALID": "Solo lettere minuscole, numeri e trattini.",
+    "KEY_INVALID": "Chiave non valida."
   },
   "Auth": {
     "signIn": {
@@ -286,7 +307,9 @@
       "sales": "Vendite",
       "payouts": "Incassi",
       "feedback": "Feedback",
-      "shop": "Negozio"
+      "shop": "Negozio",
+      "tax": "Dati fiscali",
+      "moderation": "Moderazione"
     },
     "welcome": "Ciao {name}!",
     "overviewText": "Da qui gestisci profilo, indirizzi, sicurezza e preferenze. Annunci, acquisti e vendite arriveranno presto.",
@@ -414,7 +437,8 @@
       },
       "export": {
         "title": "Esporta i tuoi dati",
-        "text": "L'esportazione completa dei dati sarà disponibile a breve. Nel frattempo puoi richiederla al supporto."
+        "text": "Scarica un file con tutti i dati che conserviamo su di te: profilo, annunci, messaggi, ordini, feedback, notifiche e dati fiscali. Ti chiederemo di confermare la tua identità.",
+        "button": "Scarica i miei dati"
       },
       "delete": {
         "title": "Elimina l'account",
@@ -472,7 +496,8 @@
     "business": "Venditore professionale",
     "notFound": "Utente non trovato.",
     "signInToFollow": "Accedi per seguire questo utente.",
-    "allFeedback": "Vedi tutti i feedback"
+    "allFeedback": "Vedi tutti i feedback",
+    "report": "Segnala l'utente"
   },
   "Condition": {
     "NEW": "Nuovo",
@@ -676,7 +701,8 @@
     "warrantyInfo": "Garanzia",
     "shopPage": "Vai al negozio",
     "privateSeller": "Venditore privato.",
-    "privateNotice": "Le tutele UE per i consumatori (come il diritto di recesso di 14 giorni e la garanzia legale di conformità) non si applicano agli acquisti da privati. Restano il pagamento protetto e le controversie di Accordo."
+    "privateNotice": "Le tutele UE per i consumatori (come il diritto di recesso di 14 giorni e la garanzia legale di conformità) non si applicano agli acquisti da privati. Restano il pagamento protetto e le controversie di Accordo.",
+    "report": "Segnala l'annuncio"
   },
   "MyListings": {
     "title": "I miei annunci",
@@ -1384,6 +1410,265 @@
     "noListings": "Nessun annuncio attivo al momento.",
     "legalInfo": "Informazioni legali",
     "consumerRights": "Diritti del consumatore",
-    "consumerRightsText": "Acquistando da questo negozio hai diritto di recesso entro 14 giorni dalla consegna e alla garanzia legale di conformità (24 mesi sul nuovo, riducibile a 12 sull'usato)."
+    "consumerRightsText": "Acquistando da questo negozio hai diritto di recesso entro 14 giorni dalla consegna e alla garanzia legale di conformità (24 mesi sul nuovo, riducibile a 12 sull'usato).",
+    "report": "Segnala il negozio"
+  },
+  "Report": {
+    "title": "Segnala un contenuto",
+    "intro": "Usa questo modulo per segnalarci contenuti illegali o contrari alle nostre regole. Lo staff esamina ogni segnalazione e ti comunica la decisione.",
+    "target": {
+      "LISTING": "Annuncio",
+      "USER": "Utente",
+      "SHOP": "Negozio",
+      "MESSAGE": "Messaggio"
+    },
+    "aMessage": "Messaggio nella chat",
+    "reason": "Motivo",
+    "reasons": {
+      "SCAM": "Truffa o tentativo di frode",
+      "PROHIBITED_ITEM": "Articolo vietato",
+      "COUNTERFEIT": "Contraffazione",
+      "STOLEN": "Merce rubata",
+      "IP_INFRINGEMENT": "Violazione di diritti d'autore o marchi",
+      "OFFENSIVE": "Contenuto offensivo",
+      "SPAM": "Spam",
+      "MISLEADING": "Informazioni ingannevoli",
+      "OTHER": "Altro"
+    },
+    "details": "Descrizione",
+    "detailsHelp": "Spiega perché il contenuto è illegale o viola le regole (almeno 20 caratteri). Indica dove si trova la violazione.",
+    "illegal": "Ritengo che il contenuto sia illegale",
+    "name": "Nome e cognome",
+    "email": "Email",
+    "goodFaith": "Dichiaro in buona fede che le informazioni fornite sono corrette e complete.",
+    "submit": "Invia la segnalazione",
+    "sent": "Segnalazione inviata: ti abbiamo mandato una conferma di ricezione e ti comunicheremo la decisione.",
+    "follow": "Segui lo stato",
+    "policy": "Per sapere cosa è vietato consulta le",
+    "rules": "Regole di pubblicazione"
+  },
+  "Moderation": {
+    "title": "Moderazione",
+    "intro": "Qui trovi le decisioni dello staff che ti riguardano, con la motivazione, e lo stato delle tue segnalazioni. Puoi presentare ricorso entro 6 mesi da ogni decisione.",
+    "noActions": "Nessuna decisione che ti riguarda.",
+    "myReports": "Le mie segnalazioni",
+    "noReports": "Non hai inviato segnalazioni.",
+    "reportStatus": {
+      "OPEN": "In attesa",
+      "IN_REVIEW": "In esame",
+      "ACTION_TAKEN": "Provvedimento adottato",
+      "DISMISSED": "Archiviata"
+    },
+    "decision": "Decisione",
+    "actions": {
+      "LISTING_REJECTED": "Annuncio non approvato",
+      "LISTING_REMOVED": "Annuncio rimosso",
+      "LISTING_RESTORED": "Annuncio ripristinato",
+      "USER_WARNED": "Avviso",
+      "USER_LIMITED": "Account limitato",
+      "USER_SUSPENDED": "Account sospeso",
+      "USER_BANNED": "Account chiuso",
+      "USER_REINSTATED": "Account riattivato",
+      "FEEDBACK_REMOVED": "Feedback rimosso",
+      "MESSAGE_HIDDEN": "Messaggio nascosto"
+    },
+    "reasons": "Motivazione",
+    "legalGround": "Base giuridica",
+    "appealPending": "Ricorso presentato: lo esaminerà un membro dello staff diverso da chi ha deciso.",
+    "appealOutcome": {
+      "UPHELD": "Ricorso respinto",
+      "REVERSED": "Ricorso accolto"
+    },
+    "appeal": "Presenta ricorso",
+    "appealText": "Perché la decisione è sbagliata? (almeno 20 caratteri)",
+    "sendAppeal": "Invia il ricorso",
+    "cancel": "Annulla"
+  },
+  "Tax": {
+    "title": "Dati fiscali (DAC7)",
+    "intro": "La normativa europea DAC7 obbliga le piattaforme a comunicare ogni anno all'Agenzia delle Entrate i dati dei venditori che fanno almeno 30 vendite o superano 2.000 € di incassi. Ti chiediamo i dati quando ti avvicini a una delle soglie.",
+    "year": "Quest'anno: {activities, plural, one {# vendita} other {# vendite}}, {amount} di incassi.",
+    "required": "Ti stai avvicinando alle soglie DAC7: inserisci i tuoi dati fiscali.",
+    "onFile": "Dati ricevuti il {date}: codice fiscale {taxId}, IBAN {iban}. Puoi aggiornarli reinserendoli.",
+    "saved": "Dati fiscali salvati.",
+    "legalName": "Nome e cognome o ragione sociale",
+    "taxId": "Codice fiscale",
+    "taxIdHelp": "16 caratteri, o 11 cifre per le società.",
+    "birthDate": "Data di nascita",
+    "vatNumber": "Partita IVA",
+    "iban": "IBAN",
+    "address": "Indirizzo di residenza o sede",
+    "cap": "CAP",
+    "city": "Comune",
+    "privacy": "Codice fiscale, data di nascita e IBAN sono cifrati e usati solo per gli obblighi fiscali."
+  },
+  "Admin": {
+    "nav": "Sezioni del backoffice",
+    "needs2fa": "Il backoffice richiede l'autenticazione a due fattori.",
+    "enable2fa": "Attivala ora",
+    "sections": {
+      "dashboard": "Dashboard",
+      "reports": "Segnalazioni",
+      "listings": "Annunci",
+      "appeals": "Ricorsi",
+      "users": "Utenti",
+      "orders": "Ordini",
+      "disputes": "Controversie",
+      "feedback": "Feedback",
+      "shops": "Negozi",
+      "dac7": "DAC7",
+      "catalog": "Catalogo",
+      "settings": "Impostazioni",
+      "audit": "Audit log",
+      "webhooks": "Webhook",
+      "queues": "Code (Bull Board)"
+    },
+    "reason": "Motivo",
+    "reasons": {
+      "SCAM": "Truffa o tentativo di frode",
+      "PROHIBITED_ITEM": "Articolo vietato",
+      "COUNTERFEIT": "Contraffazione",
+      "STOLEN": "Merce rubata",
+      "IP_INFRINGEMENT": "Violazione di diritti d'autore o marchi",
+      "OFFENSIVE": "Contenuto offensivo",
+      "SPAM": "Spam",
+      "MISLEADING": "Informazioni ingannevoli",
+      "OTHER": "Altro",
+      "TERMS_VIOLATION": "Violazione dei Termini di servizio",
+      "FRAUD": "Frode",
+      "ABUSE": "Comportamento abusivo"
+    },
+    "statement": "Motivazione per l'utente (almeno 20 caratteri)",
+    "legalGround": "Base giuridica (facoltativa)",
+    "open": "Da esaminare",
+    "closed": "Chiuse",
+    "empty": "Niente da mostrare.",
+    "illegal": "Contenuto illegale",
+    "sameTarget": "{count, plural, one {# altra segnalazione} other {# altre segnalazioni}} sullo stesso contenuto",
+    "decision": "Decisione",
+    "openUser": "Apri l'utente",
+    "decisionType": "Decisione",
+    "decisions": {
+      "DISMISS": "Archivia (nessuna violazione)",
+      "REMOVE_LISTING": "Rimuovi l'annuncio",
+      "HIDE_MESSAGE": "Nascondi il messaggio",
+      "WARN_USER": "Avvisa l'utente",
+      "LIMIT_USER": "Limita l'account",
+      "SUSPEND_USER": "Sospendi l'account",
+      "BAN_USER": "Chiudi l'account"
+    },
+    "days": "Giorni di sospensione",
+    "decide": "Conferma la decisione",
+    "listingTabs": {
+      "PENDING_REVIEW": "Da approvare",
+      "REPORTED": "Segnalati",
+      "REMOVED": "Rimossi",
+      "REJECTED": "Rifiutati"
+    },
+    "reportsCount": "{count, plural, =0 {nessuna segnalazione} one {# segnalazione} other {# segnalazioni}}",
+    "approve": "Approva",
+    "reject": "Rifiuta",
+    "remove": "Rimuovi",
+    "restore": "Ripristina",
+    "appealsIntro": "Ogni ricorso va esaminato da un membro dello staff diverso da chi ha preso la decisione.",
+    "appealText": "Ricorso",
+    "reverse": "Accogli (annulla la decisione)",
+    "uphold": "Respingi",
+    "searchUsers": "Email, nome utente, nome o id",
+    "search": "Cerca",
+    "status": {
+      "ACTIVE": "Attivo",
+      "LIMITED": "Limitato",
+      "SUSPENDED": "Sospeso",
+      "BANNED": "Chiuso",
+      "DELETED": "Eliminato"
+    },
+    "statusLabel": "Stato",
+    "memberSince": "Iscritto il",
+    "activity": "Attività",
+    "counts": "{listings} annunci · {purchases} acquisti · {sales} vendite · {reports} segnalazioni ricevute · {flagged} messaggi segnalati",
+    "sanction": "Sanzione",
+    "sanctions": {
+      "WARN": "Avviso",
+      "LIMIT": "Limitazione",
+      "SUSPEND": "Sospensione",
+      "BAN": "Chiusura dell'account"
+    },
+    "applySanction": "Applica la sanzione",
+    "reinstate": "Riattiva l'account",
+    "impersonate": "Vedi come questo utente (sola lettura)",
+    "history": "Storico delle decisioni",
+    "impersonating": "Stai vedendo il sito come {email}, in sola lettura.",
+    "stopImpersonating": "Termina",
+    "kpi": {
+      "gmv": "Transato (30 giorni)",
+      "orders": "Ordini pagati (30 giorni)",
+      "disputeRate": "Tasso di controversie",
+      "shipTime": "Tempo medio di spedizione"
+    },
+    "hours": "{count, plural, one {# ora} other {# ore}}",
+    "backlog": "Code in arretrato",
+    "backlogItems": {
+      "reports": "Segnalazioni",
+      "listings": "Annunci da approvare",
+      "appeals": "Ricorsi",
+      "shops": "Negozi da verificare",
+      "disputes": "Controversie da decidere",
+      "feedback": "Feedback nascosti",
+      "webhooksFailed": "Webhook falliti"
+    },
+    "ordersByStatus": "Ordini per stato",
+    "dsaTitle": "Trasparenza DSA (ultimi 12 mesi)",
+    "dsaStats": "{reports} segnalazioni, {actions} provvedimenti (di cui {automated} automatici), {appeals} ricorsi, {reversed} decisioni annullate, tempo mediano di decisione {hours} ore.",
+    "settingsIntro": "Ogni valore deve mantenere la stessa struttura (chiavi e tipi): le modifiche sono registrate nell'audit log.",
+    "invalidJson": "JSON non valido.",
+    "saved": "Salvato.",
+    "save": "Salva",
+    "catalogIntro": "Modifica i campi in JSON. Le voci non si eliminano (gli annunci le usano): disattiva una categoria con isActive=false.",
+    "catalog": {
+      "departments": "Reparti",
+      "categories": "Categorie",
+      "attributes": "Attributi",
+      "brands": "Marche"
+    },
+    "new": "+ Nuova voce",
+    "fieldsJson": "Campi (JSON)",
+    "categoryAttributes": "Attributi della categoria (JSON: attributeId, required)",
+    "auditFilter": {
+      "actorId": "Id di chi agisce",
+      "entityType": "Tipo",
+      "entityId": "Id dell'entità"
+    },
+    "auditCols": {
+      "when": "Quando",
+      "action": "Azione",
+      "entity": "Entità",
+      "actor": "Chi",
+      "details": "Dettagli"
+    },
+    "webhookTabs": {
+      "failed": "Falliti",
+      "pending": "In attesa",
+      "processed": "Elaborati"
+    },
+    "attempts": "{count, plural, one {# tentativo} other {# tentativi}}",
+    "replay": "Rielabora",
+    "replayed": "Evento rimesso in coda.",
+    "dac7Intro": "Venditori vicini alle soglie (30 vendite o 2.000 €) o oltre. L'export contiene i dati fiscali in chiaro: scaricalo solo su dispositivi sicuri.",
+    "year": "Anno",
+    "exportCsv": "Esporta CSV",
+    "reminderSent": "Sollecito inviato.",
+    "remind": "Sollecita",
+    "dac7Cols": {
+      "seller": "Venditore",
+      "activities": "Vendite",
+      "consideration": "Incassi",
+      "state": "Stato",
+      "reminders": "Solleciti"
+    },
+    "reportable": "Da comunicare",
+    "nearThreshold": "Vicino alla soglia",
+    "profileOk": "dati ricevuti",
+    "profileMissing": "dati mancanti"
   }
 }

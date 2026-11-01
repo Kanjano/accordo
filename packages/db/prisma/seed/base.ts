@@ -216,6 +216,22 @@ export function defaultPlatformSettings(): Record<string, Prisma.InputJsonValue>
     },
     bannedTerms: BANNED_TERMS,
     featureFlags: {},
+    // SPEC §14.4 (to confirm with the accountant): reportable from 30 sales OR above 2,000 €.
+    dac7: {
+      minActivities: 30,
+      maxConsiderationCents: 200_000,
+      requestAtBps: 8000,
+      reminderEveryDays: 7,
+      maxReminders: 3,
+      blockPayoutsWithoutProfile: false,
+    },
+    // SPEC §14.5 retention table (values to confirm).
+    retention: {
+      messagesMonths: 24,
+      auditLogMonths: 24,
+      notificationsMonths: 12,
+      tmpUploadsHours: 24,
+    },
   };
 }
 

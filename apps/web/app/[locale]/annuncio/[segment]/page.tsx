@@ -320,6 +320,14 @@ export default async function ListingPage({
           <div className="flex flex-wrap items-center gap-2">
             <ShareButton title={l.title} />
             {l.owner ? null : <FavoriteButton listingId={l.id} title={l.title} />}
+            {l.owner ? null : (
+              <Link
+                href={`/segnala?tipo=LISTING&id=${l.shortId}`}
+                className="text-sm text-muted-foreground underline underline-offset-4"
+              >
+                {t('report')}
+              </Link>
+            )}
           </div>
 
           <section aria-labelledby="seller" className="grid gap-2 rounded-xl border p-4">

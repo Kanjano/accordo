@@ -21,6 +21,11 @@ Obiettivo: OWASP ASVS livello 2 e Top 10 (SPEC §13). Documento aggiornato a ogn
 - [ ] CSP con nonce e header di sicurezza (Fase 12).
 - [ ] Limite di login per account, revisione dei limiti (Fase 12).
 - [ ] gitleaks, CodeQL, `pnpm audit` in CI (Fase 12).
+- [x] Backoffice: ruolo staff + 2FA su ogni route `admin/*` e su Bull Board (`/admin/queues` sull'host API); step-up per sanzioni, impostazioni, export DAC7 e impersonificazione (solo admin, sola lettura, auditata).
+- [x] `AuditLog` append-only imposto da un trigger del database (UPDATE vietato; DELETE solo oltre i 2 anni di conservazione), qualunque sia il ruolo che si connette.
+- [x] Dati fiscali DAC7 cifrati per campo (AES-256-GCM con key id, `ENCRYPTION_KEY`) con blind index HMAC; mai nell'audit log; export CSV solo admin con step-up e protezione da CSV injection.
+- [x] Segnalazioni pubbliche con Turnstile e limite di 10 al giorno per utente o IP; messaggi segnalabili solo dall'altro partecipante.
+- [ ] Ruoli database separati (applicativo senza UPDATE/DELETE su `AuditLog`, utente per le migrazioni) in produzione (Fase 12; il trigger copre già il vincolo).
 
 ## Regole Radar (pagamenti, SPEC §6.11)
 

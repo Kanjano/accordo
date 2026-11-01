@@ -10,6 +10,7 @@ import type { S3Client } from '@aws-sdk/client-s3';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { Queue } from 'bullmq';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { ComplianceProcessor, dac7PayoutsBlocked } from '../src/compliance.js';
 import type { Env } from '../src/env.js';
 import { LifecycleProcessor } from '../src/lifecycle.js';
 import { NotificationsProcessor } from '../src/notifications/notifications.processor.js';
@@ -961,5 +962,169 @@ describe('payments', () => {
     });
     expect(counted.map((f) => f.countsTowardScore)).toEqual([true, false]);
     expect((await repo.process({ name: 'nightly' } as never)).users).toBeGreaterThan(0);
+  });
+});
+
+describe('compliance (SPEC §14.4, §14.5)', () => {
+  const s3 = { send: async () => ({ Contents: [] }) } as unknown as S3Client;
+  const proc = () =>
+    new ComplianceProcessor(
+      db,
+      s3,
+      { ...env, S3_BUCKET_PRIVATE: 'p' } as Env,
+      new Notifier(env, db, email),
+    );
+
+  it('DAC7: quarter totals from completed orders, reminders up to the limit, optional payout block', async () => {
+    await db.platformSetting.createMany({
+      data: [
+        {
+          key: 'dac7',
+          value: {
+            minActivities: 30,
+            maxConsiderationCents: 200_000,
+            requestAtBps: 8000,
+            reminderEveryDays: 7,
+            maxReminders: 2,
+            blockPayoutsWithoutProfile: true,
+          },
+        },
+        {
+          key: 'retention',
+          value: {
+            messagesMonths: 24,
+            auditLogMonths: 24,
+            notificationsMonths: 12,
+            tmpUploadsHours: 24,
+          },
+        },
+      ],
+      skipDuplicates: true,
+    });
+    const seller = await db.user.create({
+      data: { name: 'Dac', email: 'dac7@example.test', emailVerified: true },
+    });
+    const buyer = await db.user.create({ data: { name: 'B', email: 'dac7b@example.test' } });
+    // Reminder spacing is measured against the stored notifications: real time.
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const l = await db.listing.create({
+      data: {
+        shortId: 'DAC70001',
+        slug: 'x',
+        sellerId: seller.id,
+        categoryId,
+        status: 'SOLD',
+        title: 'Batteria',
+        description: 'x',
+        condition: 'GOOD',
+        priceCents: 110_000,
+        comuneId: '015146',
+      },
+    });
+    // 2 sales: 1,100 € in Q1 and 1,100 € in Q3 → 2,200 € > 2,000 €: reportable.
+    for (const [i, at] of [`${year}-02-10T10:00:00Z`, `${year}-08-01T10:00:00Z`].entries())
+      await db.order.create({
+        data: {
+          number: `26-DAC${i}`,
+          transferGroup: `order_26-DAC${i}`,
+          listingId: l.id,
+          buyerId: buyer.id,
+          sellerId: seller.id,
+          deliveryMethod: 'HAND_DELIVERY',
+          status: 'COMPLETED',
+          completedAt: new Date(at),
+          listingSnapshot: { title: 'Batteria' },
+          itemPriceCents: 110_000,
+          buyerFeeCents: 2500,
+          totalCents: 112_500,
+          sellerNetCents: 110_000,
+        },
+      });
+    const p = proc();
+    await p.dac7(now);
+    const periods = await db.dac7Period.findMany({
+      where: { userId: seller.id },
+      orderBy: { quarter: 'asc' },
+    });
+    expect(
+      periods.map((x) => [x.quarter, x.activitiesCount, Number(x.considerationCents)]),
+    ).toEqual([
+      [1, 1, 110_000],
+      [3, 1, 110_000],
+    ]);
+    const reminders = () =>
+      db.notification.count({ where: { userId: seller.id, type: 'dac7.request' } });
+    expect(await reminders()).toBe(1);
+    await p.dac7(new Date(now.getTime() + 86_400_000)); // too soon for another one
+    expect(await reminders()).toBe(1);
+    expect(await dac7PayoutsBlocked(db, seller.id, now)).toBe(false);
+    await p.dac7(new Date(now.getTime() + 8 * 86_400_000));
+    await p.dac7(new Date(now.getTime() + 16 * 86_400_000)); // limit reached
+    expect(await reminders()).toBe(2);
+    expect(await dac7PayoutsBlocked(db, seller.id, now)).toBe(true);
+    expect(sent.some((e) => e.to === 'dac7@example.test' && /dati fiscali/.test(e.subject))).toBe(
+      true,
+    );
+    await db.taxProfile.create({
+      data: {
+        userId: seller.id,
+        legalName: 'Dac',
+        taxIdEnc: 'k1:x:y:z',
+        taxIdHash: 'h',
+        addressLine: 'Via 1',
+        cap: '20100',
+        city: 'Milano',
+      },
+    });
+    expect(await dac7PayoutsBlocked(db, seller.id, now)).toBe(false);
+  });
+
+  it('retention: old messages and notifications go, except evidence; suspensions expire', async () => {
+    const u = await db.user.create({
+      data: {
+        name: 'Sospeso',
+        email: 'sospeso@example.test',
+        status: 'SUSPENDED',
+        banned: true,
+        banExpires: new Date(Date.now() - 1000),
+      },
+    });
+    const old = new Date(Date.now() - 800 * 86_400_000);
+    let k = 9900;
+    const mk = async () => {
+      const l = await listing(++k, new Date(Date.now() + 86_400_000));
+      const c = await db.conversation.create({
+        data: { listingId: l.id, buyerId: u.id, sellerId, lastMessageAt: old },
+      });
+      const m = await db.message.create({
+        data: { conversationId: c.id, senderId: u.id, body: 'ciao', createdAt: old },
+      });
+      return { c, m };
+    };
+    const plain = await mk();
+    const reported = await mk();
+    await db.report.create({
+      data: {
+        targetType: 'MESSAGE',
+        targetId: reported.m.id,
+        reasonCode: 'SCAM',
+        details: 'x',
+      },
+    });
+    await db.notification.create({
+      data: { userId: u.id, type: 'x', title: 'x', body: 'x', createdAt: old },
+    });
+    const result = await proc().retention(new Date());
+    expect(result.messages).toBeGreaterThanOrEqual(1);
+    expect(await db.message.count({ where: { id: plain.m.id } })).toBe(0);
+    expect(await db.message.count({ where: { id: reported.m.id } })).toBe(1);
+    expect(await db.notification.count({ where: { userId: u.id } })).toBe(0);
+
+    expect((await proc().expireSuspensions(new Date())).reinstated).toBe(1);
+    expect(await db.user.findUniqueOrThrow({ where: { id: u.id } })).toMatchObject({
+      status: 'ACTIVE',
+      banned: false,
+    });
   });
 });

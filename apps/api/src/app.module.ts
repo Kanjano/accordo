@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule } from './config/config.module.js';
 import { ENV, type Env } from './config/env.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CatalogModule } from './modules/catalog/catalog.module.js';
 import { ComplianceModule } from './modules/compliance/compliance.module.js';
@@ -11,6 +12,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module.js';
 import { GeoModule } from './modules/geo/geo.module.js';
 import { ListingsModule } from './modules/listings/listings.module.js';
 import { MessagingModule } from './modules/messaging/messaging.module.js';
+import { ModerationModule } from './modules/moderation/moderation.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { OrdersModule } from './modules/orders/orders.module.js';
 import { InfraModule } from './modules/platform/infra.module.js';
@@ -62,6 +64,8 @@ import { UsersModule } from './modules/users/users.module.js';
     OrdersModule,
     FeedbackModule,
     ShopsModule,
+    ModerationModule,
+    AdminModule,
     ComplianceModule,
   ],
 })

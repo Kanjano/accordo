@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
+import { ComplianceProcessor, ComplianceScheduler } from './compliance.js';
 import { ENV, type Env } from './env.js';
 import { HEARTBEAT_QUEUE, HeartbeatProcessor, HeartbeatScheduler } from './heartbeat.js';
 import { InfraModule } from './infra.js';
@@ -49,6 +50,7 @@ import { ShippingService } from './shipping/shipping.service.js';
       { name: QUEUES.nightly },
       { name: QUEUES.shipping },
       { name: QUEUES.reputation },
+      { name: QUEUES.compliance },
     ),
   ],
   providers: [
@@ -75,6 +77,8 @@ import { ShippingService } from './shipping/shipping.service.js';
     ShippingProcessor,
     ReputationScheduler,
     ReputationProcessor,
+    ComplianceScheduler,
+    ComplianceProcessor,
   ],
 })
 export class WorkerModule {}

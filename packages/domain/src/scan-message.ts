@@ -71,7 +71,8 @@ function isPhone(match: string): boolean {
   return digits.length >= 9 && digits.length <= 13;
 }
 
-const isIban = (candidate: string) => {
+/** IBAN with a valid mod-97 checksum (spaces allowed). */
+export const isIban = (candidate: string) => {
   const compact = candidate.replace(/\s/g, '').toUpperCase();
   if (compact.length < 15 || compact.length > 34) return false;
   const rearranged = compact.slice(4) + compact.slice(0, 4);

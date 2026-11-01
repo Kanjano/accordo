@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@accordo/db';
+import type { Prisma, PrismaClient } from '@accordo/db';
 import {
   fullRefundBeforeTransferEntries,
   type OrderEffect,
@@ -14,6 +14,7 @@ import type { PaymentEvent, PaymentProvider } from '@accordo/payments';
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import type { Job, Queue } from 'bullmq';
+import { dac7PayoutsBlocked } from '../compliance.js';
 import { ENV, type Env } from '../env.js';
 import { PAYMENTS, PRISMA } from '../infra.js';
 import { QUEUES } from '../queues.js';
@@ -52,6 +53,9 @@ export class PaymentsProcessor extends WorkerHost {
     if (job.name === 'webhook.received')
       return this.webhook(job.data as { provider: string; eventId: string }, job.attemptsMade);
     if (job.name === 'order.effects') return this.effects(job.data as EffectsJob);
+    // DAC7 data received: payouts held for it can go (SPEC §14.4).
+    if (job.name === 'dac7.profile_saved')
+      return this.releaseHeldTransfers({ id: (job.data as { sellerId: string }).sellerId });
   }
 
   // ───────────── Webhooks ─────────────
@@ -141,7 +145,10 @@ export class PaymentsProcessor extends WorkerHost {
           },
         });
         // Transfers held because the account was restricted can go now.
-        if (status.transfersEnabled) await this.releaseHeldTransfers(event.accountId);
+        if (status.transfersEnabled)
+          await this.releaseHeldTransfers({
+            paymentAccount: { providerAccountId: event.accountId },
+          });
         return;
       }
       case 'dispute.created':
@@ -153,12 +160,12 @@ export class PaymentsProcessor extends WorkerHost {
     }
   }
 
-  private async releaseHeldTransfers(accountId: string) {
+  private async releaseHeldTransfers(seller: Prisma.UserWhereInput) {
     const held = await this.db.order.findMany({
       where: {
         status: 'COMPLETED',
         payoutStatus: 'ON_HOLD',
-        seller: { paymentAccount: { providerAccountId: accountId } },
+        seller,
         paymentDisputes: { none: {} },
       },
       select: { id: true, sellerNetCents: true, refundedCents: true },
@@ -246,7 +253,12 @@ export class PaymentsProcessor extends WorkerHost {
       return;
     const account = o.seller.paymentAccount;
     const openChargeback = o.paymentDisputes.some((d) => d.status !== 'won' && d.status !== 'lost');
-    if (!account?.transfersEnabled || openChargeback || !o.chargeId) {
+    if (
+      !account?.transfersEnabled ||
+      openChargeback ||
+      !o.chargeId ||
+      (await dac7PayoutsBlocked(this.db, o.sellerId))
+    ) {
       await this.db.order.update({ where: { id: o.id }, data: { payoutStatus: 'ON_HOLD' } });
       return;
     }
