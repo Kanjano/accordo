@@ -226,6 +226,8 @@ export class OrdersService {
     const activeOrders = await this.db.order.count({
       where: { listingId: listing.id, status: { in: [...ACTIVE] } },
     });
+    // Same answer as losing the race on the unique index below (P2002), whichever comes first.
+    if (activeOrders > 0) throw new ConflictException({ code: 'LISTING_NOT_AVAILABLE' });
     let start: ReturnType<typeof transition>;
     try {
       start = transition(
