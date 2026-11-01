@@ -4,11 +4,11 @@
 
 Accordo tiene la semplicità di un portale di annunci (pubblichi gratis, cerchi per categoria, contatti il venditore) e aggiunge le garanzie che lì mancano. Paghi sulla piattaforma e il venditore riceve i soldi solo quando confermi di aver ricevuto lo strumento.
 
-| Home | Ricerca |
-| --- | --- |
-| ![Home con categorie e ultimi annunci](docs/screenshots/home.png) | ![Risultati in lista compatta con filtri laterali](docs/screenshots/ricerca.png) |
-| **Annuncio** | **Mobile** |
-| ![Pagina annuncio con riquadro del venditore](docs/screenshots/annuncio.png) | <img src="docs/screenshots/mobile.png" alt="Ricerca su mobile" width="260"> |
+| Home                                                                         | Ricerca                                                                          |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| ![Home con categorie e ultimi annunci](docs/screenshots/home.png)            | ![Risultati in lista compatta con filtri laterali](docs/screenshots/ricerca.png) |
+| **Annuncio**                                                                 | **Mobile**                                                                       |
+| ![Pagina annuncio con riquadro del venditore](docs/screenshots/annuncio.png) | <img src="docs/screenshots/mobile.png" alt="Ricerca su mobile" width="260">      |
 
 <sub>Dati demo generati per lo sviluppo: persone, negozi e partite IVA sono inventati.</sub>
 
@@ -102,15 +102,15 @@ I testi legali sono segnaposto **da validare con avvocato e commercialista** (ve
                          BullMQ: pagamenti, email, foto, timer degli ordini, conformità
 ```
 
-| Area | Stack |
-| --- | --- |
-| Frontend | Next.js 16 (App Router, RSC), React, Tailwind 4, next-intl (italiano e inglese), PWA |
-| API | NestJS 12, Better Auth, contratti Zod condivisi con l'SDK |
-| Dominio | pacchetto TypeScript puro: macchina a stati degli ordini, importi, contabilità in partita doppia |
-| Dati | PostgreSQL 18, Valkey, Meilisearch, storage S3-compatibile |
-| Integrazioni | Stripe Connect, Sendcloud, entrambi con adapter simulati per sviluppo e test |
-| Qualità | Vitest, Testcontainers, Playwright con axe, k6, Biome, Turborepo |
-| Deploy | Docker multi-stage, Caddy, GitHub Actions (CI, CodeQL, staging), Renovate |
+| Area         | Stack                                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| Frontend     | Next.js 16 (App Router, RSC), React, Tailwind 4, next-intl (italiano e inglese), PWA             |
+| API          | NestJS 12, Better Auth, contratti Zod condivisi con l'SDK                                        |
+| Dominio      | pacchetto TypeScript puro: macchina a stati degli ordini, importi, contabilità in partita doppia |
+| Dati         | PostgreSQL 18, Valkey, Meilisearch, storage S3-compatibile                                       |
+| Integrazioni | Stripe Connect, Sendcloud, entrambi con adapter simulati per sviluppo e test                     |
+| Qualità      | Vitest, Testcontainers, Playwright con axe, k6, Biome, Turborepo                                 |
+| Deploy       | Docker multi-stage, Caddy, GitHub Actions (CI, CodeQL, staging), Renovate                        |
 
 ## Qualità e prestazioni
 
